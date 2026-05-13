@@ -1,8 +1,6 @@
-/**
- * @idp/api - Backend API server
- *
- * Node.js/TypeScript/Express API server for the
- * Internal Developer Platform.
- */
+import { bootstrap } from './server';
 
-export {};
+bootstrap().catch((error) => {
+  console.error('Failed to start server:', error);
+  process.exit(1);
+});
