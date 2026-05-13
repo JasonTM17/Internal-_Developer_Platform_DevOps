@@ -1,0 +1,37 @@
+{{ define "pagerduty.description" -}}
+  [{{ .Status | toUpper }}] {{ .CommonLabels.alertname }}: {{ .CommonAnnotations.summary }}
+{{- end }}
+
+{{ define "pagerduty.firing" -}}
+  {{ range .Alerts.Firing }}
+Alert: {{ .Labels.alertname }}
+Severity: {{ .Labels.severity }}
+Namespace: {{ .Labels.namespace }}
+Summary: {{ .Annotations.summary }}
+Description: {{ .Annotations.description }}
+Started: {{ .StartsAt.Format "2006-01-02 15:04:05 UTC" }}
+{{ if .Annotations.runbook_url }}Runbook: {{ .Annotations.runbook_url }}{{ end }}
+---
+  {{ end }}
+{{- end }}
+
+{{ define "pagerduty.resolved" -}}
+  {{ range .Alerts.Resolved }}
+Alert: {{ .Labels.alertname }}
+Severity: {{ .Labels.severity }}
+Resolved: {{ .EndsAt.Format "2006-01-02 15:04:05 UTC" }}
+Duration: {{ .EndsAt.Sub .StartsAt }}
+---
+  {{ end }}
+{{- end }}
+
+{{ define "pagerduty.custom_details" -}}
+  {
+    "alertname": "{{ .CommonLabels.alertname }}",
+    "severity": "{{ .CommonLabels.severity }}",
+    "namespace": "{{ .CommonLabels.namespace }}",
+    "num_firing": "{{ .Alerts.Firing | len }}",
+    "num_resolved": "{{ .Alerts.Resolved | len }}",
+    "firing_alerts": "{{ template "pagerduty.firing" . }}"
+  }
+{{- end }}

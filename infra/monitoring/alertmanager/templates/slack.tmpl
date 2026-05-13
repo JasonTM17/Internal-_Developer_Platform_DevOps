@@ -1,0 +1,42 @@
+{{ define "slack.title" -}}
+  [{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] {{ .CommonLabels.alertname }}
+{{- end }}
+
+{{ define "slack.text" -}}
+  {{ range .Alerts }}
+*Alert:* {{ .Labels.alertname }}{{ if .Labels.severity }} - `{{ .Labels.severity }}`{{ end }}
+*Description:* {{ .Annotations.description }}
+*Details:*
+  {{ range .Labels.SortedPairs }}  • *{{ .Name }}:* `{{ .Value }}`
+  {{ end }}
+{{ if .Annotations.runbook_url }}*Runbook:* {{ .Annotations.runbook_url }}{{ end }}
+  {{ end }}
+{{- end }}
+
+{{ define "slack.color" -}}
+  {{ if eq .Status "firing" -}}
+    {{ if eq .CommonLabels.severity "critical" -}}
+      danger
+    {{- else if eq .CommonLabels.severity "warning" -}}
+      warning
+    {{- else -}}
+      #439FE0
+    {{- end -}}
+  {{ else -}}
+    good
+  {{- end }}
+{{- end }}
+
+{{ define "slack.icon" -}}
+  {{ if eq .Status "firing" -}}
+    {{ if eq .CommonLabels.severity "critical" -}}
+      :rotating_light:
+    {{- else if eq .CommonLabels.severity "warning" -}}
+      :warning:
+    {{- else -}}
+      :information_source:
+    {{- end -}}
+  {{ else -}}
+    :white_check_mark:
+  {{- end }}
+{{- end }}

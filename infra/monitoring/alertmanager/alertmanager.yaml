@@ -1,0 +1,107 @@
+global:
+  resolve_timeout: 5m
+  slack_api_url: 'https://hooks.slack.com/services/PLACEHOLDER'
+  pagerduty_url: 'https://events.pagerduty.com/v2/enqueue'
+
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+route:
+  receiver: 'default-slack'
+  group_by: ['alertname', 'namespace', 'severity']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  routes:
+    # Critical alerts go to PagerDuty immediately
+    - receiver: 'pagerduty-critical'
+      match:
+        severity: critical
+      group_wait: 10s
+      repeat_interval: 1h
+
+    # Warning alerts go to Slack
+    - receiver: 'platform-slack'
+      match:
+        team: platform
+      group_wait: 1m
+      repeat_interval: 4h
+
+    # SRE team alerts
+    - receiver: 'sre-slack'
+      match:
+        team: sre
+      group_wait: 1m
+      repeat_interval: 4h
+
+    # Security alerts
+    - receiver: 'security-pagerduty'
+      match:
+        team: security
+      group_wait: 10s
+      repeat_interval: 30m
+
+receivers:
+  - name: 'default-slack'
+    slack_configs:
+      - channel: '#platform-alerts'
+        send_resolved: true
+        title: '{{ template "slack.title" . }}'
+        text: '{{ template "slack.text" . }}'
+        actions:
+          - type: button
+            text: 'Runbook :book:'
+            url: '{{ (index .Alerts 0).Annotations.runbook_url }}'
+          - type: button
+            text: 'Dashboard :chart_with_upwards_trend:'
+            url: 'https://grafana.internal.idp.example.com'
+
+  - name: 'platform-slack'
+    slack_configs:
+      - channel: '#platform-alerts'
+        send_resolved: true
+        title: '{{ template "slack.title" . }}'
+        text: '{{ template "slack.text" . }}'
+
+  - name: 'sre-slack'
+    slack_configs:
+      - channel: '#sre-alerts'
+        send_resolved: true
+        title: '{{ template "slack.title" . }}'
+        text: '{{ template "slack.text" . }}'
+
+  - name: 'pagerduty-critical'
+    pagerduty_configs:
+      - routing_key: 'PLACEHOLDER_ROUTING_KEY'
+        severity: '{{ if eq .CommonLabels.severity "critical" }}critical{{ else }}warning{{ end }}'
+        description: '{{ template "pagerduty.description" . }}'
+        details:
+          firing: '{{ template "pagerduty.firing" . }}'
+          num_firing: '{{ .Alerts.Firing | len }}'
+          num_resolved: '{{ .Alerts.Resolved | len }}'
+    slack_configs:
+      - channel: '#platform-critical'
+        send_resolved: true
+        title: ':rotating_light: CRITICAL: {{ template "slack.title" . }}'
+        text: '{{ template "slack.text" . }}'
+
+  - name: 'security-pagerduty'
+    pagerduty_configs:
+      - routing_key: 'PLACEHOLDER_SECURITY_KEY'
+        severity: critical
+        description: 'Security Alert: {{ .CommonAnnotations.summary }}'
+
+inhibit_rules:
+  # If a critical alert is firing, suppress warnings for the same alertname
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'namespace']
+
+  # If the cluster is down, suppress all other alerts
+  - source_match:
+      alertname: 'ClusterDown'
+    target_match_re:
+      alertname: '.+'
+    equal: ['cluster']
