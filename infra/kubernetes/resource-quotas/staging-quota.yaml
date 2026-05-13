@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: staging-resource-quota
+  namespace: platform
+  labels:
+    app.kubernetes.io/part-of: internal-developer-platform
+    environment: staging
+  annotations:
+    description: "Resource quota for staging environment - mirrors production sizing"
+    quota.idp.io/tier: "staging"
+    quota.idp.io/contact: "platform-engineering@company.com"
+spec:
+  hard:
+    # Compute resources - 50% of production
+    requests.cpu: "8"
+    requests.memory: "16Gi"
+    limits.cpu: "16"
+    limits.memory: "32Gi"
+    # Object counts
+    pods: "50"
+    services: "25"
+    configmaps: "50"
+    secrets: "30"
+    persistentvolumeclaims: "15"
+    replicationcontrollers: "20"
+    # Service types
+    services.nodeports: "0"
+    services.loadbalancers: "3"
+  scopeSelector:
+    matchExpressions:
+      - scopeName: PriorityClass
+        operator: NotIn
+        values:
+          - platform-critical
