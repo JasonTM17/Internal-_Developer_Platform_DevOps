@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box, Typography, Grid, Card, CardContent, Chip, Button, Stack,
-  LinearProgress, Avatar, IconButton, Tooltip, Table, TableBody,
-  TableCell, TableContainer, TableHead, TableRow, Paper,
+  LinearProgress, Avatar, Table, TableBody,
+  TableCell, TableContainer, TableHead, TableRow,
 } from '@mui/material';
 import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
 import StorageIcon from '@mui/icons-material/Storage';
@@ -15,7 +15,6 @@ import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
 import WarningIcon from '@mui/icons-material/Warning';
-import AddIcon from '@mui/icons-material/Add';
 import SpeedIcon from '@mui/icons-material/Speed';
 import { useNavigate } from 'react-router-dom';
 import { platformApi } from '../../api/platformApi';
@@ -124,31 +123,18 @@ export const DashboardPage: React.FC = () => {
     return h < 24 ? `${h}h ago` : `${Math.floor(h / 24)}d ago`;
   };
 
+  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
   return (
     <Box sx={{ maxWidth: 1400, mx: 'auto' }}>
-      {/* Welcome Header */}
-      <Box sx={{
-        mb: 4, p: 4, borderRadius: 3, position: 'relative', overflow: 'hidden',
-        background: 'linear-gradient(135deg, rgba(108,99,255,0.12) 0%, rgba(3,218,198,0.08) 100%)',
-        border: '1px solid rgba(108,99,255,0.2)',
-        '&::before': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: 'linear-gradient(90deg, #6C63FF, #03DAC6)' },
-      }}>
-        <Typography variant="h4" sx={{ fontWeight: 700, mb: 1, color: 'white' }}>
-          Welcome back, Developer 👋
+      {/* Page Header */}
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" sx={{ fontWeight: 700, color: 'white' }}>
+          Overview
         </Typography>
-        <Typography variant="body1" sx={{ color: '#8b949e', maxWidth: 600 }}>
-          Your platform is running smoothly. Here's an overview of your infrastructure and services.
+        <Typography variant="body2" sx={{ color: '#8b949e', mt: 0.5 }}>
+          {today}
         </Typography>
-        <Stack direction="row" spacing={1.5} sx={{ mt: 2.5 }}>
-          <Button variant="contained" size="small" startIcon={<RocketLaunchIcon />} onClick={() => navigate('/deployments')}
-            sx={{ background: 'linear-gradient(135deg, #6C63FF, #8B83FF)', '&:hover': { background: 'linear-gradient(135deg, #4B44B2, #6C63FF)' } }}>
-            Deploy Now
-          </Button>
-          <Button variant="outlined" size="small" startIcon={<AddIcon />} onClick={() => navigate('/catalog')}
-            sx={{ borderColor: 'rgba(108,99,255,0.5)', color: '#8B83FF' }}>
-            Register Service
-          </Button>
-        </Stack>
       </Box>
 
       {/* Stats Cards Row */}
