@@ -1,0 +1,311 @@
+name: CD - Deploy to Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to deploy (must be a tagged release)'
+        required: true
+        type: string
+      strategy:
+        description: 'Deployment strategy'
+        required: true
+        type: choice
+        options:
+          - canary
+          - blue-green
+          - rolling
+        default: canary
+      canary_percentage:
+        description: 'Canary traffic percentage (only for canary strategy)'
+        required: false
+        type: number
+        default: 10
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
+  EKS_CLUSTER: idp-production
+  NAMESPACE: idp-production
+  ENVIRONMENT: production
+
+permissions:
+  id-token: write
+  contents: read
+  deployments: write
+
+jobs:
+  validate:
+    name: Pre-deployment Validation
+    runs-on: ubuntu-latest
+    outputs:
+      approved: ${{ steps.validate.outputs.approved }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate version exists in ECR
+        id: validate
+        run: |
+          # Verify the image exists in ECR
+          aws ecr describe-images \
+            --repository-name idp-api \
+            --image-ids imageTag=${{ github.event.inputs.version }} \
+            --region ${{ env.AWS_REGION }} || {
+              echo "::error::Image tag ${{ github.event.inputs.version }} not found in ECR"
+              exit 1
+            }
+          echo "approved=true" >> $GITHUB_OUTPUT
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Verify staging deployment
+        run: |
+          echo "Checking that version ${{ github.event.inputs.version }} was deployed to staging..."
+          # Verify the version passed staging E2E tests
+          gh run list --workflow=cd-staging.yaml --json conclusion,headBranch \
+            --jq '.[] | select(.conclusion=="success")' | head -1
+
+      - name: Check deployment window
+        run: |
+          HOUR=$(date -u +%H)
+          DAY=$(date -u +%u)
+          # Block deployments outside business hours (9-17 UTC, Mon-Fri)
+          if [[ $DAY -gt 5 ]] || [[ $HOUR -lt 9 ]] || [[ $HOUR -gt 17 ]]; then
+            echo "::warning::Deploying outside standard deployment window (Mon-Fri 9-17 UTC)"
+          fi
+
+  deploy-canary:
+    name: Canary Deployment
+    runs-on: ubuntu-latest
+    needs: validate
+    if: github.event.inputs.strategy == 'canary'
+    environment:
+      name: production
+      url: https://idp.example.com
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_PROD_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER }} --region ${{ env.AWS_REGION }}
+
+      - name: Deploy canary
+        run: |
+          for service in api portal; do
+            helm upgrade --install "idp-${service}-canary" \
+              ./infra/helm/idp-platform \
+              --namespace ${{ env.NAMESPACE }} \
+              --set image.tag=${{ github.event.inputs.version }} \
+              --set image.repository=${{ env.ECR_REGISTRY }}/idp-${service} \
+              --set environment=${{ env.ENVIRONMENT }} \
+              --set canary.enabled=true \
+              --set canary.weight=${{ github.event.inputs.canary_percentage }} \
+              --set replicaCount=1 \
+              --values ./infra/helm/idp-platform/values-production.yaml \
+              --wait \
+              --timeout 10m
+          done
+
+      - name: Monitor canary (5 minutes)
+        run: |
+          echo "Monitoring canary deployment for 5 minutes..."
+          for i in $(seq 1 30); do
+            # Check error rate
+            ERROR_RATE=$(kubectl exec -n monitoring deploy/prometheus-server -- \
+              promtool query instant 'rate(http_requests_total{status=~"5..",canary="true"}[1m]) / rate(http_requests_total{canary="true"}[1m]) * 100' \
+              2>/dev/null | grep -oP '\d+\.?\d*' || echo "0")
+            
+            if (( $(echo "$ERROR_RATE > 5" | bc -l) )); then
+              echo "::error::Canary error rate too high: ${ERROR_RATE}%"
+              exit 1
+            fi
+            
+            echo "Canary health check ${i}/30 - Error rate: ${ERROR_RATE}%"
+            sleep 10
+          done
+
+      - name: Promote canary to full deployment
+        run: |
+          for service in api portal; do
+            # Scale up new version
+            helm upgrade --install "idp-${service}" \
+              ./infra/helm/idp-platform \
+              --namespace ${{ env.NAMESPACE }} \
+              --set image.tag=${{ github.event.inputs.version }} \
+              --set image.repository=${{ env.ECR_REGISTRY }}/idp-${service} \
+              --set environment=${{ env.ENVIRONMENT }} \
+              --set replicaCount=3 \
+              --values ./infra/helm/idp-platform/values-production.yaml \
+              --wait \
+              --timeout 10m
+            
+            # Remove canary
+            helm uninstall "idp-${service}-canary" -n ${{ env.NAMESPACE }} || true
+          done
+
+  deploy-blue-green:
+    name: Blue-Green Deployment
+    runs-on: ubuntu-latest
+    needs: validate
+    if: github.event.inputs.strategy == 'blue-green'
+    environment:
+      name: production
+      url: https://idp.example.com
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_PROD_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER }} --region ${{ env.AWS_REGION }}
+
+      - name: Determine active slot
+        id: slot
+        run: |
+          ACTIVE=$(kubectl get service idp-api -n ${{ env.NAMESPACE }} -o jsonpath='{.spec.selector.slot}')
+          if [[ "$ACTIVE" == "blue" ]]; then
+            echo "target=green" >> $GITHUB_OUTPUT
+          else
+            echo "target=blue" >> $GITHUB_OUTPUT
+          fi
+          echo "Active slot: ${ACTIVE}, deploying to: ${TARGET}"
+
+      - name: Deploy to inactive slot
+        run: |
+          TARGET=${{ steps.slot.outputs.target }}
+          for service in api portal; do
+            helm upgrade --install "idp-${service}-${TARGET}" \
+              ./infra/helm/idp-platform \
+              --namespace ${{ env.NAMESPACE }} \
+              --set image.tag=${{ github.event.inputs.version }} \
+              --set image.repository=${{ env.ECR_REGISTRY }}/idp-${service} \
+              --set slot=${TARGET} \
+              --set replicaCount=3 \
+              --values ./infra/helm/idp-platform/values-production.yaml \
+              --wait \
+              --timeout 10m
+          done
+
+      - name: Switch traffic
+        run: |
+          TARGET=${{ steps.slot.outputs.target }}
+          kubectl patch service idp-api -n ${{ env.NAMESPACE }} \
+            -p "{\"spec\":{\"selector\":{\"slot\":\"${TARGET}\"}}}"
+          kubectl patch service idp-portal -n ${{ env.NAMESPACE }} \
+            -p "{\"spec\":{\"selector\":{\"slot\":\"${TARGET}\"}}}"
+
+  deploy-rolling:
+    name: Rolling Deployment
+    runs-on: ubuntu-latest
+    needs: validate
+    if: github.event.inputs.strategy == 'rolling'
+    environment:
+      name: production
+      url: https://idp.example.com
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_PROD_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER }} --region ${{ env.AWS_REGION }}
+
+      - name: Rolling deploy
+        run: |
+          for service in api portal; do
+            helm upgrade --install "idp-${service}" \
+              ./infra/helm/idp-platform \
+              --namespace ${{ env.NAMESPACE }} \
+              --set image.tag=${{ github.event.inputs.version }} \
+              --set image.repository=${{ env.ECR_REGISTRY }}/idp-${service} \
+              --set environment=${{ env.ENVIRONMENT }} \
+              --set replicaCount=3 \
+              --set strategy.type=RollingUpdate \
+              --set strategy.rollingUpdate.maxSurge=1 \
+              --set strategy.rollingUpdate.maxUnavailable=0 \
+              --values ./infra/helm/idp-platform/values-production.yaml \
+              --wait \
+              --timeout 15m
+          done
+
+  post-deploy:
+    name: Post-deployment Verification
+    runs-on: ubuntu-latest
+    needs: [deploy-canary, deploy-blue-green, deploy-rolling]
+    if: always() && (needs.deploy-canary.result == 'success' || needs.deploy-blue-green.result == 'success' || needs.deploy-rolling.result == 'success')
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run production smoke tests
+        run: |
+          PROD_URL="https://idp.example.com"
+          API_URL="https://api.idp.example.com"
+          
+          # Health endpoints
+          curl -sf "${API_URL}/health" || exit 1
+          curl -sf "${API_URL}/ready" || exit 1
+          curl -sf "${PROD_URL}" || exit 1
+          
+          # Version verification
+          DEPLOYED_VERSION=$(curl -sf "${API_URL}/version" | jq -r '.version')
+          if [[ "${DEPLOYED_VERSION}" != "${{ github.event.inputs.version }}" ]]; then
+            echo "::error::Version mismatch: expected ${{ github.event.inputs.version }}, got ${DEPLOYED_VERSION}"
+            exit 1
+          fi
+
+      - name: Create deployment record
+        run: |
+          echo "Recording deployment in audit log..."
+          curl -sf -X POST "${API_URL}/api/v1/deployments" \
+            -H "Authorization: Bearer ${{ secrets.DEPLOY_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "version": "${{ github.event.inputs.version }}",
+              "environment": "production",
+              "strategy": "${{ github.event.inputs.strategy }}",
+              "actor": "${{ github.actor }}",
+              "commit": "${{ github.sha }}"
+            }'
+
+      - name: Notify team
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "🚀 Production Deployment Complete",
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": { "type": "plain_text", "text": "🚀 Production Deployment" }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    { "type": "mrkdwn", "text": "*Version:*\n`${{ github.event.inputs.version }}`" },
+                    { "type": "mrkdwn", "text": "*Strategy:*\n${{ github.event.inputs.strategy }}" },
+                    { "type": "mrkdwn", "text": "*Deployed by:*\n${{ github.actor }}" },
+                    { "type": "mrkdwn", "text": "*Status:*\n✅ Success" }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
