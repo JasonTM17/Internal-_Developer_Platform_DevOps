@@ -1,0 +1,134 @@
+# Falco Runtime Security Rules for IDP Platform
+# These rules detect suspicious runtime behavior in containers
+
+- rule: Unauthorized Process in IDP API Container
+  desc: Detect unexpected processes running in the IDP API container
+  condition: >
+    spawned_process and
+    container and
+    container.image.repository contains "idp-api" and
+    not proc.name in (node, npm, sh, tini, curl)
+  output: >
+    Unexpected process in IDP API container
+    (user=%user.name command=%proc.cmdline container=%container.name image=%container.image.repository)
+  priority: WARNING
+  tags: [container, process, idp]
+
+- rule: Shell Spawned in Production Container
+  desc: Detect shell access in production containers
+  condition: >
+    spawned_process and
+    container and
+    container.image.repository contains "idp-" and
+    proc.name in (bash, sh, zsh, dash, csh) and
+    k8s.ns.name = "idp-production"
+  output: >
+    Shell spawned in production container
+    (user=%user.name shell=%proc.name container=%container.name namespace=%k8s.ns.name pod=%k8s.pod.name)
+  priority: CRITICAL
+  tags: [container, shell, production]
+
+- rule: Sensitive File Access
+  desc: Detect access to sensitive files within containers
+  condition: >
+    open_read and
+    container and
+    container.image.repository contains "idp-" and
+    (fd.name startswith /etc/shadow or
+     fd.name startswith /etc/passwd or
+     fd.name startswith /proc/self/environ or
+     fd.name contains "private" or
+     fd.name contains ".key" or
+     fd.name contains ".pem")
+  output: >
+    Sensitive file accessed in container
+    (user=%user.name file=%fd.name container=%container.name command=%proc.cmdline)
+  priority: WARNING
+  tags: [container, filesystem, sensitive]
+
+- rule: Network Connection to Unexpected Port
+  desc: Detect outbound connections to non-standard ports
+  condition: >
+    outbound and
+    container and
+    container.image.repository contains "idp-api" and
+    not fd.sport in (80, 443, 5432, 6379, 4317, 4318, 9090, 3100) and
+    not fd.sip = "127.0.0.1"
+  output: >
+    Unexpected outbound connection from IDP API
+    (command=%proc.cmdline connection=%fd.name container=%container.name)
+  priority: WARNING
+  tags: [container, network]
+
+- rule: Kubernetes Secret Access
+  desc: Detect direct access to Kubernetes secrets via API
+  condition: >
+    kevt and
+    kevt_started and
+    ka.verb in (get, list) and
+    ka.target.resource = "secrets" and
+    not ka.user.name in (system:serviceaccount:kube-system:*, system:serviceaccount:cert-manager:*, external-secrets)
+  output: >
+    Kubernetes secret accessed
+    (user=%ka.user.name verb=%ka.verb secret=%ka.target.name namespace=%ka.target.namespace)
+  priority: NOTICE
+  tags: [k8s, secrets]
+
+- rule: Privilege Escalation Attempt
+  desc: Detect attempts to escalate privileges
+  condition: >
+    spawned_process and
+    container and
+    (proc.name in (sudo, su, setuid) or
+     proc.cmdline contains "chmod +s" or
+     proc.cmdline contains "chown root")
+  output: >
+    Privilege escalation attempt in container
+    (user=%user.name command=%proc.cmdline container=%container.name)
+  priority: CRITICAL
+  tags: [container, privilege_escalation]
+
+- rule: Crypto Mining Detection
+  desc: Detect potential cryptocurrency mining activity
+  condition: >
+    spawned_process and
+    container and
+    (proc.name in (xmrig, minerd, minergate, cpuminer) or
+     proc.cmdline contains "stratum+tcp" or
+     proc.cmdline contains "cryptonight" or
+     proc.cmdline contains "monero")
+  output: >
+    Potential crypto mining detected
+    (user=%user.name command=%proc.cmdline container=%container.name image=%container.image.repository)
+  priority: CRITICAL
+  tags: [container, cryptomining]
+
+- rule: Container Drift Detected
+  desc: Detect new executables written to container filesystem
+  condition: >
+    open_write and
+    container and
+    container.image.repository contains "idp-" and
+    fd.name startswith /usr/bin or
+    fd.name startswith /usr/sbin or
+    fd.name startswith /bin or
+    fd.name startswith /sbin
+  output: >
+    New executable written to container
+    (user=%user.name file=%fd.name container=%container.name command=%proc.cmdline)
+  priority: CRITICAL
+  tags: [container, drift, filesystem]
+
+- rule: Database Credential Exposure
+  desc: Detect database connection strings in process arguments
+  condition: >
+    spawned_process and
+    container and
+    (proc.cmdline contains "postgresql://" or
+     proc.cmdline contains "PGPASSWORD" or
+     proc.cmdline contains "redis://" and proc.cmdline contains "@")
+  output: >
+    Database credentials potentially exposed in process arguments
+    (command=%proc.cmdline container=%container.name)
+  priority: WARNING
+  tags: [container, credentials, database]
