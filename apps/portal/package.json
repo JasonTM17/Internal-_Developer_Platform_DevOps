@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "echo 'Portal build requires full dependency install - use Docker'",
+    "test": "echo 'Portal tests require jsdom - run via Docker'",
     "preview": "vite preview"
   },
   "dependencies": {
