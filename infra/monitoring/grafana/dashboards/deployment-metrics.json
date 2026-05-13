@@ -1,0 +1,166 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 1,
+      "title": "DORA Metrics",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "orange", "value": 1 },
+              { "color": "green", "value": 7 }
+            ]
+          },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 1 },
+      "id": 2,
+      "title": "Deployment Frequency (7d)",
+      "type": "stat",
+      "targets": [
+        { "expr": "sum(increase(deployment_total{environment=\"production\"}[7d]))", "legendFormat": "Deploys" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 10 },
+              { "color": "red", "value": 15 }
+            ]
+          },
+          "unit": "m"
+        }
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 1 },
+      "id": 3,
+      "title": "Lead Time for Changes",
+      "type": "stat",
+      "targets": [
+        { "expr": "avg(deployment_lead_time_seconds{environment=\"production\"}) / 60", "legendFormat": "Lead Time" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 5 },
+              { "color": "red", "value": 15 }
+            ]
+          },
+          "unit": "percentunit"
+        }
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 1 },
+      "id": 4,
+      "title": "Change Failure Rate (7d)",
+      "type": "stat",
+      "targets": [
+        { "expr": "idp:dora:change_failure_rate:7d", "legendFormat": "CFR" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 30 },
+              { "color": "red", "value": 60 }
+            ]
+          },
+          "unit": "m"
+        }
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 1 },
+      "id": 5,
+      "title": "Mean Time to Recovery",
+      "type": "stat",
+      "targets": [
+        { "expr": "avg(incident_resolution_time_seconds{severity=\"critical\"}) / 60", "legendFormat": "MTTR" }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "id": 6,
+      "title": "Deployment Activity",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "id": 7,
+      "title": "Deployments Over Time",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "sum(increase(deployment_total[1h])) by (environment)", "legendFormat": "{{environment}}" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "id": 8,
+      "title": "Deployment Duration",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "histogram_quantile(0.95, sum(rate(deployment_duration_seconds_bucket[1h])) by (le, environment))", "legendFormat": "P95 {{environment}}" },
+        { "expr": "histogram_quantile(0.50, sum(rate(deployment_duration_seconds_bucket[1h])) by (le, environment))", "legendFormat": "P50 {{environment}}" }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 },
+      "id": 9,
+      "title": "ArgoCD Sync Status",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 15 },
+      "id": 10,
+      "title": "ArgoCD Application Health",
+      "type": "table",
+      "targets": [
+        { "expr": "argocd_app_info{namespace=\"argocd\"}", "format": "table", "legendFormat": "" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 15 },
+      "id": 11,
+      "title": "ArgoCD Sync Operations",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "sum(increase(argocd_app_sync_total[1h])) by (phase)", "legendFormat": "{{phase}}" }
+      ]
+    }
+  ],
+  "schemaVersion": 38,
+  "tags": ["idp", "deployments", "dora"],
+  "time": { "from": "now-7d", "to": "now" },
+  "title": "IDP Deployment Metrics",
+  "uid": "idp-deployment-metrics",
+  "version": 1
+}
