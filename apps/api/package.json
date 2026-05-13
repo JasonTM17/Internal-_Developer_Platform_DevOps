@@ -4,7 +4,7 @@
   "private": true,
   "description": "Backend API server (Node.js/TypeScript/Express)",
   "scripts": {
-    "build": "tsc --noEmit",
+    "build": "tsc -p tsconfig.build.json",
     "dev": "echo 'api dev server'",
     "lint": "eslint . --ext .ts,.tsx",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
