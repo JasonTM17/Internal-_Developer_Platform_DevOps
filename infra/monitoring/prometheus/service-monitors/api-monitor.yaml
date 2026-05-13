@@ -1,0 +1,146 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: platform-api
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: platform-api
+    app.kubernetes.io/component: service-monitor
+    team: platform
+    release: prometheus
+spec:
+  jobLabel: platform-api
+  namespaceSelector:
+    matchNames:
+      - platform
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: platform-api
+      app.kubernetes.io/component: api
+  endpoints:
+    - port: http-metrics
+      path: /metrics
+      interval: 15s
+      scrapeTimeout: 10s
+      honorLabels: true
+      metricRelabelings:
+        # Drop high-cardinality metrics to control storage
+        - sourceLabels: [__name__]
+          regex: "go_gc_.*"
+          action: drop
+        # Normalize HTTP method labels
+        - sourceLabels: [method]
+          targetLabel: method
+          regex: "(GET|POST|PUT|DELETE|PATCH)"
+          action: keep
+        # Add environment label
+        - targetLabel: environment
+          replacement: production
+      relabelings:
+        - sourceLabels: [__meta_kubernetes_pod_label_app_kubernetes_io_version]
+          targetLabel: version
+        - sourceLabels: [__meta_kubernetes_pod_name]
+          targetLabel: pod
+        - sourceLabels: [__meta_kubernetes_namespace]
+          targetLabel: namespace
+
+    # Separate endpoint for slow /health probes
+    - port: http-metrics
+      path: /health
+      interval: 30s
+      scrapeTimeout: 5s
+      metricRelabelings:
+        - sourceLabels: [__name__]
+          regex: "health_check_.*"
+          action: keep
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: platform-api-pods
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: platform-api
+    app.kubernetes.io/component: pod-monitor
+spec:
+  namespaceSelector:
+    matchNames:
+      - platform
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: platform-api
+  podMetricsEndpoints:
+    - port: http-metrics
+      path: /metrics
+      interval: 15s
+      honorLabels: true
+
+---
+# PrometheusRule for API-specific alerts
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: platform-api-alerts
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: platform-api
+    prometheus: platform
+    role: alert-rules
+spec:
+  groups:
+    - name: platform-api.alerts
+      rules:
+        - alert: APIHighErrorRate
+          expr: |
+            sum(rate(http_requests_total{job="platform-api", code=~"5.."}[5m]))
+            /
+            sum(rate(http_requests_total{job="platform-api"}[5m])) > 0.01
+          for: 5m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "API error rate above 1%"
+            description: "Error rate is {{ $value | humanizePercentage }}"
+
+        - alert: APIHighLatency
+          expr: |
+            histogram_quantile(0.95,
+              sum(rate(http_request_duration_seconds_bucket{job="platform-api"}[5m])) by (le)
+            ) > 1
+          for: 5m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "API p95 latency above 1 second"
+            description: "p95 latency is {{ $value | humanizeDuration }}"
+
+        - alert: APIPodCrashLooping
+          expr: |
+            rate(kube_pod_container_status_restarts_total{
+              namespace="platform",
+              container="api"
+            }[15m]) > 0
+          for: 5m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "API pod is crash-looping"
+            description: "Pod {{ $labels.pod }} has restarted {{ $value | printf \"%.0f\" }} times in 15m"
+
+        - alert: APIHighMemoryUsage
+          expr: |
+            container_memory_working_set_bytes{namespace="platform", container="api"}
+            /
+            kube_pod_container_resource_limits{namespace="platform", container="api", resource="memory"}
+            > 0.9
+          for: 5m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "API pod memory usage above 90%"
+            description: "Pod {{ $labels.pod }} memory at {{ $value | humanizePercentage }}"
