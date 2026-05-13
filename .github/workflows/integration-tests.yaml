@@ -1,0 +1,309 @@
+name: Integration & Contract Tests
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'apps/**'
+      - 'packages/**'
+      - 'tests/**'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/**'
+      - 'packages/**'
+      - 'tests/**'
+  workflow_dispatch:
+    inputs:
+      test_suite:
+        description: 'Test suite to run'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - integration
+          - contract
+          - e2e
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
+env:
+  NODE_VERSION: '20'
+  PACT_BROKER_URL: ${{ secrets.PACT_BROKER_URL }}
+  PACT_BROKER_TOKEN: ${{ secrets.PACT_BROKER_TOKEN }}
+
+jobs:
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.test_suite == 'all' || github.event.inputs.test_suite == 'integration' || github.event.inputs.test_suite == '' }}
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: idp_test
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      nats:
+        image: nats:2.10-alpine
+        ports:
+          - 4222:4222
+          - 8222:8222
+        options: >-
+          --health-cmd "wget --no-verbose --tries=1 --spider http://localhost:8222/healthz || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run database migrations
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/idp_test
+        run: npm run db:migrate --workspace=apps/api
+
+      - name: Run integration tests
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/idp_test
+          REDIS_URL: redis://localhost:6379
+          NATS_URL: nats://localhost:4222
+          JWT_SECRET: test-secret-key-for-ci
+          NODE_ENV: test
+        run: |
+          npx vitest run tests/integration/ \
+            --reporter=verbose \
+            --reporter=junit \
+            --outputFile=test-results/integration-results.xml
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-results
+          path: test-results/
+          retention-days: 30
+
+      - name: Publish test results
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: Integration Test Results
+          path: test-results/integration-results.xml
+          reporter: java-junit
+
+  contract-tests-consumer:
+    name: Contract Tests (Consumer)
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.test_suite == 'all' || github.event.inputs.test_suite == 'contract' || github.event.inputs.test_suite == '' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run consumer contract tests
+        run: |
+          npx vitest run tests/contract/api-consumer.pact.ts \
+            --reporter=verbose
+
+      - name: Upload pact files
+        uses: actions/upload-artifact@v4
+        with:
+          name: pact-files
+          path: pacts/
+          retention-days: 7
+
+      - name: Publish pacts to broker
+        if: github.ref == 'refs/heads/main' && env.PACT_BROKER_URL != ''
+        run: |
+          npx pact-broker publish pacts/ \
+            --consumer-app-version=${{ github.sha }} \
+            --branch=${{ github.ref_name }} \
+            --broker-base-url=${{ env.PACT_BROKER_URL }} \
+            --broker-token=${{ env.PACT_BROKER_TOKEN }}
+
+  contract-tests-provider:
+    name: Contract Tests (Provider)
+    runs-on: ubuntu-latest
+    needs: contract-tests-consumer
+    if: ${{ github.event.inputs.test_suite == 'all' || github.event.inputs.test_suite == 'contract' || github.event.inputs.test_suite == '' }}
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: idp_test
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download pact files
+        uses: actions/download-artifact@v4
+        with:
+          name: pact-files
+          path: pacts/
+
+      - name: Run provider verification
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/idp_test
+          JWT_SECRET: test-secret-key-for-ci
+          NODE_ENV: test
+        run: |
+          npx vitest run tests/contract/api-provider.pact.ts \
+            --reporter=verbose
+
+  e2e-tests:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    needs: [integration-tests]
+    if: ${{ (github.event.inputs.test_suite == 'all' || github.event.inputs.test_suite == 'e2e') && github.ref == 'refs/heads/main' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Start platform services
+        run: |
+          docker compose -f docker-compose.test.yml up -d
+          sleep 10
+
+      - name: Wait for services to be ready
+        run: |
+          timeout 60 bash -c 'until curl -sf http://localhost:3000/healthz; do sleep 2; done'
+          timeout 60 bash -c 'until curl -sf http://localhost:3001/; do sleep 2; done'
+
+      - name: Run E2E tests
+        env:
+          E2E_API_URL: http://localhost:3000
+          E2E_PORTAL_URL: http://localhost:3001
+          E2E_AUTH_TOKEN: ${{ secrets.E2E_AUTH_TOKEN }}
+        run: |
+          npx vitest run tests/e2e/ \
+            --reporter=verbose \
+            --reporter=junit \
+            --outputFile=test-results/e2e-results.xml
+
+      - name: Collect logs on failure
+        if: failure()
+        run: |
+          docker compose -f docker-compose.test.yml logs > test-results/docker-logs.txt
+
+      - name: Upload E2E results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-test-results
+          path: test-results/
+          retention-days: 30
+
+      - name: Stop services
+        if: always()
+        run: docker compose -f docker-compose.test.yml down -v
+
+  test-summary:
+    name: Test Summary
+    runs-on: ubuntu-latest
+    needs: [integration-tests, contract-tests-consumer, contract-tests-provider, e2e-tests]
+    if: always()
+
+    steps:
+      - name: Check test results
+        run: |
+          if [ "${{ needs.integration-tests.result }}" == "failure" ] || \
+             [ "${{ needs.contract-tests-consumer.result }}" == "failure" ] || \
+             [ "${{ needs.contract-tests-provider.result }}" == "failure" ]; then
+            echo "❌ Some tests failed"
+            exit 1
+          fi
+          echo "✅ All tests passed"
+
+      - name: Notify on failure
+        if: failure() && github.ref == 'refs/heads/main'
+        uses: slackapi/slack-github-action@v1.25.0
+        with:
+          payload: |
+            {
+              "text": "❌ Integration/Contract tests failed on main",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "❌ *Test Failure on main*\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
