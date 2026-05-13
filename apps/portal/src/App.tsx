@@ -1,6 +1,6 @@
 import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider, createTheme, CssBaseline, alpha } from '@mui/material';
+import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import { AuthProvider, useAuth } from './auth/AuthProvider';
 import { ProtectedRoute } from './auth/ProtectedRoute';
@@ -15,6 +15,7 @@ const DeploymentPage = lazy(() => import('./plugins/deployments/DeploymentPage')
 const EnvironmentPage = lazy(() => import('./plugins/environments/EnvironmentPage'));
 const HealthDashboard = lazy(() => import('./plugins/health/HealthDashboard'));
 const CostDashboard = lazy(() => import('./plugins/cost/CostDashboard'));
+const SettingsPage = lazy(() => import('./plugins/settings/SettingsPage'));
 const NotFoundPage = lazy(() => import('./plugins/NotFoundPage'));
 const LoginPage = lazy(() => import('./auth/LoginPage'));
 
@@ -36,22 +37,22 @@ const theme = createTheme({
       default: '#0D1117',
       paper: '#161B22',
     },
-    success: { main: '#4caf50', light: '#81c784', dark: '#388e3c' },
-    warning: { main: '#ff9800', light: '#ffb74d', dark: '#f57c00' },
-    error: { main: '#f44336', light: '#e57373', dark: '#d32f2f' },
-    info: { main: '#2196f3', light: '#64b5f6', dark: '#1976d2' },
+    success: { main: '#3fb950', light: '#56d364', dark: '#2ea043' },
+    warning: { main: '#d29922', light: '#e3b341', dark: '#9e6a03' },
+    error: { main: '#f85149', light: '#ff7b72', dark: '#da3633' },
+    info: { main: '#6C63FF', light: '#8B83FF', dark: '#4B44B2' },
     text: {
-      primary: '#E6EDF3',
+      primary: '#c9d1d9',
       secondary: '#8B949E',
     },
     divider: 'rgba(255, 255, 255, 0.06)',
   },
   typography: {
     fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
-    h3: { fontWeight: 700, letterSpacing: -0.5 },
-    h4: { fontWeight: 700, letterSpacing: -0.3 },
-    h5: { fontWeight: 600 },
-    h6: { fontWeight: 600 },
+    h3: { fontWeight: 700, letterSpacing: -0.5, color: '#ffffff' },
+    h4: { fontWeight: 700, letterSpacing: -0.3, color: '#ffffff' },
+    h5: { fontWeight: 600, color: '#ffffff' },
+    h6: { fontWeight: 600, color: '#ffffff' },
     subtitle1: { fontWeight: 500 },
     subtitle2: { fontWeight: 600 },
     body2: { lineHeight: 1.6 },
@@ -184,7 +185,7 @@ export const navigationConfig = [
   {
     group: 'Overview',
     items: [
-      { path: '/', label: 'Dashboard', icon: 'dashboard' },
+      { path: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
     ],
   },
   {
@@ -221,9 +222,12 @@ const AppRoutes: React.FC = () => {
     <AppLayout navigation={navigationConfig}>
       <Suspense fallback={<PageLoader />}>
         <Routes>
+          {/* Redirect root to dashboard */}
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
           {/* Dashboard */}
           <Route
-            path="/"
+            path="/dashboard"
             element={<ProtectedRoute><DashboardPage /></ProtectedRoute>}
           />
 
@@ -263,6 +267,12 @@ const AppRoutes: React.FC = () => {
           <Route
             path="/cost"
             element={<ProtectedRoute><CostDashboard /></ProtectedRoute>}
+          />
+
+          {/* Settings */}
+          <Route
+            path="/settings"
+            element={<ProtectedRoute><SettingsPage /></ProtectedRoute>}
           />
 
           {/* 404 */}
