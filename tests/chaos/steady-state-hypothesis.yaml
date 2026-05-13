@@ -1,0 +1,213 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: steady-state-hypothesis
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    chaos.litmus.io/type: steady-state
+  annotations:
+    description: |
+      Defines the steady-state hypothesis for the IDP platform.
+      These conditions must hold true before, during, and after
+      chaos experiments to validate system resilience.
+data:
+  hypothesis.yaml: |
+    # Steady State Hypothesis for IDP Platform
+    # ==========================================
+    # All conditions must be met for the system to be considered healthy.
+    # Used as pre-checks before chaos injection and post-checks for validation.
+
+    name: IDP Platform Steady State
+    version: "1.0.0"
+    description: >
+      Defines the normal operating parameters for the Internal Developer
+      Platform. These metrics represent the baseline that must be maintained
+      during chaos experiments.
+
+    # Service Availability Checks
+    availability:
+      - name: API Service Available
+        type: http
+        target: http://idp-api.idp-platform.svc.cluster.local:3000/healthz
+        method: GET
+        expected_status: 200
+        timeout: 5s
+        description: API health endpoint returns 200
+
+      - name: Portal Service Available
+        type: http
+        target: http://idp-portal.idp-platform.svc.cluster.local:3001/
+        method: GET
+        expected_status: 200
+        timeout: 5s
+        description: Portal responds to requests
+
+      - name: API Readiness
+        type: http
+        target: http://idp-api.idp-platform.svc.cluster.local:3000/readyz
+        method: GET
+        expected_status: 200
+        timeout: 5s
+        description: API readiness probe passes
+
+    # Performance Baselines
+    performance:
+      - name: API P99 Latency
+        type: prometheus
+        query: >
+          histogram_quantile(0.99,
+            sum(rate(istio_request_duration_milliseconds_bucket{
+              destination_workload="idp-api",
+              destination_workload_namespace="idp-platform"
+            }[5m])) by (le))
+        threshold:
+          operator: "<="
+          value: 1000
+        unit: milliseconds
+        description: P99 latency must be under 1 second
+
+      - name: API P95 Latency
+        type: prometheus
+        query: >
+          histogram_quantile(0.95,
+            sum(rate(istio_request_duration_milliseconds_bucket{
+              destination_workload="idp-api",
+              destination_workload_namespace="idp-platform"
+            }[5m])) by (le))
+        threshold:
+          operator: "<="
+          value: 500
+        unit: milliseconds
+        description: P95 latency must be under 500ms
+
+      - name: Request Throughput
+        type: prometheus
+        query: >
+          sum(rate(istio_requests_total{
+            destination_workload="idp-api",
+            destination_workload_namespace="idp-platform"
+          }[5m]))
+        threshold:
+          operator: ">="
+          value: 10
+        unit: requests/second
+        description: Minimum throughput maintained
+
+    # Error Rate Baselines
+    error_rates:
+      - name: 5xx Error Rate
+        type: prometheus
+        query: >
+          sum(rate(istio_requests_total{
+            destination_workload="idp-api",
+            response_code=~"5.*"
+          }[5m]))
+          /
+          sum(rate(istio_requests_total{
+            destination_workload="idp-api"
+          }[5m])) * 100
+        threshold:
+          operator: "<="
+          value: 1.0
+        unit: percent
+        description: 5xx error rate must be below 1%
+
+      - name: Connection Errors
+        type: prometheus
+        query: >
+          sum(rate(envoy_cluster_upstream_cx_connect_fail{
+            namespace="idp-platform"
+          }[5m]))
+        threshold:
+          operator: "<="
+          value: 5
+        unit: errors/second
+        description: Connection failures within acceptable range
+
+    # Resource Health
+    resources:
+      - name: Minimum API Replicas
+        type: kubernetes
+        resource: deployment
+        namespace: idp-platform
+        name: idp-api
+        field: status.availableReplicas
+        threshold:
+          operator: ">="
+          value: 2
+        description: At least 2 API replicas running
+
+      - name: Minimum Portal Replicas
+        type: kubernetes
+        resource: deployment
+        namespace: idp-platform
+        name: idp-portal
+        field: status.availableReplicas
+        threshold:
+          operator: ">="
+          value: 2
+        description: At least 2 Portal replicas running
+
+      - name: No Pod Restarts
+        type: prometheus
+        query: >
+          sum(increase(kube_pod_container_status_restarts_total{
+            namespace="idp-platform"
+          }[5m]))
+        threshold:
+          operator: "<="
+          value: 2
+        description: Pod restart count within tolerance
+
+      - name: CPU Utilization
+        type: prometheus
+        query: >
+          avg(rate(container_cpu_usage_seconds_total{
+            namespace="idp-platform",
+            container!="istio-proxy"
+          }[5m])) * 100
+        threshold:
+          operator: "<="
+          value: 80
+        unit: percent
+        description: Average CPU below 80%
+
+      - name: Memory Utilization
+        type: prometheus
+        query: >
+          avg(container_memory_working_set_bytes{
+            namespace="idp-platform",
+            container!="istio-proxy"
+          })
+          /
+          avg(kube_pod_container_resource_limits{
+            namespace="idp-platform",
+            resource="memory",
+            container!="istio-proxy"
+          }) * 100
+        threshold:
+          operator: "<="
+          value: 85
+        unit: percent
+        description: Average memory below 85%
+
+    # Dependency Health
+    dependencies:
+      - name: Database Connectivity
+        type: tcp
+        target: postgresql.idp-data.svc.cluster.local:5432
+        timeout: 5s
+        description: PostgreSQL is reachable
+
+      - name: Cache Connectivity
+        type: tcp
+        target: redis.idp-data.svc.cluster.local:6379
+        timeout: 3s
+        description: Redis is reachable
+
+      - name: Event Bus Connectivity
+        type: tcp
+        target: nats.idp-platform.svc.cluster.local:4222
+        timeout: 3s
+        description: NATS is reachable
