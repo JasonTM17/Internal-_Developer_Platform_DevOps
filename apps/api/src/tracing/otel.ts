@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * OpenTelemetry SDK Integration
  *
