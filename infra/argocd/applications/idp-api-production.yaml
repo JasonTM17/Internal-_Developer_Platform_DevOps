@@ -1,0 +1,60 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: idp-api-production
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: internal-developer-platform
+    app.kubernetes.io/component: api
+    environment: production
+  annotations:
+    notifications.argoproj.io/subscribe.on-sync-succeeded.slack: platform-production
+    notifications.argoproj.io/subscribe.on-sync-failed.pagerduty: platform-oncall
+    notifications.argoproj.io/subscribe.on-health-degraded.pagerduty: platform-oncall
+    notifications.argoproj.io/subscribe.on-sync-status-unknown.slack: platform-alerts
+    argocd.argoproj.io/manifest-generate-paths: infra/helm/idp-api
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: internal-developer-platform
+  source:
+    repoURL: https://github.com/company/internal-developer-platform.git
+    targetRevision: main
+    path: infra/helm/idp-api
+    helm:
+      valueFiles:
+        - values.yaml
+        - values-production.yaml
+      parameters:
+        - name: image.tag
+          value: ""  # Set by promotion pipeline after staging validation
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: platform
+  syncPolicy:
+    # Production requires manual sync - no automated deployment
+    syncOptions:
+      - CreateNamespace=false
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+      - ApplyOutOfSyncOnly=true
+      - ServerSideApply=true
+      - RespectIgnoreDifferences=true
+      - Validate=true
+    retry:
+      limit: 3
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 10m
+  revisionHistoryLimit: 20
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
+    - group: autoscaling
+      kind: HorizontalPodAutoscaler
+      jsonPointers:
+        - /spec/metrics
+        - /status
