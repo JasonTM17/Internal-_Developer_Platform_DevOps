@@ -1,0 +1,219 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nats-accounts-config
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/name: nats
+    app.kubernetes.io/part-of: idp-platform
+    app.kubernetes.io/component: configuration
+data:
+  accounts.conf: |
+    # NATS Account Configuration for IDP Platform
+    # Implements multi-tenant isolation with fine-grained permissions
+
+    accounts {
+      # System account for NATS internal operations
+      $SYS {
+        users: [
+          { user: sys, password: $NATS_SYS_PASSWORD }
+        ]
+      }
+
+      # Platform account - core IDP services
+      PLATFORM {
+        jetstream: enabled
+        users: [
+          {
+            user: idp-api
+            password: $NATS_API_PASSWORD
+            permissions: {
+              publish: {
+                allow: [
+                  "idp.events.>"
+                  "idp.commands.>"
+                  "idp.notifications.>"
+                  "$JS.API.>"
+                ]
+              }
+              subscribe: {
+                allow: [
+                  "idp.events.>"
+                  "idp.commands.>"
+                  "idp.notifications.>"
+                  "_INBOX.>"
+                  "$JS.API.>"
+                  "$JS.ACK.>"
+                ]
+              }
+            }
+          }
+          {
+            user: idp-portal
+            password: $NATS_PORTAL_PASSWORD
+            permissions: {
+              publish: {
+                allow: [
+                  "idp.events.portal.>"
+                  "idp.commands.portal.>"
+                  "$JS.API.CONSUMER.>"
+                ]
+              }
+              subscribe: {
+                allow: [
+                  "idp.events.>"
+                  "idp.notifications.portal.>"
+                  "_INBOX.>"
+                  "$JS.API.>"
+                  "$JS.ACK.>"
+                ]
+              }
+            }
+          }
+          {
+            user: idp-worker
+            password: $NATS_WORKER_PASSWORD
+            permissions: {
+              publish: {
+                allow: [
+                  "idp.events.worker.>"
+                  "idp.commands.worker.>"
+                  "$JS.API.>"
+                ]
+              }
+              subscribe: {
+                allow: [
+                  "idp.events.>"
+                  "idp.commands.>"
+                  "_INBOX.>"
+                  "$JS.API.>"
+                  "$JS.ACK.>"
+                ]
+              }
+            }
+          }
+        ]
+
+        # JetStream limits for platform account
+        jetstream {
+          max_mem: 256MB
+          max_file: 5GB
+          max_streams: 50
+          max_consumers: 200
+          max_bytes_required: true
+        }
+
+        # Export subjects for cross-account access
+        exports: [
+          { stream: "idp.events.>", accounts: [MONITORING] }
+          { service: "idp.commands.>", accounts: [MONITORING] }
+        ]
+      }
+
+      # Monitoring account - read-only access for observability
+      MONITORING {
+        users: [
+          {
+            user: prometheus-exporter
+            password: $NATS_MONITORING_PASSWORD
+            permissions: {
+              subscribe: {
+                allow: [
+                  "idp.events.>"
+                  "$SYS.>"
+                ]
+              }
+              publish: {
+                deny: [">"]
+              }
+            }
+          }
+        ]
+
+        imports: [
+          { stream: { account: PLATFORM, subject: "idp.events.>" } }
+        ]
+      }
+
+      # CI/CD account - deployment event publishing
+      CICD {
+        jetstream: enabled
+        users: [
+          {
+            user: github-actions
+            password: $NATS_CICD_PASSWORD
+            permissions: {
+              publish: {
+                allow: [
+                  "idp.events.deployment.>"
+                  "idp.events.build.>"
+                  "$JS.API.>"
+                ]
+              }
+              subscribe: {
+                allow: [
+                  "_INBOX.>"
+                  "$JS.API.>"
+                  "$JS.ACK.>"
+                ]
+              }
+            }
+          }
+        ]
+
+        jetstream {
+          max_mem: 64MB
+          max_file: 1GB
+          max_streams: 10
+          max_consumers: 20
+        }
+      }
+    }
+
+  # JetStream stream definitions
+  streams.conf: |
+    # Stream definitions are created via NATS CLI or application code
+    # Documented here for reference
+
+    # Deployment Events Stream
+    # nats stream add DEPLOYMENTS \
+    #   --subjects "idp.events.deployment.>" \
+    #   --retention limits \
+    #   --max-msgs 100000 \
+    #   --max-bytes 1GB \
+    #   --max-age 30d \
+    #   --storage file \
+    #   --replicas 3 \
+    #   --discard old \
+    #   --dupe-window 2m
+
+    # Audit Events Stream
+    # nats stream add AUDIT \
+    #   --subjects "idp.events.audit.>" \
+    #   --retention limits \
+    #   --max-msgs 1000000 \
+    #   --max-bytes 5GB \
+    #   --max-age 90d \
+    #   --storage file \
+    #   --replicas 3 \
+    #   --discard old
+
+    # Notification Events Stream
+    # nats stream add NOTIFICATIONS \
+    #   --subjects "idp.notifications.>" \
+    #   --retention workqueue \
+    #   --max-msgs 50000 \
+    #   --max-bytes 500MB \
+    #   --max-age 7d \
+    #   --storage file \
+    #   --replicas 3
+
+    # Command Stream (request/reply pattern)
+    # nats stream add COMMANDS \
+    #   --subjects "idp.commands.>" \
+    #   --retention workqueue \
+    #   --max-msgs 10000 \
+    #   --max-bytes 256MB \
+    #   --max-age 1h \
+    #   --storage memory \
+    #   --replicas 3
