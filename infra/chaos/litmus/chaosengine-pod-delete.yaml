@@ -1,0 +1,104 @@
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosEngine
+metadata:
+  name: idp-api-pod-delete
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    chaos.litmus.io/experiment-type: pod-level
+    chaos.litmus.io/severity: medium
+  annotations:
+    litmuschaos.io/description: |
+      Validates that the IDP API service maintains availability when pods
+      are randomly terminated. Tests Kubernetes self-healing, HPA scaling,
+      and service mesh circuit breaking capabilities.
+spec:
+  engineState: active
+  appinfo:
+    appns: idp-platform
+    applabel: app=idp-api
+    appkind: deployment
+  chaosServiceAccount: chaos-serviceaccount
+  monitoring: true
+  annotationCheck: "true"
+  jobCleanUpPolicy: retain
+  auxiliaryAppInfo: ""
+  components:
+    runner:
+      image: litmuschaos/chaos-runner:3.0.0
+      imagePullPolicy: IfNotPresent
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+        limits:
+          cpu: 100m
+          memory: 128Mi
+  experiments:
+    - name: pod-delete
+      spec:
+        probe:
+          - name: api-health-check
+            type: httpProbe
+            mode: Continuous
+            httpProbe/inputs:
+              url: http://idp-api.idp-platform.svc.cluster.local:3000/healthz
+              insecureSkipVerify: false
+              method:
+                get:
+                  criteria: ==
+                  responseCode: "200"
+            runProperties:
+              probeTimeout: 5s
+              interval: 5s
+              retry: 3
+              probePollingInterval: 2s
+              initialDelay: 5s
+              stopOnFailure: false
+          - name: api-response-check
+            type: httpProbe
+            mode: Continuous
+            httpProbe/inputs:
+              url: http://idp-api.idp-platform.svc.cluster.local:3000/api/v1/catalog
+              insecureSkipVerify: false
+              method:
+                get:
+                  criteria: ==
+                  responseCode: "200"
+            runProperties:
+              probeTimeout: 10s
+              interval: 10s
+              retry: 3
+              probePollingInterval: 5s
+          - name: pod-count-check
+            type: cmdProbe
+            mode: Edge
+            cmdProbe/inputs:
+              command: "kubectl get pods -n idp-platform -l app=idp-api --field-selector=status.phase=Running -o json | jq '.items | length'"
+              comparator:
+                type: int
+                criteria: ">="
+                value: "2"
+            runProperties:
+              probeTimeout: 30s
+              interval: 30s
+              retry: 3
+        components:
+          env:
+            - name: TOTAL_CHAOS_DURATION
+              value: "60"
+            - name: CHAOS_INTERVAL
+              value: "15"
+            - name: FORCE
+              value: "false"
+            - name: PODS_AFFECTED_PERC
+              value: "50"
+            - name: TARGET_PODS
+              value: ""
+            - name: SEQUENCE
+              value: "parallel"
+            - name: RAMP_TIME
+              value: "10"
+          statusCheckTimeouts:
+            delay: 2
+            timeout: 180
