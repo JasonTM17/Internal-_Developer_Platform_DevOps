@@ -1,0 +1,32 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: platform
+  labels:
+    app.kubernetes.io/part-of: internal-developer-platform
+    network-policy.idp.io/type: baseline
+  annotations:
+    description: "Default deny all ingress and egress traffic in platform namespace"
+    security.policy/reason: "Zero-trust network model - explicitly allow required traffic"
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: internal-developer-platform
+    network-policy.idp.io/type: baseline
+  annotations:
+    description: "Default deny all ingress and egress traffic in monitoring namespace"
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
