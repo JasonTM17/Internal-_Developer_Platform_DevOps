@@ -178,8 +178,13 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Run license checker
         run: |
@@ -255,20 +260,20 @@ jobs:
           payload: |
             {
               "channel": "${{ env.SLACK_CHANNEL }}",
-              "text": "🔍 Compliance Audit Complete",
+              "text": "Compliance Audit Complete",
               "blocks": [
                 {
                   "type": "header",
                   "text": {
                     "type": "plain_text",
-                    "text": "🔍 Weekly Compliance Audit Complete"
+                    "text": "Weekly Compliance Audit Complete"
                   }
                 },
                 {
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*Status*: ${{ needs.security-scan.result == 'success' && needs.policy-compliance.result == 'success' && '✅ All checks passed' || '⚠️ Issues found - review required' }}\n*Run*: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>"
+                    "text": "*Status*: ${{ needs.security-scan.result == 'success' && needs.policy-compliance.result == 'success' && 'All checks passed' || 'Issues found - review required' }}\n*Run*: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>"
                   }
                 }
               ]

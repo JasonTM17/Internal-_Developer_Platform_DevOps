@@ -158,7 +158,7 @@ jobs:
         with:
           payload: |
             {
-              "text": "Dev Deployment ${{ job.status == 'success' && '✅' || '❌' }}",
+              "text": "Dev Deployment ${{ job.status == 'success' && 'SUCCESS' || 'FAILED' }}",
               "blocks": [
                 {
                   "type": "section",

@@ -290,11 +290,11 @@ jobs:
         with:
           payload: |
             {
-              "text": "🚀 Production Deployment Complete",
+              "text": "Production Deployment Complete",
               "blocks": [
                 {
                   "type": "header",
-                  "text": { "type": "plain_text", "text": "🚀 Production Deployment" }
+                  "text": { "type": "plain_text", "text": "Production Deployment" }
                 },
                 {
                   "type": "section",
@@ -302,7 +302,7 @@ jobs:
                     { "type": "mrkdwn", "text": "*Version:*\n`${{ github.event.inputs.version }}`" },
                     { "type": "mrkdwn", "text": "*Strategy:*\n${{ github.event.inputs.strategy }}" },
                     { "type": "mrkdwn", "text": "*Deployed by:*\n${{ github.actor }}" },
-                    { "type": "mrkdwn", "text": "*Status:*\n✅ Success" }
+                    { "type": "mrkdwn", "text": "*Status:*\nSUCCESS" }
                   ]
                 }
               ]

@@ -31,13 +31,18 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.BOT_PAT }}
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: 'pnpm'
 
       - name: Install dependencies
-        run: npm ci --prefer-offline
+        run: pnpm install --frozen-lockfile
 
       - name: Verify conditions
         run: |
@@ -162,11 +167,11 @@ jobs:
         with:
           payload: |
             {
-              "text": "🎉 New Release: v${{ needs.release.outputs.version }}",
+              "text": "New Release: v${{ needs.release.outputs.version }}",
               "blocks": [
                 {
                   "type": "header",
-                  "text": { "type": "plain_text", "text": "🎉 Release v${{ needs.release.outputs.version }}" }
+                  "text": { "type": "plain_text", "text": "Release v${{ needs.release.outputs.version }}" }
                 },
                 {
                   "type": "section",

@@ -81,7 +81,7 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `## 🚀 Preview Environment Deployed\n\n**URL:** https://pr-${context.issue.number}.preview.idp.example.com\n**Namespace:** \`${process.env.PREVIEW_NAMESPACE}\`\n\nThis environment will be automatically cleaned up when the PR is closed.`
+              body: `## Preview Environment Deployed\n\n**URL:** https://pr-${context.issue.number}.preview.idp.example.com\n**Namespace:** \`${process.env.PREVIEW_NAMESPACE}\`\n\nThis environment will be automatically cleaned up when the PR is closed.`
             });
 
   cleanup-preview:
