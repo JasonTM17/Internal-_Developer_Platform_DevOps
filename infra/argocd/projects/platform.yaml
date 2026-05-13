@@ -1,0 +1,89 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: internal-developer-platform
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: internal-developer-platform
+    app.kubernetes.io/managed-by: argocd
+  annotations:
+    description: "ArgoCD project for Internal Developer Platform services"
+    notifications.argoproj.io/subscribe.on-sync-succeeded.slack: platform-deployments
+    notifications.argoproj.io/subscribe.on-sync-failed.slack: platform-alerts
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: "Internal Developer Platform - manages all IDP microservices and infrastructure"
+  # Source repositories
+  sourceRepos:
+    - "https://github.com/company/internal-developer-platform.git"
+    - "https://charts.bitnami.com/bitnami"
+    - "ghcr.io/company/*"
+  # Destination clusters and namespaces
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: platform
+    - server: https://kubernetes.default.svc
+      namespace: monitoring
+    - server: https://kubernetes.default.svc
+      namespace: ingress
+  # Cluster resource allow list
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+    - group: scheduling.k8s.io
+      kind: PriorityClass
+    - group: networking.k8s.io
+      kind: IngressClass
+  # Namespace resource deny list
+  namespaceResourceBlacklist:
+    - group: ""
+      kind: ResourceQuota
+    - group: ""
+      kind: LimitRange
+  # Roles for project access
+  roles:
+    - name: admin
+      description: "Full access to all applications in the project"
+      policies:
+        - p, proj:internal-developer-platform:admin, applications, *, internal-developer-platform/*, allow
+      groups:
+        - platform-admins
+    - name: developer
+      description: "Read-only access with sync permissions for dev"
+      policies:
+        - p, proj:internal-developer-platform:developer, applications, get, internal-developer-platform/*, allow
+        - p, proj:internal-developer-platform:developer, applications, sync, internal-developer-platform/*-dev, allow
+      groups:
+        - dev-team
+    - name: readonly
+      description: "Read-only access to all applications"
+      policies:
+        - p, proj:internal-developer-platform:readonly, applications, get, internal-developer-platform/*, allow
+      groups:
+        - qa-team
+  # Sync windows for production
+  syncWindows:
+    - kind: allow
+      schedule: "0 6-18 * * 1-5"
+      duration: 12h
+      applications:
+        - "*-production"
+      timeZone: "America/New_York"
+    - kind: deny
+      schedule: "0 0 * * 0"
+      duration: 24h
+      applications:
+        - "*-production"
+      timeZone: "America/New_York"
+  # Orphaned resources monitoring
+  orphanedResources:
+    warn: true
+    ignore:
+      - group: ""
+        kind: ConfigMap
+        name: kube-root-ca.crt
