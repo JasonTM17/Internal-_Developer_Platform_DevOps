@@ -34,13 +34,6 @@ services:
       # Vite HMR configuration for Docker
       VITE_HMR_HOST: localhost
       VITE_HMR_PORT: 5173
-      CHOKIDAR_USEPOLLING: "true"
-      WATCHPACK_POLLING: "true"
-    volumes:
-      - ./apps/portal:/app/apps/portal:delegated
-      - ./packages:/app/packages:delegated
-      - /app/node_modules
-      - /app/apps/portal/node_modules
 
   postgres:
     # Expose additional ports for database tools

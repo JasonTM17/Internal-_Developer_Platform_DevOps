@@ -11,13 +11,6 @@ import {
   Link,
   Divider,
 } from '@mui/material';
-import Timeline from '@mui/lab/Timeline';
-import TimelineItem from '@mui/lab/TimelineItem';
-import TimelineSeparator from '@mui/lab/TimelineSeparator';
-import TimelineConnector from '@mui/lab/TimelineConnector';
-import TimelineContent from '@mui/lab/TimelineContent';
-import TimelineDot from '@mui/lab/TimelineDot';
-import TimelineOppositeContent from '@mui/lab/TimelineOppositeContent';
 import UndoIcon from '@mui/icons-material/Undo';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
@@ -76,137 +69,113 @@ export const DeploymentTimeline: React.FC<DeploymentTimelineProps> = ({
   }
 
   return (
-    <Timeline position="alternate">
-      {deployments.map((deployment, index) => (
-        <TimelineItem key={deployment.id}>
-          <TimelineOppositeContent sx={{ m: 'auto 0' }} variant="body2" color="text.secondary">
-            {formatTime(deployment.createdAt)}
-          </TimelineOppositeContent>
+    <Stack spacing={2}>
+      {deployments.map((deployment) => (
+        <Card
+          key={deployment.id}
+          variant="outlined"
+          sx={{
+            transition: 'box-shadow 0.2s',
+            '&:hover': { boxShadow: 2 },
+            borderLeft: 3,
+            borderColor: `${statusColors[deployment.status] || 'default'}.main`,
+          }}
+        >
+          <CardContent sx={{ pb: '12px !important' }}>
+            {/* Header */}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                {statusIcons[deployment.status]}
+                <Typography variant="subtitle1" component="h3" fontWeight="bold">
+                  {deployment.artifacts?.image?.split('/').pop()?.split(':')[0] || 'Unknown Service'}
+                </Typography>
+              </Box>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Typography variant="caption" color="text.secondary">
+                  {formatTime(deployment.createdAt)}
+                </Typography>
+                <Chip
+                  label={deployment.status.replace('_', ' ')}
+                  size="small"
+                  color={statusColors[deployment.status]}
+                  variant="outlined"
+                />
+              </Stack>
+            </Box>
 
-          <TimelineSeparator>
-            {index > 0 && <TimelineConnector />}
-            <TimelineDot
-              color={statusColors[deployment.status] || 'default'}
-              variant={deployment.status === 'in_progress' ? 'outlined' : 'filled'}
-            >
-              {statusIcons[deployment.status]}
-            </TimelineDot>
-            {index < deployments.length - 1 && <TimelineConnector />}
-          </TimelineSeparator>
+            {/* Details */}
+            <Stack direction="row" spacing={3} sx={{ mb: 1, flexWrap: 'wrap' }}>
+              <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                <Typography variant="caption" color="text.secondary">Version:</Typography>
+                <Typography variant="body2" fontFamily="monospace">{deployment.version}</Typography>
+              </Box>
+              <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                <Typography variant="caption" color="text.secondary">Environment:</Typography>
+                <Chip label={deployment.environment} size="small" variant="outlined" />
+              </Box>
+              <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                <Typography variant="caption" color="text.secondary">Strategy:</Typography>
+                <Typography variant="body2">
+                  {strategyLabels[deployment.strategy] || deployment.strategy}
+                </Typography>
+              </Box>
+              {deployment.duration_seconds && (
+                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                  <Typography variant="caption" color="text.secondary">Duration:</Typography>
+                  <Typography variant="body2">{formatDuration(deployment.duration_seconds)}</Typography>
+                </Box>
+              )}
+            </Stack>
 
-          <TimelineContent sx={{ py: 2, px: 2 }}>
-            <Card
-              variant="outlined"
-              sx={{
-                transition: 'box-shadow 0.2s',
-                '&:hover': { boxShadow: 2 },
-              }}
-            >
-              <CardContent sx={{ pb: '12px !important' }}>
-                {/* Header */}
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                  <Typography variant="subtitle1" component="h3" fontWeight="bold">
-                    {deployment.artifacts?.image?.split('/').pop()?.split(':')[0] || 'Unknown Service'}
-                  </Typography>
-                  <Chip
-                    label={deployment.status.replace('_', ' ')}
+            {/* Commit SHA */}
+            {deployment.artifacts?.commit_sha && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+                <Typography variant="caption" fontFamily="monospace" color="text.secondary">
+                  {deployment.artifacts.commit_sha.substring(0, 8)}
+                </Typography>
+                <Tooltip title="Copy commit SHA">
+                  <IconButton
                     size="small"
-                    color={statusColors[deployment.status]}
-                    variant="outlined"
-                  />
-                </Box>
+                    onClick={() => copyToClipboard(deployment.artifacts!.commit_sha!)}
+                    aria-label="Copy commit SHA"
+                  >
+                    <ContentCopyIcon sx={{ fontSize: 12 }} />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+            )}
 
-                {/* Details */}
-                <Stack spacing={0.5} sx={{ mb: 1 }}>
-                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                    <Typography variant="caption" color="text.secondary" sx={{ minWidth: 70 }}>
-                      Version:
-                    </Typography>
-                    <Typography variant="body2" fontFamily="monospace">
-                      {deployment.version}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                    <Typography variant="caption" color="text.secondary" sx={{ minWidth: 70 }}>
-                      Environment:
-                    </Typography>
-                    <Chip label={deployment.environment} size="small" variant="outlined" />
-                  </Box>
-                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                    <Typography variant="caption" color="text.secondary" sx={{ minWidth: 70 }}>
-                      Strategy:
-                    </Typography>
-                    <Typography variant="body2">
-                      {strategyLabels[deployment.strategy] || deployment.strategy}
-                    </Typography>
-                  </Box>
-                  {deployment.duration_seconds && (
-                    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                      <Typography variant="caption" color="text.secondary" sx={{ minWidth: 70 }}>
-                        Duration:
-                      </Typography>
-                      <Typography variant="body2">
-                        {formatDuration(deployment.duration_seconds)}
-                      </Typography>
-                    </Box>
-                  )}
-                </Stack>
+            <Divider sx={{ my: 1 }} />
 
-                {/* Commit SHA */}
-                {deployment.artifacts?.commit_sha && (
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <Typography variant="caption" fontFamily="monospace" color="text.secondary">
-                      {deployment.artifacts.commit_sha.substring(0, 8)}
-                    </Typography>
-                    <Tooltip title="Copy commit SHA">
-                      <IconButton
-                        size="small"
-                        onClick={() => copyToClipboard(deployment.artifacts!.commit_sha!)}
-                        aria-label="Copy commit SHA"
-                      >
-                        <ContentCopyIcon sx={{ fontSize: 12 }} />
-                      </IconButton>
-                    </Tooltip>
-                  </Box>
+            {/* Actions */}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography variant="caption" color="text.secondary">
+                by {deployment.initiatedBy || 'system'}
+              </Typography>
+              <Stack direction="row" spacing={0.5}>
+                <Tooltip title="View details">
+                  <IconButton
+                    size="small"
+                    component={Link}
+                    href={`/deployments/${deployment.id}`}
+                    aria-label="View deployment details"
+                  >
+                    <VisibilityIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+                {deployment.status === 'succeeded' && (
+                  <Tooltip title="Rollback">
+                    <IconButton size="small" color="warning" aria-label="Rollback deployment">
+                      <UndoIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
                 )}
-
-                <Divider sx={{ my: 1 }} />
-
-                {/* Actions */}
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Typography variant="caption" color="text.secondary">
-                    by {deployment.initiatedBy || 'system'}
-                  </Typography>
-                  <Stack direction="row" spacing={0.5}>
-                    <Tooltip title="View details">
-                      <IconButton
-                        size="small"
-                        component={Link}
-                        href={`/deployments/${deployment.id}`}
-                        aria-label="View deployment details"
-                      >
-                        <VisibilityIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    {deployment.status === 'succeeded' && (
-                      <Tooltip title="Rollback">
-                        <IconButton
-                          size="small"
-                          color="warning"
-                          aria-label="Rollback deployment"
-                        >
-                          <UndoIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    )}
-                  </Stack>
-                </Box>
-              </CardContent>
-            </Card>
-          </TimelineContent>
-        </TimelineItem>
+              </Stack>
+            </Box>
+          </CardContent>
+        </Card>
       ))}
-    </Timeline>
+    </Stack>
   );
 };
 

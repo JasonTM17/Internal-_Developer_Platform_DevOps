@@ -1,5 +1,3 @@
-version: '3.9'
-
 # =============================================================================
 # IDP Platform - Local Monitoring Stack
 # =============================================================================
@@ -59,6 +57,7 @@ services:
       GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/platform-overview.json
     volumes:
       - ./infra/monitoring/grafana/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml:ro
+      - ./infra/monitoring/grafana/provisioning/dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml:ro
       - ./infra/monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
       - grafana_data:/var/lib/grafana
     depends_on:
@@ -204,6 +203,6 @@ volumes:
 networks:
   idp-network:
     external: true
-    name: devops-project_idp-network
+    name: devopsproject_idp-network
   monitoring-network:
     driver: bridge
