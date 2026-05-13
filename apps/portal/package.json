@@ -2,23 +2,29 @@
   "name": "@idp/portal",
   "version": "0.1.0",
   "private": true,
-  "description": "Backstage-based developer portal frontend",
+  "type": "module",
   "scripts": {
-    "build": "tsc --noEmit",
-    "dev": "echo 'portal dev server'",
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
     "lint": "eslint . --ext .ts,.tsx",
-    "lint:fix": "eslint . --ext .ts,.tsx --fix",
-    "typecheck": "tsc --noEmit",
-    "test": "echo 'no tests yet'",
-    "test:unit": "echo 'no tests yet'",
-    "clean": "rimraf dist"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@idp/shared": "workspace:*",
-    "@idp/ui": "workspace:*",
-    "@idp/config": "workspace:*"
+    "@emotion/react": "^11.11.0",
+    "@emotion/styled": "^11.11.0",
+    "@mui/icons-material": "^5.15.0",
+    "@mui/material": "^5.15.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.21.0",
+    "@idp/shared": "workspace:*"
   },
   "devDependencies": {
-    "typescript": "^5.4.0"
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@vitejs/plugin-react": "^4.2.0",
+    "typescript": "^5.4.0",
+    "vite": "^5.0.0"
   }
 }
