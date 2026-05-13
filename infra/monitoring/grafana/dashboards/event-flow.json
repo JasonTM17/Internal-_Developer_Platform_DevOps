@@ -1,0 +1,179 @@
+{
+  "annotations": { "list": [] },
+  "description": "IDP Platform Event Flow - NATS JetStream monitoring and event throughput",
+  "editable": true,
+  "panels": [
+    {
+      "title": "Event Throughput (msgs/sec)",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(rate(nats_jetstream_server_total_messages[5m]))",
+          "legendFormat": "Total Messages"
+        },
+        {
+          "expr": "sum(rate(nats_jetstream_server_total_messages[5m])) by (stream)",
+          "legendFormat": "{{ stream }}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ops", "custom": { "fillOpacity": 10 } } }
+    },
+    {
+      "title": "Consumer Lag",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "nats_jetstream_consumer_num_pending",
+          "legendFormat": "{{ stream }}/{{ consumer }}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 100 },
+              { "color": "red", "value": 1000 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "Stream Storage",
+      "type": "bargauge",
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 6 },
+      "targets": [
+        {
+          "expr": "nats_jetstream_stream_total_bytes",
+          "legendFormat": "{{ stream }}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "bytes" } }
+    },
+    {
+      "title": "Messages by Stream",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 6 },
+      "targets": [
+        {
+          "expr": "nats_jetstream_stream_total_messages",
+          "legendFormat": "{{ stream }}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short" } }
+    },
+    {
+      "title": "NATS Cluster Health",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 6 },
+      "targets": [
+        {
+          "expr": "count(nats_server_info) by (server_id)",
+          "legendFormat": "Nodes"
+        },
+        {
+          "expr": "sum(nats_server_connections)",
+          "legendFormat": "Connections"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short" } }
+    },
+    {
+      "title": "Event Processing Latency",
+      "type": "heatmap",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "targets": [
+        {
+          "expr": "rate(nats_jetstream_consumer_ack_floor_stream_seq[5m])",
+          "legendFormat": "{{ consumer }}"
+        }
+      ]
+    },
+    {
+      "title": "Deployment Events Timeline",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "targets": [
+        {
+          "expr": "sum(rate(nats_jetstream_stream_total_messages{stream=\"DEPLOYMENTS\"}[5m])) by (stream)",
+          "legendFormat": "Deployment Events"
+        },
+        {
+          "expr": "sum(rate(nats_jetstream_stream_total_messages{stream=\"AUDIT\"}[5m])) by (stream)",
+          "legendFormat": "Audit Events"
+        },
+        {
+          "expr": "sum(rate(nats_jetstream_stream_total_messages{stream=\"NOTIFICATIONS\"}[5m])) by (stream)",
+          "legendFormat": "Notification Events"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ops", "custom": { "drawStyle": "bars", "stacking": { "mode": "normal" } } } }
+    },
+    {
+      "title": "Consumer Acknowledgment Rate",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 20 },
+      "targets": [
+        {
+          "expr": "rate(nats_jetstream_consumer_num_ack_pending[5m])",
+          "legendFormat": "{{ consumer }} - Pending"
+        },
+        {
+          "expr": "rate(nats_jetstream_consumer_num_redelivered[5m])",
+          "legendFormat": "{{ consumer }} - Redelivered"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ops" } }
+    },
+    {
+      "title": "Connection Stats",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 20 },
+      "targets": [
+        {
+          "expr": "nats_server_connections",
+          "legendFormat": "{{ server_id }} - Active"
+        },
+        {
+          "expr": "rate(nats_server_total_connections[5m])",
+          "legendFormat": "{{ server_id }} - New/sec"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short" } }
+    },
+    {
+      "title": "Data Flow Diagram",
+      "type": "nodeGraph",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 26 },
+      "targets": [
+        {
+          "expr": "nats_jetstream_stream_total_messages",
+          "legendFormat": "{{ stream }}"
+        }
+      ],
+      "description": "Visual representation of event flow between publishers and subscribers"
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 38,
+  "tags": ["nats", "events", "jetstream", "idp-platform"],
+  "templating": {
+    "list": [
+      {
+        "name": "stream",
+        "type": "query",
+        "query": "label_values(nats_jetstream_stream_total_messages, stream)",
+        "multi": true,
+        "includeAll": true
+      }
+    ]
+  },
+  "time": { "from": "now-1h", "to": "now" },
+  "title": "IDP Platform - Event Flow",
+  "uid": "idp-event-flow",
+  "version": 1
+}
