@@ -21,17 +21,9 @@
     "clean": "rimraf dist"
   },
   "dependencies": {
-    "@idp/shared": "workspace:*",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "@idp/shared": "workspace:*"
   },
   "devDependencies": {
-    "@types/react": "^18.2.0",
-    "@types/react-dom": "^18.2.0",
     "typescript": "^5.4.0"
-  },
-  "peerDependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
   }
 }
