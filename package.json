@@ -29,6 +29,24 @@
     "turbo": "^2.0.0",
     "typescript": "^5.4.0"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/JasonTM17/Internal-_Developer_Platform_DevOps.git"
+  },
+  "homepage": "https://github.com/JasonTM17/Internal-_Developer_Platform_DevOps#readme",
+  "bugs": {
+    "url": "https://github.com/JasonTM17/Internal-_Developer_Platform_DevOps/issues"
+  },
+  "author": "JasonTM17",
+  "keywords": [
+    "internal-developer-platform",
+    "devops",
+    "platform-engineering",
+    "kubernetes",
+    "terraform",
+    "gitops",
+    "argocd"
+  ],
   "packageManager": "pnpm@9.0.0",
   "engines": {
     "node": ">=18.0.0",
