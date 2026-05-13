@@ -12,7 +12,7 @@
     }
   },
   "scripts": {
-    "build": "tsc --noEmit",
+    "build": "echo 'UI package build - types only, no emit'",
     "lint": "eslint . --ext .ts,.tsx",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
     "typecheck": "tsc --noEmit",

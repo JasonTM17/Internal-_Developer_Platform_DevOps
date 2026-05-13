@@ -8,11 +8,6 @@ on:
       - 'packages/**'
       - 'tests/**'
   workflow_dispatch:
-    branches: [main]
-    paths:
-      - 'apps/**'
-      - 'packages/**'
-      - 'tests/**'
   workflow_dispatch:
     inputs:
       test_suite:
