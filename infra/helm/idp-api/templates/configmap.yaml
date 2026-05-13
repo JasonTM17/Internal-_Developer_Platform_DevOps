@@ -1,0 +1,14 @@
+{{- if .Values.configMap.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "idp-api.fullname" . }}
+  labels:
+    {{- include "idp-api.labels" . | nindent 4 }}
+  annotations:
+    description: "Application configuration for IDP API"
+data:
+  {{- range $key, $value := .Values.configMap.data }}
+  {{ $key }}: {{ $value | quote }}
+  {{- end }}
+{{- end }}
