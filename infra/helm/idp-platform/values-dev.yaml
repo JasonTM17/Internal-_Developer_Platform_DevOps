@@ -1,0 +1,90 @@
+# =============================================================================
+# IDP Platform - Development Values
+# =============================================================================
+
+replicaCount: 1
+
+image:
+  repository: 123456789012.dkr.ecr.us-east-1.amazonaws.com/idp-api
+  tag: "dev-latest"
+  pullPolicy: Always
+
+environment: development
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+autoscaling:
+  enabled: false
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-staging
+  hosts:
+    - host: dev-api.idp.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: idp-api-dev-tls
+      hosts:
+        - dev-api.idp.example.com
+
+serviceAccount:
+  create: true
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/idp-api-dev
+
+podDisruptionBudget:
+  enabled: false
+
+probes:
+  liveness:
+    httpGet:
+      path: /health
+      port: http
+    initialDelaySeconds: 15
+    periodSeconds: 10
+  readiness:
+    httpGet:
+      path: /ready
+      port: http
+    initialDelaySeconds: 5
+    periodSeconds: 5
+
+env:
+  NODE_ENV: development
+  LOG_LEVEL: debug
+  RATE_LIMIT_ENABLED: "false"
+
+externalSecrets:
+  enabled: true
+  secretStoreRef:
+    name: aws-secrets-manager
+    kind: ClusterSecretStore
+  data:
+    - secretKey: DATABASE_URL
+      remoteRef:
+        key: idp/dev/database
+        property: url
+    - secretKey: REDIS_URL
+      remoteRef:
+        key: idp/dev/redis
+        property: url
+    - secretKey: JWT_SECRET
+      remoteRef:
+        key: idp/dev/auth
+        property: jwt_secret
+
+monitoring:
+  serviceMonitor:
+    enabled: true
+    interval: 30s
+    path: /metrics
