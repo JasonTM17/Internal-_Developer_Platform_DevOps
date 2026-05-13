@@ -1,0 +1,115 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-notifications-template-deployment-success
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-notifications
+    app.kubernetes.io/component: template
+    notifications.argoproj.io/type: template
+data:
+  template.deployment-success-detailed: |
+    slack:
+      blocks: |
+        [
+          {
+            "type": "header",
+            "text": {
+              "type": "plain_text",
+              "text": "✅ Deployment Succeeded"
+            }
+          },
+          {
+            "type": "section",
+            "fields": [
+              {
+                "type": "mrkdwn",
+                "text": "*Application:*\n{{.app.metadata.name}}"
+              },
+              {
+                "type": "mrkdwn",
+                "text": "*Environment:*\n{{.app.metadata.labels.environment}}"
+              },
+              {
+                "type": "mrkdwn",
+                "text": "*Revision:*\n`{{.app.status.operationState.syncResult.revision | trunc 8}}`"
+              },
+              {
+                "type": "mrkdwn",
+                "text": "*Sync Status:*\n{{.app.status.sync.status}}"
+              },
+              {
+                "type": "mrkdwn",
+                "text": "*Health:*\n{{.app.status.health.status}}"
+              },
+              {
+                "type": "mrkdwn",
+                "text": "*Completed:*\n{{.app.status.operationState.finishedAt}}"
+              }
+            ]
+          },
+          {
+            "type": "section",
+            "text": {
+              "type": "mrkdwn",
+              "text": "*Images deployed:*\n{{range .app.status.summary.images}}• `{{.}}`\n{{end}}"
+            }
+          },
+          {
+            "type": "actions",
+            "elements": [
+              {
+                "type": "button",
+                "text": {
+                  "type": "plain_text",
+                  "text": "View in ArgoCD"
+                },
+                "url": "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}"
+              },
+              {
+                "type": "button",
+                "text": {
+                  "type": "plain_text",
+                  "text": "View in Portal"
+                },
+                "url": "{{.context.portalUrl}}/deployments?app={{.app.metadata.name}}"
+              }
+            ]
+          },
+          {
+            "type": "context",
+            "elements": [
+              {
+                "type": "mrkdwn",
+                "text": "Triggered by ArgoCD auto-sync | {{.app.status.operationState.finishedAt}}"
+              }
+            ]
+          }
+        ]
+    webhook:
+      platform-api:
+        method: POST
+        body: |
+          {
+            "id": "evt_{{.app.status.operationState.syncResult.revision | trunc 8}}_success",
+            "type": "deployment.succeeded",
+            "version": "1",
+            "timestamp": "{{.app.status.operationState.finishedAt}}",
+            "data": {
+              "deployment": {
+                "application": "{{.app.metadata.name}}",
+                "environment": "{{.app.metadata.labels.environment}}",
+                "revision": "{{.app.status.operationState.syncResult.revision}}",
+                "health": "{{.app.status.health.status}}",
+                "syncStatus": "{{.app.status.sync.status}}",
+                "images": {{.app.status.summary.images | toJson}},
+                "startedAt": "{{.app.status.operationState.startedAt}}",
+                "finishedAt": "{{.app.status.operationState.finishedAt}}"
+              }
+            },
+            "metadata": {
+              "source": "argocd",
+              "cluster": "{{.app.spec.destination.server}}",
+              "namespace": "{{.app.spec.destination.namespace}}"
+            }
+          }

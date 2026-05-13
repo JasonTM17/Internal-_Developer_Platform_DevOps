@@ -1,0 +1,157 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-notifications-template-deployment-failure
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-notifications
+    app.kubernetes.io/component: template
+    notifications.argoproj.io/type: template
+data:
+  template.deployment-failure-detailed: |
+    slack:
+      blocks: |
+        [
+          {
+            "type": "header",
+            "text": {
+              "type": "plain_text",
+              "text": "❌ Deployment Failed",
+              "emoji": true
+            }
+          },
+          {
+            "type": "section",
+            "fields": [
+              {
+                "type": "mrkdwn",
+                "text": "*Application:*\n{{.app.metadata.name}}"
+              },
+              {
+                "type": "mrkdwn",
+                "text": "*Environment:*\n{{.app.metadata.labels.environment}}"
+              },
+              {
+                "type": "mrkdwn",
+                "text": "*Revision:*\n`{{.app.status.operationState.syncResult.revision | trunc 8}}`"
+              },
+              {
+                "type": "mrkdwn",
+                "text": "*Phase:*\n{{.app.status.operationState.phase}}"
+              }
+            ]
+          },
+          {
+            "type": "section",
+            "text": {
+              "type": "mrkdwn",
+              "text": "*Error Message:*\n```{{.app.status.operationState.message | trunc 500}}```"
+            }
+          },
+          {
+            "type": "section",
+            "text": {
+              "type": "mrkdwn",
+              "text": "*Failed Resources:*\n{{range .app.status.operationState.syncResult.resources}}{{if eq .status \"SyncFailed\"}}• `{{.kind}}/{{.name}}`: {{.message}}\n{{end}}{{end}}"
+            }
+          },
+          {
+            "type": "actions",
+            "elements": [
+              {
+                "type": "button",
+                "text": {
+                  "type": "plain_text",
+                  "text": "🔍 View in ArgoCD"
+                },
+                "url": "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}",
+                "style": "primary"
+              },
+              {
+                "type": "button",
+                "text": {
+                  "type": "plain_text",
+                  "text": "📋 View Logs"
+                },
+                "url": "{{.context.portalUrl}}/deployments?app={{.app.metadata.name}}&status=failed"
+              },
+              {
+                "type": "button",
+                "text": {
+                  "type": "plain_text",
+                  "text": "⏪ Rollback"
+                },
+                "url": "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}?operation=rollback",
+                "style": "danger"
+              }
+            ]
+          },
+          {
+            "type": "divider"
+          },
+          {
+            "type": "context",
+            "elements": [
+              {
+                "type": "mrkdwn",
+                "text": "⏰ Failed at {{.app.status.operationState.finishedAt}} | 📖 <{{.context.portalUrl}}/docs/runbooks/deployment-failure|Runbook>"
+              }
+            ]
+          }
+        ]
+    webhook:
+      platform-api:
+        method: POST
+        body: |
+          {
+            "id": "evt_{{.app.status.operationState.syncResult.revision | trunc 8}}_failure",
+            "type": "deployment.failed",
+            "version": "1",
+            "timestamp": "{{.app.status.operationState.finishedAt}}",
+            "data": {
+              "deployment": {
+                "application": "{{.app.metadata.name}}",
+                "environment": "{{.app.metadata.labels.environment}}",
+                "revision": "{{.app.status.operationState.syncResult.revision}}",
+                "phase": "{{.app.status.operationState.phase}}",
+                "message": "{{.app.status.operationState.message}}",
+                "startedAt": "{{.app.status.operationState.startedAt}}",
+                "finishedAt": "{{.app.status.operationState.finishedAt}}"
+              }
+            },
+            "metadata": {
+              "source": "argocd",
+              "cluster": "{{.app.spec.destination.server}}",
+              "namespace": "{{.app.spec.destination.namespace}}",
+              "severity": "critical"
+            }
+          }
+      pagerduty:
+        method: POST
+        body: |
+          {
+            "routing_key": "$pagerduty-routing-key",
+            "event_action": "trigger",
+            "dedup_key": "argocd-{{.app.metadata.name}}-{{.app.metadata.labels.environment}}-sync-failed",
+            "payload": {
+              "summary": "ArgoCD sync failed: {{.app.metadata.name}} in {{.app.metadata.labels.environment}}",
+              "severity": "critical",
+              "source": "argocd.platform.internal",
+              "component": "{{.app.metadata.name}}",
+              "group": "deployments",
+              "class": "sync_failure",
+              "custom_details": {
+                "application": "{{.app.metadata.name}}",
+                "environment": "{{.app.metadata.labels.environment}}",
+                "revision": "{{.app.status.operationState.syncResult.revision}}",
+                "message": "{{.app.status.operationState.message | trunc 200}}",
+                "argocd_url": "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}"
+              }
+            },
+            "links": [
+              {
+                "href": "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}",
+                "text": "View in ArgoCD"
+              }
+            ]
+          }
