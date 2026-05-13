@@ -1,0 +1,199 @@
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: api-deny-all
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    app.kubernetes.io/managed-by: istio
+    security.istio.io/policy: deny-all
+spec:
+  selector:
+    matchLabels:
+      app: idp-api
+  action: DENY
+  rules: []
+---
+# Allow health checks from any source (no auth required)
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: api-allow-health
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    app.kubernetes.io/managed-by: istio
+spec:
+  selector:
+    matchLabels:
+      app: idp-api
+  action: ALLOW
+  rules:
+    - to:
+        - operation:
+            paths:
+              - /healthz
+              - /readyz
+              - /metrics
+            methods:
+              - GET
+---
+# Allow authenticated users to access API
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: api-allow-authenticated
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    app.kubernetes.io/managed-by: istio
+spec:
+  selector:
+    matchLabels:
+      app: idp-api
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            requestPrincipals:
+              - "https://auth.idp.example.com/*"
+            namespaces:
+              - idp-platform
+              - istio-system
+      to:
+        - operation:
+            paths:
+              - /api/v1/*
+            methods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - PATCH
+      when:
+        - key: request.auth.claims[iss]
+          values:
+            - "https://auth.idp.example.com"
+---
+# Allow admin operations only for admin role
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: api-allow-admin
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    app.kubernetes.io/managed-by: istio
+spec:
+  selector:
+    matchLabels:
+      app: idp-api
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            requestPrincipals:
+              - "https://auth.idp.example.com/*"
+      to:
+        - operation:
+            paths:
+              - /api/v1/admin/*
+              - /api/v1/settings/*
+              - /api/v1/users/*/roles
+            methods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+      when:
+        - key: request.auth.claims[role]
+          values:
+            - "admin"
+            - "platform-admin"
+---
+# Allow portal to call API (service-to-service)
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: api-allow-portal
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    app.kubernetes.io/managed-by: istio
+spec:
+  selector:
+    matchLabels:
+      app: idp-api
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              - "cluster.local/ns/idp-platform/sa/idp-portal"
+            namespaces:
+              - idp-platform
+      to:
+        - operation:
+            paths:
+              - /api/v1/*
+              - /graphql
+            methods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - PATCH
+---
+# Allow ingress gateway traffic
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: api-allow-ingress
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    app.kubernetes.io/managed-by: istio
+spec:
+  selector:
+    matchLabels:
+      app: idp-api
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              - "cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"
+      to:
+        - operation:
+            paths:
+              - /api/v1/*
+              - /graphql
+              - /healthz
+              - /readyz
+---
+# Deny access from untrusted namespaces
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: api-deny-untrusted
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    app.kubernetes.io/managed-by: istio
+spec:
+  selector:
+    matchLabels:
+      app: idp-api
+  action: DENY
+  rules:
+    - from:
+        - source:
+            notNamespaces:
+              - idp-platform
+              - istio-system
+              - monitoring
+      to:
+        - operation:
+            paths:
+              - /api/v1/admin/*
+              - /api/v1/settings/*
