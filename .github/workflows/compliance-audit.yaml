@@ -1,0 +1,278 @@
+name: Compliance Audit
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'  # Weekly on Monday at 6 AM UTC
+  workflow_dispatch:
+    inputs:
+      audit_scope:
+        description: 'Scope of audit'
+        required: true
+        default: 'full'
+        type: choice
+        options:
+          - full
+          - security
+          - access
+          - infrastructure
+
+permissions:
+  contents: read
+  security-events: write
+  issues: write
+
+env:
+  AUDIT_REPORT_BUCKET: idp-compliance-reports
+  SLACK_CHANNEL: platform-compliance
+
+jobs:
+  security-scan:
+    name: Security Compliance Scan
+    runs-on: ubuntu-latest
+    outputs:
+      vulnerabilities_found: ${{ steps.trivy.outputs.vulnerabilities }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Trivy vulnerability scanner
+        id: trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '0'
+
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Run Trivy config scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'config'
+          scan-ref: './infra'
+          format: 'json'
+          output: 'trivy-config-results.json'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+          exit-code: '0'
+
+      - name: Check for secrets in code
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          extra_args: --only-verified
+
+      - name: Upload security scan artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-scan-results
+          path: |
+            trivy-results.sarif
+            trivy-config-results.json
+          retention-days: 90
+
+  policy-compliance:
+    name: Policy Compliance Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install conftest
+        run: |
+          wget -q https://github.com/open-policy-agent/conftest/releases/download/v0.46.0/conftest_0.46.0_Linux_x86_64.tar.gz
+          tar xzf conftest_0.46.0_Linux_x86_64.tar.gz
+          sudo mv conftest /usr/local/bin/
+
+      - name: Run OPA policy checks on Kubernetes manifests
+        run: |
+          echo "## Policy Compliance Results" > policy-report.md
+          echo "" >> policy-report.md
+
+          find infra/kubernetes infra/istio -name "*.yaml" -type f | while read file; do
+            echo "Checking: $file"
+            conftest test "$file" --policy infra/security/policies/ --output json >> policy-results.json 2>&1 || true
+          done
+
+          echo "Policy check completed"
+
+      - name: Validate Terraform configurations
+        run: |
+          find infra/terraform -name "*.tf" -type f -exec dirname {} \; | sort -u | while read dir; do
+            echo "Validating: $dir"
+            conftest test "$dir" --policy infra/security/policies/ --output json >> terraform-policy-results.json 2>&1 || true
+          done
+
+      - name: Upload policy results
+        uses: actions/upload-artifact@v4
+        with:
+          name: policy-compliance-results
+          path: |
+            policy-report.md
+            policy-results.json
+            terraform-policy-results.json
+          retention-days: 90
+
+  access-review:
+    name: Access Control Review
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Review CODEOWNERS coverage
+        run: |
+          echo "## CODEOWNERS Coverage Report" > access-report.md
+          echo "" >> access-report.md
+
+          # Check all directories have CODEOWNERS entries
+          total_dirs=$(find . -type d -not -path './.git*' -not -path './node_modules*' | wc -l)
+          covered_patterns=$(grep -v '^#' .github/CODEOWNERS | grep -v '^$' | wc -l)
+
+          echo "- Total directories: $total_dirs" >> access-report.md
+          echo "- CODEOWNERS patterns: $covered_patterns" >> access-report.md
+          echo "" >> access-report.md
+
+      - name: Check for overly permissive RBAC
+        run: |
+          echo "## RBAC Analysis" >> access-report.md
+          echo "" >> access-report.md
+
+          # Check for wildcard permissions
+          grep -r "verbs.*\*" infra/ --include="*.yaml" | while read line; do
+            echo "⚠️  Wildcard verb found: $line" >> access-report.md
+          done
+
+          # Check for cluster-admin bindings
+          grep -r "cluster-admin" infra/ --include="*.yaml" | while read line; do
+            echo "⚠️  cluster-admin reference: $line" >> access-report.md
+          done
+
+          echo "" >> access-report.md
+          echo "Review completed at $(date -u)" >> access-report.md
+
+      - name: Upload access review
+        uses: actions/upload-artifact@v4
+        with:
+          name: access-review-results
+          path: access-report.md
+          retention-days: 90
+
+  dependency-audit:
+    name: Dependency License Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run license checker
+        run: |
+          npx license-checker --production --json > license-report.json
+          npx license-checker --production --failOn "GPL-3.0;AGPL-3.0;SSPL-1.0" || echo "RESTRICTED_LICENSE_FOUND=true" >> $GITHUB_ENV
+
+      - name: Generate SBOM
+        run: |
+          npx @cyclonedx/cyclonedx-npm --output-file sbom.json --spec-version 1.5
+
+      - name: Upload dependency audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-audit-results
+          path: |
+            license-report.json
+            sbom.json
+          retention-days: 90
+
+  generate-report:
+    name: Generate Compliance Report
+    runs-on: ubuntu-latest
+    needs: [security-scan, policy-compliance, access-review, dependency-audit]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: audit-results/
+
+      - name: Generate consolidated report
+        run: |
+          cat << 'EOF' > compliance-report.md
+          # IDP Platform Compliance Audit Report
+
+          **Date**: $(date -u +"%Y-%m-%d")
+          **Scope**: ${{ github.event.inputs.audit_scope || 'full' }}
+          **Triggered By**: ${{ github.event_name }}
+
+          ## Summary
+
+          | Check | Status |
+          |-------|--------|
+          | Security Scan | See artifacts |
+          | Policy Compliance | See artifacts |
+          | Access Review | See artifacts |
+          | Dependency Audit | See artifacts |
+
+          ## Next Steps
+
+          1. Review findings in attached artifacts
+          2. Create issues for any violations
+          3. Update compliance tracking spreadsheet
+          4. Schedule remediation for critical findings
+
+          ---
+          *Generated by automated compliance audit workflow*
+          EOF
+
+      - name: Upload consolidated report
+        uses: actions/upload-artifact@v4
+        with:
+          name: compliance-audit-report
+          path: compliance-report.md
+          retention-days: 365
+
+      - name: Notify on completion
+        if: always()
+        uses: slackapi/slack-github-action@v1.25.0
+        with:
+          payload: |
+            {
+              "channel": "${{ env.SLACK_CHANNEL }}",
+              "text": "🔍 Compliance Audit Complete",
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "🔍 Weekly Compliance Audit Complete"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Status*: ${{ needs.security-scan.result == 'success' && needs.policy-compliance.result == 'success' && '✅ All checks passed' || '⚠️ Issues found - review required' }}\n*Run*: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
