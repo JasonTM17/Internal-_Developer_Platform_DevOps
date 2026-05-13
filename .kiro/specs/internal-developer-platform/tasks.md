@@ -33,8 +33,8 @@ This implementation plan breaks down the Internal Developer Platform into increm
     - Define validation constraints (field lengths, allowed values, URL patterns)
     - _Requirements: 2.1, 2.2, 6.5, 9.2, 15.1_
 
-- [ ] 2. Implement Service Catalog core
-  - [-] 2.1 Implement CatalogEntity validation logic
+- [x] 2. Implement Service Catalog core
+  - [x] 2.1 Implement CatalogEntity validation logic
     - Create validation functions using Zod schemas for all entity fields
     - Validate name (1-128 chars), owner (1-128 chars), description (1-1024 chars)
     - Validate lifecycle stage enum (experimental, development, production, deprecated)
@@ -59,7 +59,7 @@ This implementation plan breaks down the Internal Developer Platform into increm
     - **Property 6: Valid Entity Registration Persists With Audit Metadata**
     - **Validates: Requirements 1.1, 1.5**
 
-  - [~] 2.5 Implement Service Catalog search
+  - [x] 2.5 Implement Service Catalog search
     - Implement case-insensitive substring search across name, owner, and tags
     - Limit results to 50 entries maximum
     - Ensure search responds within 1 second (use in-memory caching layer)
@@ -69,7 +69,7 @@ This implementation plan breaks down the Internal Developer Platform into increm
     - **Property 7: Catalog Search Returns Only Matching Results**
     - **Validates: Requirements 1.2**
 
-  - [~] 2.7 Implement entity update with version history
+  - [x] 2.7 Implement entity update with version history
     - Implement `update()` method that increments version counter
     - Preserve previous version in history table (retain at least 50 most recent versions)
     - Record actor and timestamp for each version change
@@ -79,7 +79,7 @@ This implementation plan breaks down the Internal Developer Platform into increm
     - **Property 8: Version History Preservation on Update**
     - **Validates: Requirements 2.4**
 
-  - [~] 2.9 Implement dependency graph management
+  - [x] 2.9 Implement dependency graph management
     - Implement `addDependency()` with referential integrity check (target must exist)
     - Store directed edges with source, target, and dependency type
     - Return error identifying unknown target entity if target doesn't exist
@@ -94,11 +94,11 @@ This implementation plan breaks down the Internal Developer Platform into increm
     - **Property 1: CatalogEntity Serialization Round-Trip**
     - **Validates: Requirements 2.7**
 
-- [~] 3. Checkpoint - Ensure all Service Catalog tests pass
+- [x] 3. Checkpoint - Ensure all Service Catalog tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 4. Implement RBAC System
-  - [-] 4.1 Implement OAuth2/OIDC authentication middleware
+- [x] 4. Implement RBAC System
+  - [x] 4.1 Implement OAuth2/OIDC authentication middleware
     - Create authentication middleware that validates JWT tokens from OIDC provider
     - Implement session expiry detection (default 60 minutes of inactivity)
     - Return 401 for expired/invalid tokens with re-authentication message
@@ -109,7 +109,7 @@ This implementation plan breaks down the Internal Developer Platform into increm
     - **Property 12: Expired or Invalid Token Rejection**
     - **Validates: Requirements 9.5**
 
-  - [-] 4.3 Implement role-based permission evaluation engine
+  - [x] 4.3 Implement role-based permission evaluation engine
     - Define three base roles: viewer (read-only), developer (read + deploy non-prod + provision + config), admin (all)
     - Implement team-scoped permission resolution (permissions apply only to team-owned resources)
     - Support multiple team memberships with independent per-team evaluation
@@ -121,8 +121,8 @@ This implementation plan breaks down the Internal Developer Platform into increm
     - **Property 11: RBAC Permission Evaluation Correctness**
     - **Validates: Requirements 3.5, 3.6, 9.2, 9.3, 9.4**
 
-- [ ] 5. Implement Audit Logger
-  - [-] 5.1 Implement append-only audit log with hash chain integrity
+- [x] 5. Implement Audit Logger
+  - [x] 5.1 Implement append-only audit log with hash chain integrity
     - Create PostgreSQL schema for audit log entries with integrity hash column
     - Implement SHA-256 hash chain (each entry incorporates previous entry's hash)
     - Record: actor, action, resource, UTC timestamp (ms precision), outcome, reason
@@ -148,11 +148,11 @@ This implementation plan breaks down the Internal Developer Platform into increm
     - **Property 23: Audit Log Query Filtering Correctness**
     - **Validates: Requirements 10.3**
 
-- [~] 6. Checkpoint - Ensure RBAC and Audit tests pass
+- [x] 6. Checkpoint - Ensure RBAC and Audit tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 7. Implement Deployment Engine
-  - [~] 7.1 Implement deployment request validation and creation
+- [x] 7. Implement Deployment Engine
+  - [x] 7.1 Implement deployment request validation and creation
     - Validate service exists, environment exists, version matches known artifact
     - Prevent concurrent deployments for same service+environment pair
     - Check RBAC permissions (deploy permission for target environment)
@@ -164,14 +164,14 @@ This implementation plan breaks down the Internal Developer Platform into increm
     - **Property 10: Deployment Action Validation and Concurrent Prevention**
     - **Validates: Requirements 3.1, 3.3, 3.4, 13.6**
 
-  - [~] 7.3 Implement deployment lifecycle state machine
+  - [x] 7.3 Implement deployment lifecycle state machine
     - Implement phase transitions: pending → validating → generating_manifests → committing → syncing → health_checking → success/failed
     - Track progress percentage (0-100) per phase
     - Report status updates at intervals of no more than 5 seconds
     - Record error details on failure (phase, message, triggering inputs)
     - _Requirements: 3.2_
 
-  - [~] 7.4 Implement deployment history and rollback
+  - [x] 7.4 Implement deployment history and rollback
     - Return last 50 deployments in reverse chronological order with all required fields
     - Implement rollback: target most recent "success" deployment prior to current version
     - Reject rollback if no previous successful deployment exists
@@ -188,8 +188,8 @@ This implementation plan breaks down the Internal Developer Platform into increm
     - **Property 28: Rollback Version Reference Update**
     - **Validates: Requirements 13.5**
 
-- [ ] 8. Implement Manifest Generator
-  - [~] 8.1 Implement Kubernetes manifest template engine
+- [x] 8. Implement Manifest Generator
+  - [x] 8.1 Implement Kubernetes manifest template engine
     - Create Handlebars/EJS templates for Deployment, Service, and ConfigMap manifests
     - Template using service metadata, environment config, and requested version
     - Include container image reference tagged with requested version
@@ -202,7 +202,7 @@ This implementation plan breaks down the Internal Developer Platform into increm
     - **Property 15: Generated Manifests Pass Kubernetes Schema Validation**
     - **Validates: Requirements 4.7**
 
-  - [~] 8.3 Implement manifest validation and YAML round-trip
+  - [x] 8.3 Implement manifest validation and YAML round-trip
     - Validate generated manifests against Kubernetes API version schemas
     - Implement YAML parse → serialize → parse round-trip verification
     - Report template errors with template name and triggering input values on failure
@@ -212,7 +212,7 @@ This implementation plan breaks down the Internal Developer Platform into increm
     - **Property 2: Manifest YAML Round-Trip**
     - **Validates: Requirements 4.6**
 
-  - [~] 8.5 Implement Git commit and push with retry logic
+  - [x] 8.5 Implement Git commit and push with retry logic
     - Use conventional commit format: "deploy(service-name): version to environment"
     - Implement retry up to 3 times with exponential backoff (1s, 2s, 4s)
     - Mark deployment as failed if all retries exhausted (repository unreachable)
@@ -222,11 +222,11 @@ This implementation plan breaks down the Internal Developer Platform into increm
     - **Property 14: Manifest Commit Message and Path Format**
     - **Validates: Requirements 4.3**
 
-- [~] 9. Checkpoint - Ensure Deployment and Manifest tests pass
+- [x] 9. Checkpoint - Ensure Deployment and Manifest tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 10. Implement Environment Manager
-  - [~] 10.1 Implement environment provisioning
+- [x] 10. Implement Environment Manager
+  - [x] 10.1 Implement environment provisioning
     - Provision Kubernetes namespace with resource quotas, network policies, and RBAC bindings within 60 seconds
     - Apply network policies denying all inter-namespace traffic by default
     - Apply standard labels (team, environment-type, created-by, expiry-date) with 30-day default expiry
@@ -243,14 +243,14 @@ This implementation plan breaks down the Internal Developer Platform into increm
     - **Property 18: Environment Limit Enforcement**
     - **Validates: Requirements 6.8**
 
-  - [~] 10.3 Implement environment lifecycle management
+  - [x] 10.3 Implement environment lifecycle management
     - Implement expiry notification 7 days before configured expiry date
     - Implement deprovisioning on expiry (delete all resources within 24 hours after expiry)
     - Implement renewal functionality
     - Support three environment types with distinct resource quotas (dev: 4CPU/8GiB/50GiB, staging: 8CPU/16GiB/100GiB, prod: 16CPU/32GiB/200GiB)
     - _Requirements: 6.5, 6.6, 6.7_
 
-  - [~] 10.4 Implement configuration and secret management
+  - [x] 10.4 Implement configuration and secret management
     - Store environment-specific configuration values independent of source code
     - Version configuration changes with actor identity and UTC timestamp
     - Distinguish plain config values from secrets (user-designated at creation)
@@ -268,23 +268,23 @@ This implementation plan breaks down the Internal Developer Platform into increm
     - **Property 31: Configuration Schema Validation**
     - **Validates: Requirements 14.4, 14.5, 14.6**
 
-- [ ] 11. Implement GitOps Controller (ArgoCD Integration)
-  - [~] 11.1 Implement ArgoCD sync status monitoring
+- [x] 11. Implement GitOps Controller (ArgoCD Integration)
+  - [x] 11.1 Implement ArgoCD sync status monitoring
     - Detect new manifest commits and initiate synchronization within 30 seconds
     - Report sync status transitions (Syncing, Synced, OutOfSync, Failed) to Deployment Engine
     - Implement 10-minute sync timeout detection, mark deployment as failed on timeout
     - Update deployment record to "deployed" on successful sync
     - _Requirements: 5.1, 5.2, 5.3, 5.4_
 
-  - [~] 11.2 Implement automatic rollback on health check failure
+  - [x] 11.2 Implement automatic rollback on health check failure
     - Monitor readiness probes after successful sync
     - If not-ready within 5 minutes of sync completion, revert GitOps repo to previous manifest version
     - Initiate resynchronization after rollback
     - Report "rollback_failed" if rollback sync fails or doesn't reach "Synced" within 10 minutes
     - _Requirements: 5.5, 5.6_
 
-- [ ] 12. Implement Health Monitor
-  - [~] 12.1 Implement health probe collection and alerting
+- [x] 12. Implement Health Monitor
+  - [x] 12.1 Implement health probe collection and alerting
     - Begin collecting readiness/liveness probes within 30 seconds of deployment completion
     - Collect probes every 10 seconds
     - Emit alert and set status to "degraded" after 3 consecutive probe failures
@@ -297,7 +297,7 @@ This implementation plan breaks down the Internal Developer Platform into increm
     - **Property 20: Connectivity Loss Detection**
     - **Validates: Requirements 8.7**
 
-  - [~] 12.3 Implement observability metrics and dashboards
+  - [x] 12.3 Implement observability metrics and dashboards
     - Expose deployment metrics (success rate, rollback count, mean time to deploy) via Prometheus endpoints
     - Calculate metrics over rolling 24-hour window, update at least every 60 seconds
     - Auto-generate Grafana dashboards within 30 seconds (request rate, error rate, latency p50/p95/p99, resource usage)
@@ -305,11 +305,11 @@ This implementation plan breaks down the Internal Developer Platform into increm
     - Display current health, last 24h metrics, and most recent 100 log entries in Portal
     - _Requirements: 8.2, 8.3, 8.5, 8.6_
 
-- [~] 13. Checkpoint - Ensure Environment, GitOps, and Health Monitor tests pass
+- [x] 13. Checkpoint - Ensure Environment, GitOps, and Health Monitor tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 14. Implement API Server and validation layer
-  - [~] 14.1 Implement API Server with Express and Zod validation middleware
+- [x] 14. Implement API Server and validation layer
+  - [x] 14.1 Implement API Server with Express and Zod validation middleware
     - Set up Express server with TypeScript strict mode
     - Create validation middleware using Zod schemas for body, query, and path params
     - Return HTTP 400 with structured error response (up to 50 violations) for invalid requests
@@ -323,7 +323,7 @@ This implementation plan breaks down the Internal Developer Platform into increm
     - **Property 33: Consistent Error Response Format**
     - **Validates: Requirements 15.3**
 
-  - [~] 14.3 Implement OpenAPI specification auto-generation
+  - [x] 14.3 Implement OpenAPI specification auto-generation
     - Auto-generate OpenAPI 3.x spec from route definitions at build time
     - Fail build if generated spec diverges from implemented route signatures
     - Use shared TypeScript interfaces as single source of truth for request/response types
@@ -333,7 +333,7 @@ This implementation plan breaks down the Internal Developer Platform into increm
     - **Property 3: API Request/Response JSON Round-Trip**
     - **Validates: Requirements 15.5**
 
-  - [~] 14.5 Wire API routes to platform services
+  - [x] 14.5 Wire API routes to platform services
     - Implement catalog routes: POST /catalog, GET /catalog/search, PUT /catalog/:id
     - Implement deployment routes: POST /deployments, GET /deployments/:id/status, GET /deployments/history/:serviceId, POST /deployments/rollback
     - Implement environment routes: POST /environments, GET /environments, DELETE /environments/:id
@@ -343,8 +343,8 @@ This implementation plan breaks down the Internal Developer Platform into increm
     - Integrate audit logging on all state-changing routes
     - _Requirements: 1.1, 1.2, 3.1, 6.1, 10.3, 14.1_
 
-- [ ] 15. Implement Infrastructure Provisioner (Terraform)
-  - [~] 15.1 Create Terraform modules organized by concern
+- [x] 15. Implement Infrastructure Provisioner (Terraform)
+  - [x] 15.1 Create Terraform modules organized by concern
     - Create modules: networking, compute, database, monitoring, security
     - Configure remote state storage with state locking
     - Implement validation gate (terraform validate, terraform fmt -check)
@@ -352,15 +352,15 @@ This implementation plan breaks down the Internal Developer Platform into increm
     - Reject provisioning if remote state storage is unavailable (no local state fallback)
     - _Requirements: 7.1, 7.3, 7.5, 7.7_
 
-  - [~] 15.2 Implement Terraform plan/apply orchestration
+  - [x] 15.2 Implement Terraform plan/apply orchestration
     - Execute terraform plan and present change summary (additions, modifications, deletions)
     - Require explicit approval before applying
     - Preserve state file on failure, log error with failed resource identifiers
     - Record audit artifacts (plan output, apply output, state version, user, timestamp) retained 90 days minimum
     - _Requirements: 7.2, 7.4, 7.6_
 
-- [ ] 16. Implement CI/CD Pipeline
-  - [~] 16.1 Create GitHub Actions workflow for PR validation
+- [x] 16. Implement CI/CD Pipeline
+  - [x] 16.1 Create GitHub Actions workflow for PR validation
     - Execute linting, type checking, unit tests, and integration tests on feature branch push
     - Report pass/fail status check on pull request within 10 minutes
     - Halt execution and skip subsequent stages on any failure
@@ -368,13 +368,13 @@ This implementation plan breaks down the Internal Developer Platform into increm
     - Notify committer via commit status check and PR comment on failure
     - _Requirements: 11.1, 11.3, 11.4, 11.5_
 
-  - [~] 16.2 Create GitHub Actions workflow for post-merge builds
+  - [x] 16.2 Create GitHub Actions workflow for post-merge builds
     - Build container images for portal and api workspaces on merge to main
     - Tag images with full Git SHA
     - Push to container registry within 15 minutes
     - _Requirements: 11.2_
 
-  - [~] 16.3 Implement workspace-aware selective pipeline execution
+  - [x] 16.3 Implement workspace-aware selective pipeline execution
     - Detect modified file paths and resolve affected workspaces from dependency graph
     - Execute validation only for affected workspaces and their dependents
     - _Requirements: 11.6_
@@ -383,51 +383,51 @@ This implementation plan breaks down the Internal Developer Platform into increm
     - **Property 25: Workspace Dependency Graph Resolution**
     - **Validates: Requirements 11.6**
 
-- [ ] 17. Implement Portal Frontend
-  - [~] 17.1 Set up Backstage portal application
+- [x] 17. Implement Portal Frontend
+  - [x] 17.1 Set up Backstage portal application
     - Initialize Backstage app with React/TypeScript/Material UI
     - Configure API client to communicate with backend API server
     - Set up embedded Grafana for observability dashboards
     - _Requirements: 12.1_
 
-  - [~] 17.2 Implement service catalog UI
+  - [x] 17.2 Implement service catalog UI
     - Create service registration form with all required fields
     - Implement search interface with real-time results (case-insensitive, max 50 results)
     - Display entity details, dependencies, and version history
     - _Requirements: 1.1, 1.2, 2.1_
 
-  - [~] 17.3 Implement deployment UI
+  - [x] 17.3 Implement deployment UI
     - Create deployment initiation form (service, version, environment selection)
     - Display deployment status updates every 5 seconds (phase name, progress percentage)
     - Show deployment history (last 50, reverse chronological) with all required fields
     - Implement rollback controls
     - _Requirements: 3.1, 3.2, 13.1_
 
-  - [~] 17.4 Implement environment and configuration UI
+  - [x] 17.4 Implement environment and configuration UI
     - Create environment provisioning interface
     - Display environment list with status, quotas, and expiry info
     - Implement configuration management UI (view/edit config values per service per environment)
     - Ensure secret values are never displayed in plaintext
     - _Requirements: 6.1, 14.1, 14.7_
 
-- [ ] 18. Implement Developer Experience tooling
-  - [~] 18.1 Create developer setup script
+- [x] 18. Implement Developer Experience tooling
+  - [x] 18.1 Create developer setup script
     - Single-command setup: install dependencies, configure git hooks, set up environment variables
     - Detect missing prerequisites (Node.js >= 18, pnpm >= 8, Docker) and exit with clear error
     - Complete within 120 seconds on standard broadband (10 Mbps+)
     - _Requirements: 12.3, 12.4_
 
-  - [~] 18.2 Create docker-compose local development environment
+  - [x] 18.2 Create docker-compose local development environment
     - Define services: database (PostgreSQL), cache (Redis), mock APIs
     - Start all services with single `docker-compose up` command within 60 seconds
     - Display error indicating which service failed if any service doesn't become healthy within 60 seconds
     - _Requirements: 12.6, 12.7_
 
-- [~] 19. Checkpoint - Ensure all integration tests pass
+- [x] 19. Checkpoint - Ensure all integration tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 20. Final wiring and end-to-end integration
-  - [~] 20.1 Wire all components together end-to-end
+- [x] 20. Final wiring and end-to-end integration
+  - [x] 20.1 Wire all components together end-to-end
     - Connect Portal → API Server → RBAC → Audit → Service Catalog
     - Connect Portal → API Server → Deployment Engine → Manifest Generator → Git → ArgoCD
     - Connect Portal → API Server → Environment Manager → Namespace Controller → Kubernetes
@@ -442,7 +442,7 @@ This implementation plan breaks down the Internal Developer Platform into increm
     - Test RBAC enforcement across full request path
     - _Requirements: 3.1, 5.5, 6.1, 9.3_
 
-- [~] 21. Final checkpoint - Ensure all tests pass
+- [x] 21. Final checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes
