@@ -1,0 +1,150 @@
+# AWS WAF Configuration for IDP Platform
+# Defines Web Application Firewall rules for API protection
+
+apiVersion: wafv2.aws.upbound.io/v1beta1
+kind: WebACL
+metadata:
+  name: idp-platform-waf
+spec:
+  forProvider:
+    name: idp-platform-waf
+    region: us-east-1
+    scope: REGIONAL
+    defaultAction:
+      - allow: [{}]
+    description: "WAF rules for IDP Platform API and Portal"
+
+    # Rule 1: AWS Managed - Common Rule Set
+    rule:
+      - name: AWSManagedRulesCommonRuleSet
+        priority: 1
+        overrideAction:
+          - none: [{}]
+        statement:
+          - managedRuleGroupStatement:
+              - name: AWSManagedRulesCommonRuleSet
+                vendorName: AWS
+        visibilityConfig:
+          - cloudwatchMetricsEnabled: true
+            metricName: AWSManagedRulesCommonRuleSet
+            sampledRequestsEnabled: true
+
+      # Rule 2: AWS Managed - Known Bad Inputs
+      - name: AWSManagedRulesKnownBadInputsRuleSet
+        priority: 2
+        overrideAction:
+          - none: [{}]
+        statement:
+          - managedRuleGroupStatement:
+              - name: AWSManagedRulesKnownBadInputsRuleSet
+                vendorName: AWS
+        visibilityConfig:
+          - cloudwatchMetricsEnabled: true
+            metricName: KnownBadInputs
+            sampledRequestsEnabled: true
+
+      # Rule 3: AWS Managed - SQL Injection
+      - name: AWSManagedRulesSQLiRuleSet
+        priority: 3
+        overrideAction:
+          - none: [{}]
+        statement:
+          - managedRuleGroupStatement:
+              - name: AWSManagedRulesSQLiRuleSet
+                vendorName: AWS
+        visibilityConfig:
+          - cloudwatchMetricsEnabled: true
+            metricName: SQLInjection
+            sampledRequestsEnabled: true
+
+      # Rule 4: Rate limiting - API endpoints
+      - name: RateLimitAPI
+        priority: 4
+        action:
+          - block: [{}]
+        statement:
+          - rateBasedStatement:
+              - aggregateKeyType: IP
+                limit: 2000  # 2000 requests per 5 minutes per IP
+                scopeDownStatement:
+                  - byteMatchStatement:
+                      - fieldToMatch:
+                            - uriPath: [{}]
+                        positionalConstraint: STARTS_WITH
+                        searchString: /api/
+                        textTransformation:
+                          - priority: 0
+                            type: LOWERCASE
+        visibilityConfig:
+          - cloudwatchMetricsEnabled: true
+            metricName: RateLimitAPI
+            sampledRequestsEnabled: true
+
+      # Rule 5: Rate limiting - Authentication endpoints (stricter)
+      - name: RateLimitAuth
+        priority: 5
+        action:
+          - block: [{}]
+        statement:
+          - rateBasedStatement:
+              - aggregateKeyType: IP
+                limit: 100  # 100 requests per 5 minutes per IP
+                scopeDownStatement:
+                  - byteMatchStatement:
+                      - fieldToMatch:
+                            - uriPath: [{}]
+                        positionalConstraint: STARTS_WITH
+                        searchString: /api/v1/auth/
+                        textTransformation:
+                          - priority: 0
+                            type: LOWERCASE
+        visibilityConfig:
+          - cloudwatchMetricsEnabled: true
+            metricName: RateLimitAuth
+            sampledRequestsEnabled: true
+
+      # Rule 6: Geo-blocking (optional - restrict to allowed countries)
+      - name: GeoRestriction
+        priority: 6
+        action:
+          - block: [{}]
+        statement:
+          - geoMatchStatement:
+              - countryCodes:
+                  - CN
+                  - RU
+                  - KP
+        visibilityConfig:
+          - cloudwatchMetricsEnabled: true
+            metricName: GeoBlocked
+            sampledRequestsEnabled: true
+
+      # Rule 7: Block requests with suspicious user agents
+      - name: BlockBadBots
+        priority: 7
+        action:
+          - block: [{}]
+        statement:
+          - byteMatchStatement:
+              - fieldToMatch:
+                    - singleHeader:
+                        - name: user-agent
+                searchString: "bot"
+                positionalConstraint: CONTAINS
+                textTransformation:
+                  - priority: 0
+                    type: LOWERCASE
+        visibilityConfig:
+          - cloudwatchMetricsEnabled: true
+            metricName: BadBots
+            sampledRequestsEnabled: true
+
+    visibilityConfig:
+      - cloudwatchMetricsEnabled: true
+        metricName: idp-platform-waf
+        sampledRequestsEnabled: true
+
+    tags:
+      Environment: production
+      Service: idp-platform
+      ManagedBy: terraform

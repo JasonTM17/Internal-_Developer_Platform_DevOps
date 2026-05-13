@@ -1,0 +1,131 @@
+# SonarQube Project Configuration
+# Static Application Security Testing (SAST) settings
+
+---
+# sonar-project.properties equivalent in YAML for CI integration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sonarqube-config
+  namespace: idp-production
+  labels:
+    app: sonarqube
+    component: scanning
+data:
+  sonar-project.properties: |
+    # Project identification
+    sonar.projectKey=idp-platform
+    sonar.projectName=Internal Developer Platform
+    sonar.projectVersion=1.0.0
+    
+    # Source configuration
+    sonar.sources=apps/api/src,apps/portal/src,packages
+    sonar.tests=apps/api/src/**/*.test.ts,apps/portal/src/**/*.test.ts
+    sonar.test.inclusions=**/*.test.ts,**/*.spec.ts
+    
+    # Language settings
+    sonar.language=ts
+    sonar.typescript.lcov.reportPaths=coverage/lcov.info
+    
+    # Exclusions
+    sonar.exclusions=\
+      **/node_modules/**,\
+      **/dist/**,\
+      **/coverage/**,\
+      **/*.test.ts,\
+      **/*.spec.ts,\
+      **/migrations/**,\
+      **/__mocks__/**
+    
+    # Quality gate settings
+    sonar.qualitygate.wait=true
+    sonar.qualitygate.timeout=300
+    
+    # Security hotspot review
+    sonar.security.hotspots.reviewed=true
+    
+    # Encoding
+    sonar.sourceEncoding=UTF-8
+
+  quality-gate.json: |
+    {
+      "name": "IDP Platform Quality Gate",
+      "conditions": [
+        {
+          "metric": "new_reliability_rating",
+          "op": "GT",
+          "error": "1"
+        },
+        {
+          "metric": "new_security_rating",
+          "op": "GT",
+          "error": "1"
+        },
+        {
+          "metric": "new_maintainability_rating",
+          "op": "GT",
+          "error": "1"
+        },
+        {
+          "metric": "new_coverage",
+          "op": "LT",
+          "error": "80"
+        },
+        {
+          "metric": "new_duplicated_lines_density",
+          "op": "GT",
+          "error": "3"
+        },
+        {
+          "metric": "new_security_hotspots_reviewed",
+          "op": "LT",
+          "error": "100"
+        },
+        {
+          "metric": "new_vulnerabilities",
+          "op": "GT",
+          "error": "0"
+        },
+        {
+          "metric": "new_bugs",
+          "op": "GT",
+          "error": "0"
+        }
+      ]
+    }
+
+  quality-profile.json: |
+    {
+      "name": "IDP TypeScript Profile",
+      "language": "ts",
+      "rules": {
+        "security": {
+          "severity": "BLOCKER",
+          "categories": [
+            "sql-injection",
+            "xss",
+            "path-traversal",
+            "command-injection",
+            "insecure-crypto",
+            "hardcoded-credentials",
+            "insecure-deserialization"
+          ]
+        },
+        "reliability": {
+          "severity": "CRITICAL",
+          "categories": [
+            "null-pointer",
+            "resource-leak",
+            "exception-handling"
+          ]
+        },
+        "maintainability": {
+          "severity": "MAJOR",
+          "categories": [
+            "cognitive-complexity",
+            "code-duplication",
+            "naming-conventions"
+          ]
+        }
+      }
+    }
