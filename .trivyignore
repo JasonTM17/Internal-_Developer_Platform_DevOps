@@ -1,0 +1,11 @@
+# Trivy Ignore File
+# =============================================================================
+# CVEs listed here are acknowledged and accepted risks.
+# Each entry MUST include a justification and review date.
+# =============================================================================
+
+# Example format:
+# CVE-YYYY-XXXXX  # Justification: [reason]. Reviewed: YYYY-MM-DD. Expires: YYYY-MM-DD
+
+# Node.js - Low severity, no exploit path in our usage
+# CVE-2023-44487  # HTTP/2 Rapid Reset - mitigated by WAF rate limiting. Reviewed: 2024-01-15. Expires: 2024-04-15
