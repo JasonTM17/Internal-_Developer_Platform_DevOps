@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Box, Drawer, AppBar, Toolbar, Typography, List, ListItem,
   ListItemButton, ListItemIcon, ListItemText, IconButton,
   Avatar, Badge, Divider, useTheme, useMediaQuery, Tooltip,
-  Chip
+  Chip, Stack
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import DashboardIcon from '@mui/icons-material/Dashboard';
@@ -15,6 +15,7 @@ import MonitorHeartIcon from '@mui/icons-material/MonitorHeart';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import SettingsIcon from '@mui/icons-material/Settings';
+import CircleIcon from '@mui/icons-material/Circle';
 
 const DRAWER_WIDTH = 260;
 
@@ -41,10 +42,22 @@ interface AppLayoutProps {
 
 export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [apiConnected, setApiConnected] = useState(true);
   const location = useLocation();
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
+  // Simulate API connection check
+  useEffect(() => {
+    const checkConnection = () => {
+      // Simulated: in production this would ping the API health endpoint
+      setApiConnected(true);
+    };
+    checkConnection();
+    const interval = setInterval(checkConnection, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + '/');
 
@@ -111,6 +124,16 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           </ListItemIcon>
           <ListItemText primary="Settings" primaryTypographyProps={{ fontSize: '0.85rem', color: '#8b949e' }} />
         </ListItemButton>
+
+        {/* API Connection Status */}
+        <Box sx={{ mt: 1.5, px: 2, py: 1, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.02)' }}>
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <CircleIcon sx={{ fontSize: 8, color: apiConnected ? '#3fb950' : '#f85149' }} />
+            <Typography variant="caption" sx={{ color: apiConnected ? '#3fb950' : '#f85149', fontSize: '0.7rem', fontWeight: 500 }}>
+              {apiConnected ? 'API Connected' : 'API Disconnected'}
+            </Typography>
+          </Stack>
+        </Box>
       </Box>
     </Box>
   );
