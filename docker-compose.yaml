@@ -1,6 +1,10 @@
 # =============================================================================
 # IDP Platform - Full Local Development Stack
 # =============================================================================
+# Production images (uncomment to use published images instead of building locally):
+# API:    ghcr.io/jasontm17/idp-api:v1.0.0
+# Portal: ghcr.io/jasontm17/idp-portal:v1.0.0
+# =============================================================================
 # Usage:
 #   docker compose up -d          # Start all services
 #   docker compose up api portal  # Start specific services
