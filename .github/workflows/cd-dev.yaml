@@ -1,0 +1,173 @@
+name: CD - Deploy to Development
+
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+    inputs:
+      service:
+        description: 'Service to deploy'
+        required: true
+        type: choice
+        options:
+          - all
+          - api
+          - portal
+      skip_tests:
+        description: 'Skip test execution'
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: deploy-dev-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
+  EKS_CLUSTER: idp-dev
+  NAMESPACE: idp-dev
+  ENVIRONMENT: development
+
+permissions:
+  id-token: write
+  contents: read
+  packages: write
+
+jobs:
+  prepare:
+    name: Prepare Deployment
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      services: ${{ steps.changes.outputs.services }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate version
+        id: version
+        run: |
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          TIMESTAMP=$(date +%Y%m%d%H%M%S)
+          echo "version=dev-${SHORT_SHA}-${TIMESTAMP}" >> $GITHUB_OUTPUT
+
+      - name: Detect changed services
+        id: changes
+        run: |
+          if [[ "${{ github.event.inputs.service }}" == "all" ]] || [[ -z "${{ github.event.inputs.service }}" ]]; then
+            SERVICES=$(git diff --name-only HEAD~1 | grep -E '^apps/' | cut -d'/' -f2 | sort -u | jq -R -s -c 'split("\n")[:-1]')
+            echo "services=${SERVICES}" >> $GITHUB_OUTPUT
+          else
+            echo "services=[\"${{ github.event.inputs.service }}\"]" >> $GITHUB_OUTPUT
+          fi
+
+  build-and-push:
+    name: Build & Push - ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    needs: prepare
+    strategy:
+      matrix:
+        service: ${{ fromJson(needs.prepare.outputs.services) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: apps/${{ matrix.service }}/Dockerfile
+          push: true
+          tags: |
+            ${{ env.ECR_REGISTRY }}/idp-${{ matrix.service }}:${{ needs.prepare.outputs.version }}
+            ${{ env.ECR_REGISTRY }}/idp-${{ matrix.service }}:dev-latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            NODE_ENV=development
+            VERSION=${{ needs.prepare.outputs.version }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ needs.prepare.outputs.version }}
+
+  deploy:
+    name: Deploy to Dev
+    runs-on: ubuntu-latest
+    needs: [prepare, build-and-push]
+    environment: development
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER }} --region ${{ env.AWS_REGION }}
+
+      - name: Deploy with Helm
+        run: |
+          for service in $(echo '${{ needs.prepare.outputs.services }}' | jq -r '.[]'); do
+            helm upgrade --install "idp-${service}" \
+              ./infra/helm/idp-platform \
+              --namespace ${{ env.NAMESPACE }} \
+              --set image.tag=${{ needs.prepare.outputs.version }} \
+              --set image.repository=${{ env.ECR_REGISTRY }}/idp-${service} \
+              --set environment=${{ env.ENVIRONMENT }} \
+              --set replicaCount=1 \
+              --values ./infra/helm/idp-platform/values-dev.yaml \
+              --wait \
+              --timeout 5m
+          done
+
+      - name: Verify deployment
+        run: |
+          for service in $(echo '${{ needs.prepare.outputs.services }}' | jq -r '.[]'); do
+            kubectl rollout status deployment/idp-${service} \
+              -n ${{ env.NAMESPACE }} \
+              --timeout=300s
+          done
+
+      - name: Run smoke tests
+        run: |
+          API_URL=$(kubectl get ingress idp-api -n ${{ env.NAMESPACE }} -o jsonpath='{.spec.rules[0].host}')
+          curl -sf "https://${API_URL}/health" || exit 1
+          curl -sf "https://${API_URL}/ready" || exit 1
+
+      - name: Post deployment notification
+        if: always()
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "Dev Deployment ${{ job.status == 'success' && '✅' || '❌' }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Dev Deployment*\n*Version:* `${{ needs.prepare.outputs.version }}`\n*Services:* ${{ needs.prepare.outputs.services }}\n*Status:* ${{ job.status }}\n*Actor:* ${{ github.actor }}"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
