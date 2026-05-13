@@ -1,0 +1,110 @@
+apiVersion: flagger.app/v1beta1
+kind: Canary
+metadata:
+  name: idp-portal
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/name: idp-portal
+    app.kubernetes.io/part-of: idp-platform
+    app.kubernetes.io/managed-by: flagger
+  annotations:
+    flagger.app/description: "IDP Portal canary deployment with A/B testing support"
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: idp-portal
+  progressDeadlineSeconds: 600
+  autoscalerRef:
+    apiVersion: autoscaling/v2
+    kind: HorizontalPodAutoscaler
+    name: idp-portal
+
+  service:
+    port: 3001
+    targetPort: 3001
+    portName: http
+    portDiscovery: true
+    gateways:
+      - idp-gateway
+    hosts:
+      - portal.idp.example.com
+    trafficPolicy:
+      tls:
+        mode: ISTIO_MUTUAL
+    retries:
+      attempts: 3
+      perTryTimeout: 5s
+      retryOn: "gateway-error,connect-failure,refused-stream"
+
+  analysis:
+    # A/B testing with header-based routing
+    interval: 1m
+    threshold: 5
+    iterations: 10
+    # Use header-based routing for A/B testing
+    match:
+      - headers:
+          x-canary:
+            exact: "true"
+      - headers:
+          cookie:
+            regex: ".*canary=always.*"
+    # Fallback to progressive traffic shifting
+    maxWeight: 50
+    stepWeight: 10
+
+    metrics:
+      - name: request-success-rate
+        thresholdRange:
+          min: 99.0
+        interval: 1m
+      - name: request-duration
+        thresholdRange:
+          max: 1000
+        interval: 1m
+      - name: error-rate
+        templateRef:
+          name: error-rate-check
+          namespace: idp-platform
+        thresholdRange:
+          max: 2.0
+        interval: 1m
+
+    webhooks:
+      - name: acceptance-test
+        type: pre-rollout
+        url: http://flagger-loadtester.idp-platform/
+        timeout: 60s
+        metadata:
+          type: bash
+          cmd: "curl -sf http://idp-portal-canary.idp-platform:3001/"
+      - name: load-test
+        type: rollout
+        url: http://flagger-loadtester.idp-platform/
+        timeout: 60s
+        metadata:
+          type: cmd
+          cmd: "hey -z 1m -q 5 -c 2 http://idp-portal-canary.idp-platform:3001/"
+          logCmdOutput: "true"
+      - name: smoke-test
+        type: pre-rollout
+        url: http://flagger-loadtester.idp-platform/
+        timeout: 90s
+        metadata:
+          type: bash
+          cmd: |
+            # Verify critical portal pages load
+            curl -sf http://idp-portal-canary.idp-platform:3001/ && \
+            curl -sf http://idp-portal-canary.idp-platform:3001/api/health && \
+            echo "Portal smoke tests passed"
+      - name: confirm-promotion
+        type: confirm-promotion
+        url: http://flagger-loadtester.idp-platform/gate/approve
+
+    alerts:
+      - name: slack-notification
+        severity: info
+        providerRef:
+          name: slack-alert
+          namespace: idp-platform
