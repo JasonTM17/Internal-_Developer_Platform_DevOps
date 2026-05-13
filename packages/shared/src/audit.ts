@@ -75,3 +75,17 @@ export interface AuditQueryFilters {
   /** Pagination cursor for fetching subsequent pages. */
   cursor?: string;
 }
+
+/**
+ * Paginated result set for audit log queries.
+ */
+export interface PaginatedAuditResult {
+  /** The audit log entries matching the query. */
+  entries: AuditLogEntry[];
+  /** Total number of entries matching the filters (if available). */
+  totalCount?: number;
+  /** Cursor for fetching the next page. Null if no more results. */
+  nextCursor: string | null;
+  /** Whether there are more results beyond this page. */
+  hasMore: boolean;
+}

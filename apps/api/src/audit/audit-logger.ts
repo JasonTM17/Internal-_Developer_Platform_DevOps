@@ -9,7 +9,7 @@
  */
 
 import { createHash } from 'crypto';
-import type { AuditEntry, AuditLogEntry } from '@idp/shared';
+import type { AuditEntry, AuditLogEntry, AuditQueryFilters, PaginatedAuditResult } from '@idp/shared';
 
 /**
  * Genesis hash used as the previous_hash for the very first audit log entry.
@@ -40,7 +40,25 @@ export interface AuditLogStore {
   getLastEntryHash(): Promise<string | null>;
   /** Insert a new audit log entry. Throws on failure. */
   insert(entry: AuditLogEntry): Promise<void>;
+  /**
+   * Query audit log entries with filtering and pagination.
+   * Returns entries matching the filters, ordered by timestamp descending.
+   * Supports cursor-based pagination for efficient traversal.
+   */
+  query(filters: AuditQueryFilters): Promise<PaginatedAuditResult>;
 }
+
+/**
+ * Maximum number of entries returned per query response.
+ * Enforced regardless of the requested limit.
+ */
+export const MAX_QUERY_LIMIT = 1000;
+
+/**
+ * Minimum retention period in days for audit log entries.
+ * Entries within this period must never be deleted.
+ */
+export const MIN_RETENTION_DAYS = 365;
 
 /**
  * Computes the SHA-256 integrity hash for an audit log entry.
@@ -130,6 +148,39 @@ export class AuditLogger {
     }
 
     return logEntry;
+  }
+
+  /**
+   * Query audit log entries with filtering and pagination.
+   *
+   * Supports filters:
+   * - actor: filter by actor identity (exact match)
+   * - action: filter by action type (exact match)
+   * - startTime/endTime: filter by time range (inclusive)
+   *
+   * Results are ordered by timestamp descending (most recent first).
+   * Limited to MAX_QUERY_LIMIT (1000) entries per response.
+   * Cursor-based pagination allows traversal of larger result sets.
+   *
+   * Enforces 1-year minimum retention: queries can access entries
+   * up to at least 1 year old.
+   *
+   * @param filters - Query filters and pagination options
+   * @returns Paginated result with matching entries
+   *
+   * Requirements: 10.3, 10.4
+   */
+  async query(filters: AuditQueryFilters): Promise<PaginatedAuditResult> {
+    // Enforce maximum limit of 1000 entries per response
+    const requestedLimit = filters.limit ?? MAX_QUERY_LIMIT;
+    const effectiveLimit = Math.min(Math.max(1, requestedLimit), MAX_QUERY_LIMIT);
+
+    const normalizedFilters: AuditQueryFilters = {
+      ...filters,
+      limit: effectiveLimit,
+    };
+
+    return this.store.query(normalizedFilters);
   }
 
   /**

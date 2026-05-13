@@ -50,6 +50,7 @@ export type {
   AuditLogEntry,
   AuditOutcome,
   AuditQueryFilters,
+  PaginatedAuditResult,
 } from './audit';
 
 // RBAC types
