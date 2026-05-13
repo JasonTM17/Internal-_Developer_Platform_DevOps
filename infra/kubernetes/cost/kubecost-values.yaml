@@ -1,0 +1,153 @@
+# Kubecost Helm Values for IDP Platform
+# Provides cost visibility, allocation, and optimization recommendations
+
+global:
+  prometheus:
+    enabled: true
+    fqdn: http://prometheus.monitoring.svc.cluster.local:9090
+  grafana:
+    enabled: false  # Use existing Grafana instance
+    proxy: false
+
+kubecostProductConfigs:
+  clusterName: idp-primary
+  currencyCode: USD
+  azureBillingRegion: US
+  productKey:
+    enabled: true
+    secretname: kubecost-product-key
+  labelMappingConfigs:
+    enabled: true
+    owner_label: team
+    department_label: department
+    product_label: service
+    environment_label: environment
+  defaultModelPricing:
+    enabled: true
+    CPU: "0.031611"
+    RAM: "0.004237"
+    storage: "0.000138889"
+    spotCPU: "0.012644"
+    spotRAM: "0.001695"
+  networkCosts:
+    enabled: true
+  clusterProfile: production
+
+kubecostModel:
+  etl: true
+  etlBucketConfigSecret: kubecost-etl-bucket
+  maxQueryConcurrency: 5
+  allocation:
+    nodeDownsampling: true
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+costAnalyzer:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+prometheus:
+  server:
+    retention: 15d
+    resources:
+      requests:
+        cpu: 200m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+    persistentVolume:
+      enabled: true
+      size: 50Gi
+      storageClass: gp3-encrypted
+  nodeExporter:
+    enabled: true
+  alertmanager:
+    enabled: false  # Use existing AlertManager
+  pushgateway:
+    enabled: false
+
+networkCosts:
+  enabled: true
+  config:
+    services:
+      amazon-web-services: true
+      google-cloud-services: false
+      azure-cloud-services: false
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
+
+serviceAccount:
+  create: true
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/kubecost-s3-access
+
+# Savings recommendations
+savings:
+  enabled: true
+
+# Cost alerts
+notifications:
+  alertConfigs:
+    enabled: true
+    alerts:
+      - type: budget
+        threshold: 80
+        window: monthly
+        aggregation: cluster
+        filter: ""
+        ownerContact:
+          - platform-team@example.com
+      - type: efficiency
+        threshold: 0.3
+        window: 48h
+        aggregation: namespace
+        filter: 'namespace:"idp-platform"'
+        ownerContact:
+          - platform-team@example.com
+      - type: spendChange
+        threshold: 0.2
+        window: 1d
+        baselineWindow: 7d
+        aggregation: namespace
+        filter: ""
+        ownerContact:
+          - platform-team@example.com
+
+# Node affinity for system nodes
+nodeSelector:
+  node-role: system
+
+tolerations:
+  - key: node-role
+    operator: Equal
+    value: system
+    effect: NoSchedule
+
+# Pod security
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  fsGroup: 1001
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
