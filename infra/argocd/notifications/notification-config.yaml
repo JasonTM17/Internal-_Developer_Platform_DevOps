@@ -1,0 +1,211 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-notifications-cm
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-notifications
+    app.kubernetes.io/part-of: argocd
+data:
+  # ─────────────────────────────────────────────────────────────────────────
+  # Notification Services Configuration
+  # ─────────────────────────────────────────────────────────────────────────
+  service.slack: |
+    token: $slack-token
+    signingSecret: $slack-signing-secret
+
+  service.webhook.platform-api: |
+    url: https://api.platform.internal/v2/webhooks/argocd
+    headers:
+      - name: X-API-Key
+        value: $platform-api-key
+      - name: Content-Type
+        value: application/json
+
+  service.email: |
+    host: smtp.internal.company.com
+    port: 587
+    from: platform-notifications@company.com
+    username: $email-username
+    password: $email-password
+
+  service.webhook.pagerduty: |
+    url: https://events.pagerduty.com/v2/enqueue
+    headers:
+      - name: Content-Type
+        value: application/json
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Context Variables
+  # ─────────────────────────────────────────────────────────────────────────
+  context: |
+    argocdUrl: https://argocd.platform.internal
+    portalUrl: https://portal.platform.internal
+    environment: production
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Subscriptions (Default triggers for all applications)
+  # ─────────────────────────────────────────────────────────────────────────
+  subscriptions: |
+    - recipients:
+        - slack:platform-deployments
+        - webhook:platform-api
+      triggers:
+        - on-sync-succeeded
+        - on-sync-failed
+        - on-health-degraded
+    - recipients:
+        - slack:platform-alerts
+        - webhook:pagerduty
+      selector: app.kubernetes.io/tier=critical
+      triggers:
+        - on-sync-failed
+        - on-health-degraded
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Triggers
+  # ─────────────────────────────────────────────────────────────────────────
+  trigger.on-sync-succeeded: |
+    - when: app.status.operationState.phase in ['Succeeded']
+      oncePer: app.status.operationState.syncResult.revision
+      send:
+        - deployment-success
+
+  trigger.on-sync-failed: |
+    - when: app.status.operationState.phase in ['Error', 'Failed']
+      oncePer: app.status.operationState.syncResult.revision
+      send:
+        - deployment-failure
+
+  trigger.on-health-degraded: |
+    - when: app.status.health.status == 'Degraded'
+      oncePer: app.status.health.status
+      send:
+        - health-degraded
+
+  trigger.on-sync-running: |
+    - when: app.status.operationState.phase in ['Running']
+      oncePer: app.status.operationState.syncResult.revision
+      send:
+        - deployment-started
+
+  trigger.on-deployed-to-production: |
+    - when: app.status.operationState.phase in ['Succeeded'] && app.metadata.labels['environment'] == 'production'
+      oncePer: app.status.operationState.syncResult.revision
+      send:
+        - production-deployment
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Templates (referenced by triggers)
+  # ─────────────────────────────────────────────────────────────────────────
+  template.deployment-success: |
+    slack:
+      attachments: |
+        [{
+          "color": "#18be52",
+          "title": "✅ {{.app.metadata.name}} deployed successfully",
+          "title_link": "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}",
+          "fields": [
+            {"title": "Application", "value": "{{.app.metadata.name}}", "short": true},
+            {"title": "Environment", "value": "{{.app.metadata.labels.environment}}", "short": true},
+            {"title": "Revision", "value": "{{.app.status.operationState.syncResult.revision | trunc 8}}", "short": true},
+            {"title": "Duration", "value": "{{.app.status.operationState.finishedAt | toUnixFloat | sub (.app.status.operationState.startedAt | toUnixFloat) | printf \"%.0f\"}}s", "short": true}
+          ],
+          "footer": "ArgoCD | {{.app.status.operationState.finishedAt}}"
+        }]
+    webhook:
+      platform-api:
+        method: POST
+        body: |
+          {
+            "type": "deployment.succeeded",
+            "timestamp": "{{.app.status.operationState.finishedAt}}",
+            "data": {
+              "application": "{{.app.metadata.name}}",
+              "environment": "{{.app.metadata.labels.environment}}",
+              "revision": "{{.app.status.operationState.syncResult.revision}}",
+              "source": "argocd"
+            }
+          }
+
+  template.deployment-failure: |
+    slack:
+      attachments: |
+        [{
+          "color": "#E96D76",
+          "title": "❌ {{.app.metadata.name}} deployment failed",
+          "title_link": "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}",
+          "fields": [
+            {"title": "Application", "value": "{{.app.metadata.name}}", "short": true},
+            {"title": "Environment", "value": "{{.app.metadata.labels.environment}}", "short": true},
+            {"title": "Revision", "value": "{{.app.status.operationState.syncResult.revision | trunc 8}}", "short": true},
+            {"title": "Message", "value": "{{.app.status.operationState.message | trunc 200}}", "short": false}
+          ],
+          "footer": "ArgoCD | {{.app.status.operationState.finishedAt}}"
+        }]
+    webhook:
+      platform-api:
+        method: POST
+        body: |
+          {
+            "type": "deployment.failed",
+            "timestamp": "{{.app.status.operationState.finishedAt}}",
+            "data": {
+              "application": "{{.app.metadata.name}}",
+              "environment": "{{.app.metadata.labels.environment}}",
+              "revision": "{{.app.status.operationState.syncResult.revision}}",
+              "message": "{{.app.status.operationState.message}}",
+              "source": "argocd"
+            }
+          }
+      pagerduty:
+        method: POST
+        body: |
+          {
+            "routing_key": "$pagerduty-routing-key",
+            "event_action": "trigger",
+            "payload": {
+              "summary": "Deployment failed: {{.app.metadata.name}} in {{.app.metadata.labels.environment}}",
+              "severity": "critical",
+              "source": "argocd",
+              "component": "{{.app.metadata.name}}",
+              "group": "deployments"
+            }
+          }
+
+  template.health-degraded: |
+    slack:
+      attachments: |
+        [{
+          "color": "#f0ad4e",
+          "title": "⚠️ {{.app.metadata.name}} health degraded",
+          "title_link": "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}",
+          "fields": [
+            {"title": "Application", "value": "{{.app.metadata.name}}", "short": true},
+            {"title": "Environment", "value": "{{.app.metadata.labels.environment}}", "short": true},
+            {"title": "Health Status", "value": "{{.app.status.health.status}}", "short": true}
+          ]
+        }]
+
+  template.deployment-started: |
+    slack:
+      attachments: |
+        [{
+          "color": "#0DADEA",
+          "title": "🚀 {{.app.metadata.name}} deployment started",
+          "fields": [
+            {"title": "Application", "value": "{{.app.metadata.name}}", "short": true},
+            {"title": "Environment", "value": "{{.app.metadata.labels.environment}}", "short": true},
+            {"title": "Revision", "value": "{{.app.status.operationState.syncResult.revision | trunc 8}}", "short": true}
+          ]
+        }]
+
+  template.production-deployment: |
+    email:
+      subject: "[Platform] Production deployment: {{.app.metadata.name}}"
+      body: |
+        <h2>Production Deployment Completed</h2>
+        <p><strong>Application:</strong> {{.app.metadata.name}}</p>
+        <p><strong>Revision:</strong> {{.app.status.operationState.syncResult.revision}}</p>
+        <p><strong>Status:</strong> {{.app.status.operationState.phase}}</p>
+        <p><a href="{{.context.argocdUrl}}/applications/{{.app.metadata.name}}">View in ArgoCD</a></p>
