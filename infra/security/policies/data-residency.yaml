@@ -1,0 +1,211 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sDataResidency
+metadata:
+  name: enforce-data-residency
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    compliance.idp/control: C1.1
+    compliance.idp/regulation: GDPR
+  annotations:
+    description: |
+      Enforces data residency requirements by ensuring workloads handling
+      regulated data are scheduled only in approved regions/zones.
+spec:
+  match:
+    kinds:
+      - apiGroups: ["apps"]
+        kinds: ["Deployment", "StatefulSet"]
+    namespaces:
+      - idp-platform
+      - idp-data
+  parameters:
+    allowedRegions:
+      - us-east-1
+      - us-west-2
+      - eu-west-1
+    restrictedDataLabels:
+      - data-classification: restricted
+      - data-classification: confidential
+    message: "Workloads with restricted/confidential data must run in approved regions"
+---
+# Node affinity constraint for data-sensitive workloads
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8sdataresidency
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sDataResidency
+      validation:
+        openAPIV3Schema:
+          type: object
+          properties:
+            allowedRegions:
+              type: array
+              items:
+                type: string
+            restrictedDataLabels:
+              type: array
+              items:
+                type: object
+                additionalProperties:
+                  type: string
+            message:
+              type: string
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8sdataresidency
+
+        violation[{"msg": msg}] {
+          # Check if the workload has restricted data labels
+          input.review.object.metadata.labels[key] == value
+          some i
+          input.parameters.restrictedDataLabels[i][key] == value
+
+          # Verify node affinity includes only allowed regions
+          containers := input.review.object.spec.template.spec.containers
+          not has_region_affinity(input.review.object)
+
+          msg := sprintf(
+            "Workload '%v' handles restricted data but lacks region affinity constraint. %v",
+            [input.review.object.metadata.name, input.parameters.message]
+          )
+        }
+
+        has_region_affinity(obj) {
+          affinity := obj.spec.template.spec.affinity.nodeAffinity
+          terms := affinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms
+          some i
+          expressions := terms[i].matchExpressions
+          some j
+          expressions[j].key == "topology.kubernetes.io/region"
+          expressions[j].operator == "In"
+          all_allowed(expressions[j].values)
+        }
+
+        all_allowed(values) {
+          count({v | v := values[_]; not allowed_region(v)}) == 0
+        }
+
+        allowed_region(region) {
+          some i
+          input.parameters.allowedRegions[i] == region
+        }
+---
+# Prevent PVC creation in non-approved zones
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sStorageResidency
+metadata:
+  name: enforce-storage-residency
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    compliance.idp/control: C1.1
+spec:
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["PersistentVolumeClaim"]
+    namespaces:
+      - idp-data
+  parameters:
+    allowedZones:
+      - us-east-1a
+      - us-east-1b
+      - us-east-1c
+      - us-west-2a
+      - us-west-2b
+      - us-west-2c
+    requiredEncryption: true
+    message: "Storage must be provisioned in approved availability zones with encryption"
+---
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8sstorageresidency
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sStorageResidency
+      validation:
+        openAPIV3Schema:
+          type: object
+          properties:
+            allowedZones:
+              type: array
+              items:
+                type: string
+            requiredEncryption:
+              type: boolean
+            message:
+              type: string
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8sstorageresidency
+
+        violation[{"msg": msg}] {
+          input.review.object.kind == "PersistentVolumeClaim"
+          sc := input.review.object.spec.storageClassName
+          not encrypted_storage_class(sc)
+          input.parameters.requiredEncryption == true
+          msg := sprintf(
+            "PVC '%v' must use an encrypted storage class. %v",
+            [input.review.object.metadata.name, input.parameters.message]
+          )
+        }
+
+        encrypted_storage_class(sc) {
+          sc == "gp3-encrypted"
+        }
+        encrypted_storage_class(sc) {
+          sc == "io2-encrypted"
+        }
+---
+# Egress restriction for data-sensitive namespaces
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: data-residency-egress
+  namespace: idp-data
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    compliance.idp/control: C1.1
+spec:
+  podSelector:
+    matchLabels:
+      data-classification: restricted
+  policyTypes:
+    - Egress
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Allow internal cluster communication only
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: idp-platform
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: idp-data
+      ports:
+        - protocol: TCP
+          port: 5432
+        - protocol: TCP
+          port: 6379
+    # Block all external egress for restricted data workloads
