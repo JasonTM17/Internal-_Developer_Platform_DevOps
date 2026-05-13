@@ -1,0 +1,184 @@
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: github-api
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    app.kubernetes.io/managed-by: istio
+    networking.istio.io/traffic-type: external
+spec:
+  hosts:
+    - api.github.com
+    - github.com
+  ports:
+    - number: 443
+      name: https
+      protocol: TLS
+  location: MESH_EXTERNAL
+  resolution: DNS
+  exportTo:
+    - "."
+    - "istio-system"
+---
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: aws-services
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    app.kubernetes.io/managed-by: istio
+    networking.istio.io/traffic-type: external
+spec:
+  hosts:
+    - "*.amazonaws.com"
+    - "*.aws.amazon.com"
+  ports:
+    - number: 443
+      name: https
+      protocol: TLS
+  location: MESH_EXTERNAL
+  resolution: NONE
+  exportTo:
+    - "."
+    - "istio-system"
+---
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: auth-provider
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    app.kubernetes.io/managed-by: istio
+    networking.istio.io/traffic-type: external
+spec:
+  hosts:
+    - auth.idp.example.com
+    - accounts.google.com
+    - oauth2.googleapis.com
+    - www.googleapis.com
+  ports:
+    - number: 443
+      name: https
+      protocol: TLS
+  location: MESH_EXTERNAL
+  resolution: DNS
+  exportTo:
+    - "."
+---
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: container-registry
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    app.kubernetes.io/managed-by: istio
+    networking.istio.io/traffic-type: external
+spec:
+  hosts:
+    - "*.dkr.ecr.us-east-1.amazonaws.com"
+    - "*.dkr.ecr.us-west-2.amazonaws.com"
+    - ghcr.io
+  ports:
+    - number: 443
+      name: https
+      protocol: TLS
+  location: MESH_EXTERNAL
+  resolution: NONE
+  exportTo:
+    - "*"
+---
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: slack-webhook
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    app.kubernetes.io/managed-by: istio
+    networking.istio.io/traffic-type: external
+spec:
+  hosts:
+    - hooks.slack.com
+    - api.slack.com
+  ports:
+    - number: 443
+      name: https
+      protocol: TLS
+  location: MESH_EXTERNAL
+  resolution: DNS
+  exportTo:
+    - "."
+---
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: datadog-agent
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    app.kubernetes.io/managed-by: istio
+    networking.istio.io/traffic-type: external
+spec:
+  hosts:
+    - "*.datadoghq.com"
+    - "*.browser-intake-datadoghq.com"
+  ports:
+    - number: 443
+      name: https
+      protocol: TLS
+  location: MESH_EXTERNAL
+  resolution: NONE
+  exportTo:
+    - "."
+    - "monitoring"
+---
+# Egress traffic policy for external database (RDS)
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: rds-database
+  namespace: idp-data
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    app.kubernetes.io/managed-by: istio
+    networking.istio.io/traffic-type: external
+spec:
+  hosts:
+    - idp-primary.cluster-abc123.us-east-1.rds.amazonaws.com
+    - idp-replica.cluster-ro-abc123.us-east-1.rds.amazonaws.com
+  ports:
+    - number: 5432
+      name: tcp-postgres
+      protocol: TCP
+  location: MESH_EXTERNAL
+  resolution: DNS
+  exportTo:
+    - "."
+    - "idp-platform"
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: github-api-tls
+  namespace: idp-platform
+spec:
+  host: api.github.com
+  trafficPolicy:
+    tls:
+      mode: SIMPLE
+      sni: api.github.com
+    connectionPool:
+      tcp:
+        maxConnections: 100
+        connectTimeout: 10s
+      http:
+        http1MaxPendingRequests: 50
+        maxRequestsPerConnection: 10
+    outlierDetection:
+      consecutive5xxErrors: 3
+      interval: 30s
+      baseEjectionTime: 60s
