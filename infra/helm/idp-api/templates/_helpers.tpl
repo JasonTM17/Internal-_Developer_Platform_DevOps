@@ -1,0 +1,97 @@
+{{/*
+Expand the name of the chart.
+*/}}
+{{- define "idp-api.name" -}}
+{{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
+Create a default fully qualified app name.
+We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
+If release name contains chart name it will be used as a full name.
+*/}}
+{{- define "idp-api.fullname" -}}
+{{- if .Values.fullnameOverride }}
+{{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
+{{- else }}
+{{- $name := default .Chart.Name .Values.nameOverride }}
+{{- if contains $name .Release.Name }}
+{{- .Release.Name | trunc 63 | trimSuffix "-" }}
+{{- else }}
+{{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{/*
+Create chart name and version as used by the chart label.
+*/}}
+{{- define "idp-api.chart" -}}
+{{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
+Common labels
+*/}}
+{{- define "idp-api.labels" -}}
+helm.sh/chart: {{ include "idp-api.chart" . }}
+{{ include "idp-api.selectorLabels" . }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+{{- end }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+app.kubernetes.io/part-of: internal-developer-platform
+{{- end }}
+
+{{/*
+Selector labels
+*/}}
+{{- define "idp-api.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "idp-api.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}
+
+{{/*
+Create the name of the service account to use
+*/}}
+{{- define "idp-api.serviceAccountName" -}}
+{{- if .Values.serviceAccount.create }}
+{{- default (include "idp-api.fullname" .) .Values.serviceAccount.name }}
+{{- else }}
+{{- default "default" .Values.serviceAccount.name }}
+{{- end }}
+{{- end }}
+
+{{/*
+Return the appropriate apiVersion for HPA
+*/}}
+{{- define "idp-api.hpa.apiVersion" -}}
+{{- if .Capabilities.APIVersions.Has "autoscaling/v2" }}
+{{- print "autoscaling/v2" }}
+{{- else }}
+{{- print "autoscaling/v2beta2" }}
+{{- end }}
+{{- end }}
+
+{{/*
+Return the appropriate apiVersion for PDB
+*/}}
+{{- define "idp-api.pdb.apiVersion" -}}
+{{- if .Capabilities.APIVersions.Has "policy/v1" }}
+{{- print "policy/v1" }}
+{{- else }}
+{{- print "policy/v1beta1" }}
+{{- end }}
+{{- end }}
+
+{{/*
+Generate container port configuration
+*/}}
+{{- define "idp-api.containerPorts" -}}
+- name: http
+  containerPort: {{ .Values.service.targetPort | default 3000 }}
+  protocol: TCP
+- name: metrics
+  containerPort: 9090
+  protocol: TCP
+{{- end }}
