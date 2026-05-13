@@ -1,0 +1,66 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: idp-portal-dev
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: internal-developer-platform
+    app.kubernetes.io/component: portal
+    environment: dev
+  annotations:
+    notifications.argoproj.io/subscribe.on-sync-succeeded.slack: platform-dev
+    notifications.argoproj.io/subscribe.on-health-degraded.slack: platform-alerts
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: internal-developer-platform
+  source:
+    repoURL: https://github.com/company/internal-developer-platform.git
+    targetRevision: develop
+    path: infra/helm/idp-portal
+    helm:
+      valueFiles:
+        - values.yaml
+      parameters:
+        - name: image.tag
+          value: latest
+        - name: ingress.hosts[0].host
+          value: portal.dev.idp.company.com
+        - name: ingress.tls[0].hosts[0]
+          value: portal.dev.idp.company.com
+        - name: ingress.tls[0].secretName
+          value: idp-portal-dev-tls
+        - name: ingress.annotations.cert-manager\.io/cluster-issuer
+          value: letsencrypt-staging
+        - name: resources.requests.cpu
+          value: 50m
+        - name: resources.requests.memory
+          value: 64Mi
+        - name: resources.limits.cpu
+          value: 250m
+        - name: resources.limits.memory
+          value: 128Mi
+        - name: autoscaling.enabled
+          value: "false"
+        - name: replicaCount
+          value: "1"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: platform
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=false
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+      - ApplyOutOfSyncOnly=true
+    retry:
+      limit: 3
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+  revisionHistoryLimit: 5
