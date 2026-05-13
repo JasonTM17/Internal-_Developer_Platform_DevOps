@@ -22,3 +22,4 @@ export { DuplicateEntityError } from './catalog-store';
 export type { CatalogStore, CatalogEntityRow } from './catalog-store';
 
 export { InMemoryCatalogStore } from './in-memory-catalog-store';
+export { PostgresCatalogStore } from './postgres-catalog-store';

@@ -53,8 +53,29 @@ CREATE TABLE catalog_entity_versions (
 -- Index for efficient version history queries
 CREATE INDEX idx_catalog_entity_versions_entity_id ON catalog_entity_versions (entity_id, version DESC);
 
+-- Dependency edges table for entity relationships (Requirements 2.5, 2.6)
+CREATE TABLE catalog_entity_dependencies (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  source_entity_id UUID NOT NULL REFERENCES catalog_entities(id) ON DELETE CASCADE,
+  target_entity_id UUID NOT NULL REFERENCES catalog_entities(id) ON DELETE CASCADE,
+  dependency_type VARCHAR(64) NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+  -- Prevent duplicate edges between the same source and target
+  CONSTRAINT catalog_entity_dependencies_unique UNIQUE (source_entity_id, target_entity_id),
+  -- Prevent self-referencing dependencies
+  CONSTRAINT catalog_entity_dependencies_no_self_ref CHECK (source_entity_id != target_entity_id)
+);
+
+-- Index for efficient dependency lookups by source entity
+CREATE INDEX idx_catalog_entity_dependencies_source ON catalog_entity_dependencies (source_entity_id);
+
+-- Index for reverse lookups (who depends on this entity)
+CREATE INDEX idx_catalog_entity_dependencies_target ON catalog_entity_dependencies (target_entity_id);
+
 COMMENT ON TABLE catalog_entities IS 'Service Catalog entities with unique name constraint per namespace.';
 COMMENT ON COLUMN catalog_entities.version IS 'Auto-incremented version counter, starts at 1 on registration.';
 COMMENT ON COLUMN catalog_entities.created_by IS 'Identity of the user who registered this entity (audit metadata).';
 COMMENT ON COLUMN catalog_entities.source_repository IS 'Source repository URL recorded as audit metadata at registration.';
 COMMENT ON TABLE catalog_entity_versions IS 'Version history snapshots for catalog entities. Retains at least 50 most recent versions per entity.';
+COMMENT ON TABLE catalog_entity_dependencies IS 'Directed dependency edges between catalog entities. Enforces referential integrity via foreign keys.';

@@ -46,7 +46,7 @@ This implementation plan breaks down the Internal Developer Platform into increm
     - **Property 4: CatalogEntity Validation Rejects Invalid Inputs Without Persistence**
     - **Validates: Requirements 1.4, 2.1, 2.2, 2.3**
 
-  - [~] 2.3 Implement Service Catalog registration and persistence
+  - [-] 2.3 Implement Service Catalog registration and persistence
     - Create PostgreSQL schema for catalog entities with unique constraint on (name, namespace)
     - Implement `register()` method that persists entity with audit metadata (user, timestamp, source repo)
     - Implement duplicate name detection within namespace returning conflict error
