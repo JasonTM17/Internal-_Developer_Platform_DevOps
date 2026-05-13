@@ -1,0 +1,95 @@
+# =============================================================================
+# IDP Platform - Staging Values
+# =============================================================================
+
+replicaCount: 2
+
+image:
+  repository: 123456789012.dkr.ecr.us-east-1.amazonaws.com/idp-api
+  tag: "staging-latest"
+  pullPolicy: Always
+
+environment: staging
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 384Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 65
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-production
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  hosts:
+    - host: staging-api.idp.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: idp-api-staging-tls
+      hosts:
+        - staging-api.idp.example.com
+
+serviceAccount:
+  create: true
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/idp-api-staging
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+probes:
+  liveness:
+    httpGet:
+      path: /health
+      port: http
+    initialDelaySeconds: 20
+    periodSeconds: 10
+  readiness:
+    httpGet:
+      path: /ready
+      port: http
+    initialDelaySeconds: 10
+    periodSeconds: 5
+
+env:
+  NODE_ENV: production
+  LOG_LEVEL: info
+  RATE_LIMIT_ENABLED: "true"
+
+externalSecrets:
+  enabled: true
+  secretStoreRef:
+    name: aws-secrets-manager
+    kind: ClusterSecretStore
+  data:
+    - secretKey: DATABASE_URL
+      remoteRef:
+        key: idp/staging/database
+        property: url
+    - secretKey: REDIS_URL
+      remoteRef:
+        key: idp/staging/redis
+        property: url
+    - secretKey: JWT_SECRET
+      remoteRef:
+        key: idp/staging/auth
+        property: jwt_secret
+
+monitoring:
+  serviceMonitor:
+    enabled: true
+    interval: 15s
+    path: /metrics
