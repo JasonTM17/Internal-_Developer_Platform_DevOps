@@ -1,0 +1,64 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-prometheus-scraping
+  namespace: platform
+  labels:
+    app.kubernetes.io/part-of: internal-developer-platform
+    network-policy.idp.io/type: monitoring
+  annotations:
+    description: "Allow Prometheus to scrape metrics from platform pods"
+    security.policy/reason: "Required for observability and alerting"
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/part-of: internal-developer-platform
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              purpose: observability
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus
+      ports:
+        - protocol: TCP
+          port: 9090
+        - protocol: TCP
+          port: 9091
+        - protocol: TCP
+          port: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-grafana-to-prometheus
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: internal-developer-platform
+    network-policy.idp.io/type: monitoring
+  annotations:
+    description: "Allow Grafana to query Prometheus and Alertmanager"
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: prometheus
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: grafana
+      ports:
+        - protocol: TCP
+          port: 9090
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              app.kubernetes.io/part-of: internal-developer-platform
+      ports:
+        - protocol: TCP
+          port: 9090
