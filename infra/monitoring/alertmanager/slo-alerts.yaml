@@ -1,0 +1,237 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: slo-burn-rate-alerts
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/component: alerting-rules
+    prometheus: platform
+    role: slo-alerts
+spec:
+  groups:
+    # ─────────────────────────────────────────────────────────────────────────
+    # API Availability Burn Rate Alerts
+    # Multi-window, multi-burn-rate approach (Google SRE methodology)
+    # ─────────────────────────────────────────────────────────────────────────
+    - name: slo.api_availability.alerts
+      rules:
+        # Critical: 14.4x burn rate over 1 hour AND 6x over 6 hours
+        # Exhausts 30-day budget in ~2 days at this rate
+        - alert: APIAvailabilityBurnRateCritical
+          expr: |
+            slo:api_availability:burn_rate1h > 14.4
+            and
+            slo:api_availability:burn_rate6h > 6
+          for: 2m
+          labels:
+            severity: critical
+            slo: api-availability
+            team: platform
+            runbook: https://wiki.internal/runbooks/api-availability-critical
+          annotations:
+            summary: "API availability error budget burning critically fast"
+            description: |
+              API availability burn rate is {{ $value | printf "%.1f" }}x the budget consumption rate.
+              At this rate, the 30-day error budget will be exhausted in {{ printf "%.1f" (div 720 $value) }} hours.
+              Current 1h availability: {{ with query "slo:api_availability:ratio_rate1h" }}{{ . | first | value | printf "%.4f" }}{{ end }}
+            dashboard: https://grafana.internal/d/platform-slo-overview
+            action: "Page on-call engineer. Investigate 5xx errors immediately."
+
+        # Warning: 6x burn rate over 6 hours AND 3x over 3 days
+        # Exhausts 30-day budget in ~5 days at this rate
+        - alert: APIAvailabilityBurnRateWarning
+          expr: |
+            slo:api_availability:burn_rate6h > 6
+            and
+            (1 - slo:api_availability:ratio_rate30d) / (1 - 0.9995) > 3
+          for: 15m
+          labels:
+            severity: warning
+            slo: api-availability
+            team: platform
+            runbook: https://wiki.internal/runbooks/api-availability-warning
+          annotations:
+            summary: "API availability error budget burning above normal"
+            description: |
+              API availability 6h burn rate is {{ $value | printf "%.1f" }}x normal.
+              Error budget remaining: {{ with query "slo:api_availability:error_budget_remaining" }}{{ . | first | value | humanizePercentage }}{{ end }}
+            action: "Create ticket. Investigate during business hours."
+
+        # Budget exhaustion alert
+        - alert: APIAvailabilityBudgetExhausted
+          expr: slo:api_availability:error_budget_remaining < 0
+          for: 5m
+          labels:
+            severity: critical
+            slo: api-availability
+            team: platform
+            escalation: engineering-leadership
+          annotations:
+            summary: "API availability error budget is exhausted"
+            description: |
+              The 30-day error budget for API availability (99.95%) has been fully consumed.
+              Error budget policy: Freeze non-critical deployments, prioritize reliability work.
+            action: "Activate error budget policy. Freeze feature deployments."
+
+        # Budget low warning
+        - alert: APIAvailabilityBudgetLow
+          expr: slo:api_availability:error_budget_remaining < 0.25
+          for: 5m
+          labels:
+            severity: warning
+            slo: api-availability
+            team: platform
+          annotations:
+            summary: "API availability error budget below 25%"
+            description: |
+              Only {{ with query "slo:api_availability:error_budget_remaining" }}{{ . | first | value | humanizePercentage }}{{ end }} of the monthly error budget remains.
+            action: "Review recent changes. Increase monitoring vigilance."
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # API Latency Burn Rate Alerts
+    # ─────────────────────────────────────────────────────────────────────────
+    - name: slo.api_latency.alerts
+      rules:
+        - alert: APILatencyBurnRateCritical
+          expr: |
+            slo:api_latency:burn_rate1h > 14.4
+          for: 5m
+          labels:
+            severity: critical
+            slo: api-latency
+            team: platform
+            runbook: https://wiki.internal/runbooks/api-latency-critical
+          annotations:
+            summary: "API latency SLO burn rate critical"
+            description: |
+              More than {{ $value | printf "%.1f" }}x the normal rate of requests are exceeding 500ms.
+              Current p95: {{ with query "slo:api_latency:p95" }}{{ . | first | value | humanizeDuration }}{{ end }}
+              Current p99: {{ with query "slo:api_latency:p99" }}{{ . | first | value | humanizeDuration }}{{ end }}
+            action: "Investigate slow queries, resource saturation, or upstream latency."
+
+        - alert: APILatencyBurnRateWarning
+          expr: |
+            slo:api_latency:burn_rate1h > 6
+          for: 15m
+          labels:
+            severity: warning
+            slo: api-latency
+            team: platform
+          annotations:
+            summary: "API latency SLO burn rate elevated"
+            description: |
+              Latency burn rate is {{ $value | printf "%.1f" }}x normal over the past hour.
+            action: "Monitor closely. Check for gradual degradation."
+
+        - alert: APILatencyP99High
+          expr: slo:api_latency:p99 > 5
+          for: 10m
+          labels:
+            severity: warning
+            slo: api-latency
+            team: platform
+          annotations:
+            summary: "API p99 latency exceeds 5 seconds"
+            description: "p99 latency is {{ $value | humanizeDuration }}. Investigate slow endpoints."
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Deployment Success Burn Rate Alerts
+    # ─────────────────────────────────────────────────────────────────────────
+    - name: slo.deployment_success.alerts
+      rules:
+        - alert: DeploymentSuccessBurnRateCritical
+          expr: |
+            slo:deployment_success:burn_rate1h > 14.4
+          for: 5m
+          labels:
+            severity: critical
+            slo: deployment-success
+            team: platform
+            runbook: https://wiki.internal/runbooks/deployment-failures
+          annotations:
+            summary: "Deployment failure rate critically high"
+            description: |
+              Deployment success rate burn rate is {{ $value | printf "%.1f" }}x normal.
+              Multiple deployments are failing. This may indicate a platform-wide issue.
+            action: "Halt all deployments. Investigate ArgoCD, cluster health, and image registry."
+
+        - alert: DeploymentSuccessBudgetLow
+          expr: slo:deployment_success:error_budget_remaining < 0.25
+          for: 5m
+          labels:
+            severity: warning
+            slo: deployment-success
+            team: platform
+          annotations:
+            summary: "Deployment success error budget below 25%"
+            description: |
+              Deployment error budget is running low. Consider pausing non-critical deployments.
+            action: "Review failed deployments. Consider deployment freeze."
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Portal Availability Alerts
+    # ─────────────────────────────────────────────────────────────────────────
+    - name: slo.portal_availability.alerts
+      rules:
+        - alert: PortalDown
+          expr: slo:portal_availability:ratio_rate5m < 0.5
+          for: 2m
+          labels:
+            severity: critical
+            slo: portal-availability
+            team: platform
+            runbook: https://wiki.internal/runbooks/portal-down
+          annotations:
+            summary: "Developer portal is down"
+            description: |
+              Portal synthetic probes are failing. The developer portal may be unreachable.
+            action: "Check portal pods, ingress, and CDN. Notify developers via Slack."
+
+        - alert: PortalAvailabilityBudgetLow
+          expr: slo:portal_availability:error_budget_remaining < 0.25
+          for: 5m
+          labels:
+            severity: warning
+            slo: portal-availability
+            team: platform
+          annotations:
+            summary: "Portal availability error budget below 25%"
+            description: "Portal has consumed more than 75% of its monthly error budget."
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Environment Provisioning Alerts
+    # ─────────────────────────────────────────────────────────────────────────
+    - name: slo.environment_provisioning.alerts
+      rules:
+        - alert: EnvironmentProvisioningFailureSpike
+          expr: |
+            (
+              sum(rate(environment_provisioning_total{status="failed"}[1h]))
+              /
+              sum(rate(environment_provisioning_total[1h]))
+            ) > 0.1
+          for: 10m
+          labels:
+            severity: warning
+            slo: env-provisioning
+            team: platform
+            runbook: https://wiki.internal/runbooks/env-provisioning-failures
+          annotations:
+            summary: "Environment provisioning failure rate elevated"
+            description: |
+              More than 10% of environment provisioning attempts are failing in the past hour.
+            action: "Check Terraform state, cloud quotas, and cluster capacity."
+
+        - alert: EnvironmentProvisioningSlow
+          expr: slo:env_provisioning:duration_p95 > 900
+          for: 15m
+          labels:
+            severity: warning
+            slo: env-provisioning
+            team: platform
+          annotations:
+            summary: "Environment provisioning is slow (p95 > 15 min)"
+            description: |
+              p95 provisioning time is {{ $value | humanizeDuration }}, exceeding the 10-minute target.
+            action: "Check cloud API rate limits and Terraform plan complexity."
