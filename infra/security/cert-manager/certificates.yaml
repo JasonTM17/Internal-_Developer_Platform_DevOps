@@ -1,0 +1,115 @@
+---
+# Wildcard certificate for IDP platform
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: idp-wildcard-tls
+  namespace: idp-production
+spec:
+  secretName: idp-wildcard-tls
+  issuerRef:
+    name: letsencrypt-production
+    kind: ClusterIssuer
+  duration: 2160h # 90 days
+  renewBefore: 720h # 30 days before expiry
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    rotationPolicy: Always
+  dnsNames:
+    - "*.idp.example.com"
+    - "idp.example.com"
+  secretTemplate:
+    annotations:
+      reloader.stakater.com/match: "true"
+---
+# API-specific certificate
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: idp-api-tls
+  namespace: idp-production
+spec:
+  secretName: idp-api-tls
+  issuerRef:
+    name: letsencrypt-production
+    kind: ClusterIssuer
+  duration: 2160h
+  renewBefore: 720h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    rotationPolicy: Always
+  dnsNames:
+    - "api.idp.example.com"
+    - "api-internal.idp.example.com"
+  secretTemplate:
+    annotations:
+      reloader.stakater.com/match: "true"
+---
+# Portal certificate
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: idp-portal-tls
+  namespace: idp-production
+spec:
+  secretName: idp-portal-tls
+  issuerRef:
+    name: letsencrypt-production
+    kind: ClusterIssuer
+  duration: 2160h
+  renewBefore: 720h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    rotationPolicy: Always
+  dnsNames:
+    - "portal.idp.example.com"
+    - "idp.example.com"
+---
+# Internal mTLS certificate for service-to-service communication
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: idp-api-mtls
+  namespace: idp-production
+spec:
+  secretName: idp-api-mtls
+  issuerRef:
+    name: internal-ca
+    kind: ClusterIssuer
+  duration: 8760h # 1 year
+  renewBefore: 2160h # 90 days
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    rotationPolicy: Always
+  commonName: idp-api.idp-production.svc.cluster.local
+  dnsNames:
+    - "idp-api"
+    - "idp-api.idp-production"
+    - "idp-api.idp-production.svc"
+    - "idp-api.idp-production.svc.cluster.local"
+  usages:
+    - server auth
+    - client auth
+---
+# Grafana internal certificate
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: grafana-tls
+  namespace: monitoring
+spec:
+  secretName: grafana-tls
+  issuerRef:
+    name: letsencrypt-production
+    kind: ClusterIssuer
+  duration: 2160h
+  renewBefore: 720h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  dnsNames:
+    - "grafana.internal.idp.example.com"
