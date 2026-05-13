@@ -88,7 +88,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                 Developer Platform
               </Typography>
             </Box>
-            <Chip label="v1.0" size="small" sx={{ ml: 'auto', height: 20, fontSize: '0.6rem', bgcolor: 'rgba(108,99,255,0.15)', color: '#6C63FF' }} />
+            <Chip label="Local" size="small" sx={{ ml: 'auto', height: 20, fontSize: '0.6rem', bgcolor: 'rgba(76,175,80,0.15)', color: '#4caf50' }} />
           </>
         )}
       </Box>
