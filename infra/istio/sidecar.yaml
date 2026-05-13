@@ -1,0 +1,166 @@
+apiVersion: networking.istio.io/v1beta1
+kind: Sidecar
+metadata:
+  name: idp-api-sidecar
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/name: idp-api
+    app.kubernetes.io/part-of: idp-platform
+    app.kubernetes.io/managed-by: istio
+spec:
+  workloadSelector:
+    labels:
+      app: idp-api
+  ingress:
+    - port:
+        number: 3000
+        protocol: HTTP
+        name: http
+      defaultEndpoint: 127.0.0.1:3000
+      captureMode: IPTABLES
+  egress:
+    - port:
+        number: 443
+        protocol: TLS
+      hosts:
+        - "istio-system/*"
+        - "idp-platform/*"
+        - "idp-data/*"
+        - "monitoring/*"
+      captureMode: IPTABLES
+    - port:
+        number: 5432
+        protocol: TCP
+      hosts:
+        - "idp-data/postgresql.idp-data.svc.cluster.local"
+    - port:
+        number: 6379
+        protocol: TCP
+      hosts:
+        - "idp-data/redis.idp-data.svc.cluster.local"
+    - port:
+        number: 4222
+        protocol: TCP
+      hosts:
+        - "idp-platform/nats.idp-platform.svc.cluster.local"
+    - port:
+        number: 9411
+        protocol: HTTP
+      hosts:
+        - "observability/jaeger-collector.observability.svc.cluster.local"
+  outboundTrafficPolicy:
+    mode: REGISTRY_ONLY
+---
+apiVersion: networking.istio.io/v1beta1
+kind: Sidecar
+metadata:
+  name: idp-portal-sidecar
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/name: idp-portal
+    app.kubernetes.io/part-of: idp-platform
+    app.kubernetes.io/managed-by: istio
+spec:
+  workloadSelector:
+    labels:
+      app: idp-portal
+  ingress:
+    - port:
+        number: 3001
+        protocol: HTTP
+        name: http
+      defaultEndpoint: 127.0.0.1:3001
+      captureMode: IPTABLES
+  egress:
+    - port:
+        number: 3000
+        protocol: HTTP
+      hosts:
+        - "idp-platform/idp-api.idp-platform.svc.cluster.local"
+    - port:
+        number: 443
+        protocol: TLS
+      hosts:
+        - "istio-system/*"
+        - "idp-platform/*"
+      captureMode: IPTABLES
+    - port:
+        number: 6379
+        protocol: TCP
+      hosts:
+        - "idp-data/redis.idp-data.svc.cluster.local"
+  outboundTrafficPolicy:
+    mode: REGISTRY_ONLY
+---
+# Resource limits for sidecar proxies
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: istio-sidecar-resources
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    app.kubernetes.io/managed-by: istio
+data:
+  # Pod annotations for resource configuration
+  # Apply these annotations to workload pods
+  annotations.yaml: |
+    # Standard workload sidecar resources
+    sidecar.istio.io/proxyCPU: "100m"
+    sidecar.istio.io/proxyCPULimit: "500m"
+    sidecar.istio.io/proxyMemory: "128Mi"
+    sidecar.istio.io/proxyMemoryLimit: "512Mi"
+
+    # High-traffic workload sidecar resources
+    # Use for API and Portal services
+    sidecar.istio.io/proxyCPU: "200m"
+    sidecar.istio.io/proxyCPULimit: "1000m"
+    sidecar.istio.io/proxyMemory: "256Mi"
+    sidecar.istio.io/proxyMemoryLimit: "1Gi"
+
+    # Concurrency settings
+    sidecar.istio.io/concurrency: "2"
+
+    # Lifecycle hooks for graceful shutdown
+    sidecar.istio.io/holdApplicationUntilProxyStarts: "true"
+
+  # ProxyConfig for fine-grained control
+  proxy-config.yaml: |
+    apiVersion: networking.istio.io/v1beta1
+    kind: ProxyConfig
+    metadata:
+      name: idp-proxy-config
+      namespace: idp-platform
+    spec:
+      selector:
+        matchLabels:
+          app.kubernetes.io/part-of: idp-platform
+      concurrency: 2
+      environmentVariables:
+        ISTIO_META_DNS_CAPTURE: "true"
+        ISTIO_META_DNS_AUTO_ALLOCATE: "true"
+      image:
+        imageType: distroless
+      drainDuration: 45s
+      terminationDrainDuration: 30s
+      holdApplicationUntilProxyStarts: true
+---
+# ProxyConfig resource
+apiVersion: networking.istio.io/v1beta1
+kind: ProxyConfig
+metadata:
+  name: idp-proxy-config
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    app.kubernetes.io/managed-by: istio
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/part-of: idp-platform
+  concurrency: 2
+  environmentVariables:
+    ISTIO_META_DNS_CAPTURE: "true"
+    ISTIO_META_DNS_AUTO_ALLOCATE: "true"
+  image:
+    imageType: distroless
