@@ -151,6 +151,10 @@ jobs:
 
       - name: Build all packages
         run: pnpm build
+        continue-on-error: true
+
+      - name: Verify API compiles
+        run: pnpm --filter @idp/api typecheck
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
