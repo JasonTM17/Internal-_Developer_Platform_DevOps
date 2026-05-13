@@ -1,0 +1,111 @@
+---
+# Pod Security Standards - Restricted profile
+# Enforces Kubernetes Pod Security Standards at the namespace level
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: idp-production
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/audit-version: latest
+    pod-security.kubernetes.io/warn: restricted
+    pod-security.kubernetes.io/warn-version: latest
+---
+# SecurityContext constraints for IDP workloads
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pod-security-reference
+  namespace: idp-production
+  annotations:
+    description: "Reference security context for all IDP pods"
+data:
+  security-context.yaml: |
+    # All pods MUST include these security settings
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 1001
+      runAsGroup: 1001
+      fsGroup: 1001
+      seccompProfile:
+        type: RuntimeDefault
+    
+    # All containers MUST include these settings
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop:
+          - ALL
+      seccompProfile:
+        type: RuntimeDefault
+---
+# PodDisruptionBudget for API
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: idp-api-pdb
+  namespace: idp-production
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: idp-api
+---
+# PodDisruptionBudget for Portal
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: idp-portal-pdb
+  namespace: idp-production
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: idp-portal
+---
+# ResourceQuota for namespace
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: idp-production-quota
+  namespace: idp-production
+spec:
+  hard:
+    requests.cpu: "20"
+    requests.memory: 40Gi
+    limits.cpu: "40"
+    limits.memory: 80Gi
+    pods: "100"
+    services: "20"
+    secrets: "50"
+    configmaps: "50"
+    persistentvolumeclaims: "10"
+---
+# LimitRange for default resource constraints
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: idp-production-limits
+  namespace: idp-production
+spec:
+  limits:
+    - type: Container
+      default:
+        cpu: 500m
+        memory: 512Mi
+      defaultRequest:
+        cpu: 100m
+        memory: 128Mi
+      max:
+        cpu: "4"
+        memory: 4Gi
+      min:
+        cpu: 50m
+        memory: 64Mi
+    - type: Pod
+      max:
+        cpu: "8"
+        memory: 8Gi
