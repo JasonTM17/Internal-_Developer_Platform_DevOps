@@ -14,7 +14,7 @@ services:
       LOG_LEVEL: trace
       DEBUG: "idp:*,express:*"
       # Enable source maps
-      NODE_OPTIONS: "--enable-source-maps --inspect=0.0.0.0:9229"
+      NODE_OPTIONS: "--enable-source-maps"
       # Disable rate limiting in dev
       RATE_LIMIT_ENABLED: "false"
       # Local AWS (LocalStack)

@@ -2,15 +2,16 @@ FROM node:20-alpine
 WORKDIR /app
 RUN apk add --no-cache libc6-compat python3 make g++ curl git bash
 RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
+RUN npm install -g tsx
+COPY .npmrc package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
 COPY apps/api/package.json ./apps/api/
 COPY packages/shared/package.json ./packages/shared/
 COPY packages/config/package.json ./packages/config/
 COPY packages/ui/package.json ./packages/ui/
-RUN pnpm install --frozen-lockfile
+RUN pnpm install
 COPY apps/api/ ./apps/api/
 COPY packages/ ./packages/
 ENV NODE_ENV=development PORT=3000 LOG_LEVEL=debug
 EXPOSE 3000 9229
 HEALTHCHECK --interval=10s --timeout=5s --start-period=30s --retries=3 CMD curl -f http://localhost:3000/health || exit 1
-CMD ["pnpm", "exec", "tsx", "watch", "--clear-screen=false", "apps/api/src/index.ts"]
+CMD ["tsx", "watch", "--clear-screen=false", "apps/api/src/index.ts"]
