@@ -100,12 +100,13 @@ export const CatalogPage: React.FC = () => {
           </Typography>
         </Box>
         <Button
-          variant="contained"
+          variant="outlined"
+          size="small"
           startIcon={<AddIcon />}
           onClick={() => setShowRegisterForm(true)}
-          sx={{ background: 'linear-gradient(135deg, #6C63FF, #8B83FF)', '&:hover': { background: 'linear-gradient(135deg, #4B44B2, #6C63FF)' } }}
+          sx={{ borderColor: 'rgba(255,255,255,0.12)', color: '#c9d1d9', '&:hover': { borderColor: 'rgba(255,255,255,0.24)', bgcolor: 'rgba(255,255,255,0.04)' } }}
         >
-          Register Service
+          New
         </Button>
       </Box>
 
