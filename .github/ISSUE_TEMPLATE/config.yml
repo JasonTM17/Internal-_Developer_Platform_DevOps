@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Platform Support
+    url: https://slack.com/app_redirect?channel=platform-engineering
+    about: Get help from the platform engineering team on Slack
+  - name: Security Vulnerability
+    url: https://github.com/org/idp-platform/security/advisories/new
+    about: Report a security vulnerability (private disclosure)
+  - name: Documentation
+    url: https://docs.idp.example.com
+    about: Check our documentation before opening an issue
