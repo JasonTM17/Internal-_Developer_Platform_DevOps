@@ -1,0 +1,50 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns-resolution
+  namespace: platform
+  labels:
+    app.kubernetes.io/part-of: internal-developer-platform
+    network-policy.idp.io/type: system
+  annotations:
+    description: "Allow DNS resolution to kube-dns/CoreDNS for all pods"
+    security.policy/reason: "Required for service discovery and external name resolution"
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns-resolution
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: internal-developer-platform
+    network-policy.idp.io/type: system
+  annotations:
+    description: "Allow DNS resolution for monitoring namespace"
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
