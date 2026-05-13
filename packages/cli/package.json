@@ -1,6 +1,7 @@
 {
   "name": "@idp/cli",
   "version": "0.1.0",
+  "license": "MIT",
   "description": "Developer CLI for the Internal Developer Platform",
   "bin": {
     "idp": "./dist/bin/idp.js"

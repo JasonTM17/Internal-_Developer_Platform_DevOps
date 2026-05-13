@@ -2,6 +2,7 @@
   "name": "@idp/api",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "description": "Backend API server (Node.js/TypeScript/Express)",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",

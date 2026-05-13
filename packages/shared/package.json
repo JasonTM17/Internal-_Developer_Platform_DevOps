@@ -2,6 +2,7 @@
   "name": "@idp/shared",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "description": "Shared TypeScript interfaces, types, and utilities",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
