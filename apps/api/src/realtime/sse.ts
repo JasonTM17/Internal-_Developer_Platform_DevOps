@@ -32,7 +32,7 @@ export interface SSEEvent {
 
 export class SSEManager {
   private clients: Map<string, SSEClient> = new Map();
-  private heartbeatInterval: NodeJS.Timer | null = null;
+  private heartbeatInterval: ReturnType<typeof setInterval> | null = null;
   private readonly heartbeatMs: number;
 
   constructor(heartbeatMs = 30000) {

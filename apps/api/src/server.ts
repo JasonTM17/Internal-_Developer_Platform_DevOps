@@ -11,7 +11,7 @@
  */
 
 import express from 'express';
-import type { Express, Request, Response } from 'express';
+import type { Express } from 'express';
 import { getConfig } from './config/index';
 import { createRequestLogger } from './middleware/request-logger';
 import { createCorsMiddleware, buildCorsOptions } from './middleware/cors';

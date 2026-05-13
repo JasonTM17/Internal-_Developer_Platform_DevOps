@@ -62,7 +62,7 @@ const SEVERITY_EMOJI: Record<NotificationSeverity, string> = {
 };
 
 /** Severity to color mapping for attachments. */
-const SEVERITY_COLOR: Record<NotificationSeverity, string> = {
+const _SEVERITY_COLOR: Record<NotificationSeverity, string> = {
   info: '#36a64f',
   warning: '#ff9900',
   error: '#dc3545',
