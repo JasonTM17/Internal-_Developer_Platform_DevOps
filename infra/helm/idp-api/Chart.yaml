@@ -1,0 +1,30 @@
+apiVersion: v2
+name: idp-api
+description: Internal Developer Platform API service Helm chart
+type: application
+version: 1.0.0
+appVersion: "0.1.0"
+keywords:
+  - idp
+  - api
+  - platform
+  - developer-portal
+home: https://github.com/company/internal-developer-platform
+sources:
+  - https://github.com/company/internal-developer-platform
+maintainers:
+  - name: Platform Engineering
+    email: platform-engineering@company.com
+    url: https://platform.company.com
+dependencies:
+  - name: postgresql
+    version: "13.x.x"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: postgresql.enabled
+  - name: redis
+    version: "18.x.x"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: redis.enabled
+annotations:
+  artifacthub.io/license: MIT
+  artifacthub.io/category: integration-delivery
