@@ -11,8 +11,6 @@ version: '3.9'
 
 services:
   api:
-    build:
-      target: '' # Use dev Dockerfile directly
     environment:
       # Enable verbose logging
       LOG_LEVEL: trace
