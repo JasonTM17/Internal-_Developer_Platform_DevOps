@@ -1,0 +1,81 @@
+# Development environment overrides for idp-api
+replicaCount: 1
+
+image:
+  pullPolicy: Always
+
+podAnnotations:
+  sidecar.istio.io/inject: "false"
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+autoscaling:
+  enabled: false
+
+podDisruptionBudget:
+  enabled: false
+
+affinity: {}
+
+ingress:
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-staging
+    nginx.ingress.kubernetes.io/rate-limit: "1000"
+  hosts:
+    - host: api.dev.idp.company.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: idp-api-dev-tls
+      hosts:
+        - api.dev.idp.company.com
+
+env:
+  - name: NODE_ENV
+    value: "development"
+  - name: PORT
+    value: "3000"
+  - name: LOG_LEVEL
+    value: "debug"
+  - name: LOG_FORMAT
+    value: "pretty"
+
+configMap:
+  data:
+    DATABASE_POOL_SIZE: "5"
+    CACHE_TTL: "60"
+    CORS_ORIGINS: "*"
+    RATE_LIMIT_MAX: "1000"
+    RATE_LIMIT_WINDOW_MS: "60000"
+
+externalSecret:
+  data:
+    - secretKey: DATABASE_URL
+      remoteRef:
+        key: idp/dev/api/database-url
+    - secretKey: REDIS_URL
+      remoteRef:
+        key: idp/dev/api/redis-url
+    - secretKey: JWT_SECRET
+      remoteRef:
+        key: idp/dev/api/jwt-secret
+
+serviceMonitor:
+  enabled: false
+
+postgresql:
+  enabled: true
+  auth:
+    database: idp_dev
+    username: idp_api
+
+redis:
+  enabled: true
+  architecture: standalone
