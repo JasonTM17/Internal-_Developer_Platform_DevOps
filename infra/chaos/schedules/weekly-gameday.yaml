@@ -1,0 +1,201 @@
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosSchedule
+metadata:
+  name: weekly-gameday
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    chaos.litmus.io/schedule-type: recurring
+    chaos.litmus.io/severity: medium
+  annotations:
+    litmuschaos.io/description: |
+      Weekly chaos game day schedule that runs a series of experiments
+      every Wednesday at 2 PM UTC during business hours. Includes
+      pod deletion, network chaos, and resource stress experiments
+      with automatic rollback and notification.
+spec:
+  schedule:
+    now: false
+    once:
+      executionTime: ""
+    repeat:
+      timeRange:
+        startTime: "2024-01-01T14:00:00Z"
+        endTime: "2025-12-31T16:00:00Z"
+      properties:
+        minChaosInterval: 168h  # Weekly
+      workDays:
+        includedDays: "Wed"
+      workHours:
+        includedHours: "14-16"
+  engineTemplateSpec:
+    engineState: active
+    appinfo:
+      appns: idp-platform
+      applabel: app=idp-api
+      appkind: deployment
+    chaosServiceAccount: chaos-serviceaccount
+    monitoring: true
+    annotationCheck: "true"
+    jobCleanUpPolicy: retain
+    experiments:
+      - name: pod-delete
+        spec:
+          probe:
+            - name: steady-state-api
+              type: httpProbe
+              mode: Continuous
+              httpProbe/inputs:
+                url: http://idp-api.idp-platform.svc.cluster.local:3000/healthz
+                insecureSkipVerify: false
+                method:
+                  get:
+                    criteria: ==
+                    responseCode: "200"
+              runProperties:
+                probeTimeout: 10s
+                interval: 5s
+                retry: 5
+                probePollingInterval: 3s
+          components:
+            env:
+              - name: TOTAL_CHAOS_DURATION
+                value: "30"
+              - name: CHAOS_INTERVAL
+                value: "10"
+              - name: FORCE
+                value: "false"
+              - name: PODS_AFFECTED_PERC
+                value: "30"
+      - name: pod-network-latency
+        spec:
+          probe:
+            - name: latency-within-bounds
+              type: promProbe
+              mode: Continuous
+              promProbe/inputs:
+                endpoint: http://prometheus.monitoring.svc.cluster.local:9090
+                query: |
+                  histogram_quantile(0.99, sum(rate(istio_request_duration_milliseconds_bucket{destination_workload="idp-api"}[1m])) by (le))
+                comparator:
+                  type: float
+                  criteria: "<="
+                  value: "3000"
+              runProperties:
+                probeTimeout: 15s
+                interval: 15s
+                retry: 3
+          components:
+            env:
+              - name: TOTAL_CHAOS_DURATION
+                value: "60"
+              - name: NETWORK_LATENCY
+                value: "200"
+              - name: JITTER
+                value: "50"
+              - name: CONTAINER_RUNTIME
+                value: "containerd"
+              - name: SOCKET_PATH
+                value: "/run/containerd/containerd.sock"
+              - name: TARGET_CONTAINER
+                value: "idp-api"
+      - name: pod-cpu-hog-exec
+        spec:
+          probe:
+            - name: autoscaling-triggered
+              type: cmdProbe
+              mode: Edge
+              cmdProbe/inputs:
+                command: "kubectl get hpa idp-api -n idp-platform -o jsonpath='{.status.currentReplicas}'"
+                comparator:
+                  type: int
+                  criteria: ">="
+                  value: "3"
+              runProperties:
+                probeTimeout: 60s
+                interval: 30s
+                retry: 5
+                initialDelay: 60s
+          components:
+            env:
+              - name: TOTAL_CHAOS_DURATION
+                value: "120"
+              - name: CPU_CORES
+                value: "1"
+              - name: CPU_LOAD
+                value: "70"
+              - name: CONTAINER_RUNTIME
+                value: "containerd"
+              - name: SOCKET_PATH
+                value: "/run/containerd/containerd.sock"
+              - name: TARGET_CONTAINER
+                value: "idp-api"
+              - name: PODS_AFFECTED_PERC
+                value: "50"
+---
+# Monthly full game day with all experiments
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosSchedule
+metadata:
+  name: monthly-full-gameday
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    chaos.litmus.io/schedule-type: recurring
+    chaos.litmus.io/severity: high
+spec:
+  schedule:
+    now: false
+    repeat:
+      timeRange:
+        startTime: "2024-01-01T14:00:00Z"
+        endTime: "2025-12-31T18:00:00Z"
+      properties:
+        minChaosInterval: 720h  # Monthly
+      workDays:
+        includedDays: "Thu"
+      workHours:
+        includedHours: "14-18"
+  engineTemplateSpec:
+    engineState: active
+    appinfo:
+      appns: idp-platform
+      applabel: app=idp-api
+      appkind: deployment
+    chaosServiceAccount: chaos-serviceaccount
+    monitoring: true
+    experiments:
+      - name: node-drain
+        spec:
+          components:
+            env:
+              - name: TOTAL_CHAOS_DURATION
+                value: "60"
+              - name: NODE_LABEL
+                value: "node-role=workload"
+              - name: RAMP_TIME
+                value: "15"
+      - name: pod-network-loss
+        spec:
+          components:
+            env:
+              - name: TOTAL_CHAOS_DURATION
+                value: "90"
+              - name: NETWORK_PACKET_LOSS_PERCENTAGE
+                value: "40"
+              - name: CONTAINER_RUNTIME
+                value: "containerd"
+              - name: SOCKET_PATH
+                value: "/run/containerd/containerd.sock"
+      - name: disk-fill
+        spec:
+          components:
+            env:
+              - name: TOTAL_CHAOS_DURATION
+                value: "60"
+              - name: FILL_PERCENTAGE
+                value: "70"
+              - name: CONTAINER_RUNTIME
+                value: "containerd"
+              - name: SOCKET_PATH
+                value: "/run/containerd/containerd.sock"
