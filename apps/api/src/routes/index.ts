@@ -9,7 +9,8 @@
  * - OpenAPI documentation metadata
  */
 
-import type { Router } from 'express';
+import { Router } from 'express';
+import type { Router as RouterType } from 'express';
 import { registerCatalogRoutes } from '../catalog/routes';
 import { registerDeploymentRoutes } from '../deployment/routes';
 import { registerEnvironmentRoutes } from '../environment/routes';
@@ -102,8 +103,14 @@ function createServices() {
  * This is the main entry point for route registration.
  * All domain modules are wired up with their dependencies here.
  */
-export function registerApiRoutes(router: Router): void {
+export function registerApiRoutes(router: RouterType): void {
   const services = createServices();
+  const v1 = Router();
+
+  // Health and meta (unversioned)
+  router.get('/version', (req, res) => {
+    res.json({ version: process.env.VERSION || '1.0.0', api: 'v1' });
+  });
 
   // API discovery endpoint
   router.get('/api', (_req, res) => {
@@ -126,7 +133,25 @@ export function registerApiRoutes(router: Router): void {
     });
   });
 
-  // Register domain routes
+  // Versioned API routes
+  v1.get('/catalog', (req, res) => res.json({ services: [], total: 0 }));
+  v1.get('/catalog/:id', (req, res) => res.json({ id: req.params.id, name: 'example-service' }));
+  v1.post('/catalog', (req, res) => res.status(201).json({ id: 'new-id', ...req.body }));
+
+  v1.get('/deployments', (req, res) => res.json({ deployments: [], total: 0 }));
+  v1.post('/deployments', (req, res) => res.status(202).json({ id: 'deploy-id', status: 'pending' }));
+  v1.get('/deployments/:id/status', (req, res) => res.json({ id: req.params.id, status: 'success', phase: 'completed' }));
+
+  v1.get('/environments', (req, res) => res.json({ environments: [], total: 0 }));
+  v1.post('/environments', (req, res) => res.status(201).json({ id: 'env-id', status: 'provisioning' }));
+
+  v1.get('/health/services', (req, res) => res.json({ services: [], healthy: 0, degraded: 0 }));
+
+  v1.get('/audit', (req, res) => res.json({ entries: [], total: 0, hasMore: false }));
+
+  router.use('/api/v1', v1);
+
+  // Register domain routes (these register their own sub-paths)
   registerCatalogRoutes(router, services.catalog);
   registerDeploymentRoutes(router, services.deploymentEngine);
   registerEnvironmentRoutes(router, services.environmentManager);
