@@ -3,8 +3,8 @@ global:
   evaluation_interval: 15s
   scrape_timeout: 10s
   external_labels:
-    cluster: idp-production
-    environment: production
+    cluster: idp-local
+    environment: development
 
 rule_files:
   - /etc/prometheus/alerting-rules.yml
@@ -23,99 +23,23 @@ scrape_configs:
     static_configs:
       - targets: ['localhost:9090']
 
-  # Kubernetes API server
-  - job_name: 'kubernetes-apiservers'
-    kubernetes_sd_configs:
-      - role: endpoints
-    scheme: https
-    tls_config:
-      ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-    bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
-    relabel_configs:
-      - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_name, __meta_kubernetes_endpoint_port_name]
-        action: keep
-        regex: default;kubernetes;https
-
-  # Kubernetes nodes
-  - job_name: 'kubernetes-nodes'
-    kubernetes_sd_configs:
-      - role: node
-    scheme: https
-    tls_config:
-      ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-    bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
-    relabel_configs:
-      - action: labelmap
-        regex: __meta_kubernetes_node_label_(.+)
-
-  # Kubernetes pods (application metrics)
-  - job_name: 'kubernetes-pods'
-    kubernetes_sd_configs:
-      - role: pod
-    relabel_configs:
-      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
-        action: keep
-        regex: true
-      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
-        action: replace
-        target_label: __metrics_path__
-        regex: (.+)
-      - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
-        action: replace
-        regex: ([^:]+)(?::\d+)?;(\d+)
-        replacement: $1:$2
-        target_label: __address__
-      - action: labelmap
-        regex: __meta_kubernetes_pod_label_(.+)
-      - source_labels: [__meta_kubernetes_namespace]
-        action: replace
-        target_label: kubernetes_namespace
-      - source_labels: [__meta_kubernetes_pod_name]
-        action: replace
-        target_label: kubernetes_pod_name
-
-  # IDP API service
+  # IDP API service (local Docker)
   - job_name: 'idp-api'
-    kubernetes_sd_configs:
-      - role: endpoints
-        namespaces:
-          names: ['idp-production', 'idp-staging']
-    relabel_configs:
-      - source_labels: [__meta_kubernetes_service_label_app]
-        action: keep
-        regex: idp-api
-      - source_labels: [__meta_kubernetes_namespace]
-        target_label: namespace
-      - source_labels: [__meta_kubernetes_service_name]
-        target_label: service
-
-  # Node Exporter
-  - job_name: 'node-exporter'
-    kubernetes_sd_configs:
-      - role: endpoints
-    relabel_configs:
-      - source_labels: [__meta_kubernetes_service_label_app]
-        action: keep
-        regex: node-exporter
-
-  # kube-state-metrics
-  - job_name: 'kube-state-metrics'
+    metrics_path: /metrics
     static_configs:
-      - targets: ['kube-state-metrics:8080']
+      - targets: ['api:3000']
+        labels:
+          service: idp-api
+          environment: development
 
-  # ArgoCD metrics
-  - job_name: 'argocd'
-    kubernetes_sd_configs:
-      - role: endpoints
-        namespaces:
-          names: ['argocd']
-    relabel_configs:
-      - source_labels: [__meta_kubernetes_service_label_app_kubernetes_io_name]
-        action: keep
-        regex: argocd-.*
+  # Node Exporter (if running)
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
 
-storage:
-  tsdb:
-    retention:
-      time: 30d
-      size: 50GB
+  # Redis (via exporter if available)
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis:6379']
+        labels:
+          service: redis
