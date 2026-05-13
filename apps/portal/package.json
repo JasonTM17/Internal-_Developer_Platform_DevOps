@@ -1,0 +1,24 @@
+{
+  "name": "@idp/portal",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Backstage-based developer portal frontend",
+  "scripts": {
+    "build": "tsc --noEmit",
+    "dev": "echo 'portal dev server'",
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "typecheck": "tsc --noEmit",
+    "test": "echo 'no tests yet'",
+    "test:unit": "echo 'no tests yet'",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@idp/shared": "workspace:*",
+    "@idp/ui": "workspace:*",
+    "@idp/config": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  }
+}
