@@ -1,0 +1,133 @@
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosEngine
+metadata:
+  name: idp-node-drain
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    chaos.litmus.io/experiment-type: node-level
+    chaos.litmus.io/severity: critical
+  annotations:
+    litmuschaos.io/description: |
+      Simulates node drain to validate pod disruption budgets, pod
+      anti-affinity rules, and multi-AZ resilience. Ensures the platform
+      maintains availability during node maintenance or failure.
+spec:
+  engineState: active
+  appinfo:
+    appns: idp-platform
+    applabel: app=idp-api
+    appkind: deployment
+  chaosServiceAccount: chaos-serviceaccount
+  monitoring: true
+  annotationCheck: "true"
+  jobCleanUpPolicy: retain
+  experiments:
+    - name: node-drain
+      spec:
+        probe:
+          - name: platform-availability
+            type: httpProbe
+            mode: Continuous
+            httpProbe/inputs:
+              url: http://idp-api.idp-platform.svc.cluster.local:3000/healthz
+              insecureSkipVerify: false
+              method:
+                get:
+                  criteria: ==
+                  responseCode: "200"
+            runProperties:
+              probeTimeout: 15s
+              interval: 10s
+              retry: 5
+              probePollingInterval: 5s
+              initialDelay: 15s
+              stopOnFailure: false
+          - name: portal-availability
+            type: httpProbe
+            mode: Continuous
+            httpProbe/inputs:
+              url: http://idp-portal.idp-platform.svc.cluster.local:3001/
+              insecureSkipVerify: false
+              method:
+                get:
+                  criteria: ==
+                  responseCode: "200"
+            runProperties:
+              probeTimeout: 15s
+              interval: 10s
+              retry: 5
+              probePollingInterval: 5s
+          - name: pdb-respected
+            type: cmdProbe
+            mode: Continuous
+            cmdProbe/inputs:
+              command: |
+                kubectl get pdb -n idp-platform -o json | jq '[.items[] | select(.status.disruptionsAllowed >= 0)] | length'
+              comparator:
+                type: int
+                criteria: ">="
+                value: "1"
+            runProperties:
+              probeTimeout: 15s
+              interval: 30s
+              retry: 3
+          - name: min-replicas-maintained
+            type: cmdProbe
+            mode: Continuous
+            cmdProbe/inputs:
+              command: "kubectl get pods -n idp-platform -l app=idp-api --field-selector=status.phase=Running -o json | jq '.items | length'"
+              comparator:
+                type: int
+                criteria: ">="
+                value: "2"
+            runProperties:
+              probeTimeout: 15s
+              interval: 15s
+              retry: 5
+              initialDelay: 30s
+        components:
+          env:
+            - name: TOTAL_CHAOS_DURATION
+              value: "90"
+            - name: APP_NODE
+              value: ""
+            - name: TARGET_NODE
+              value: ""
+            - name: NODE_LABEL
+              value: "node-role=workload"
+            - name: RAMP_TIME
+              value: "15"
+          statusCheckTimeouts:
+            delay: 5
+            timeout: 300
+    - name: node-taint
+      spec:
+        probe:
+          - name: workloads-rescheduled
+            type: cmdProbe
+            mode: Edge
+            cmdProbe/inputs:
+              command: "kubectl get pods -n idp-platform -l app=idp-api --field-selector=status.phase=Running -o json | jq '.items | length'"
+              comparator:
+                type: int
+                criteria: ">="
+                value: "2"
+            runProperties:
+              probeTimeout: 60s
+              interval: 30s
+              retry: 5
+              initialDelay: 60s
+        components:
+          env:
+            - name: TOTAL_CHAOS_DURATION
+              value: "60"
+            - name: NODE_LABEL
+              value: "node-role=workload"
+            - name: TAINT_LABEL
+              value: "chaos=true:NoSchedule"
+            - name: RAMP_TIME
+              value: "10"
+          statusCheckTimeouts:
+            delay: 5
+            timeout: 240
