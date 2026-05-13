@@ -4,7 +4,7 @@ contact_links:
     url: https://slack.com/app_redirect?channel=platform-engineering
     about: Get help from the platform engineering team on Slack
   - name: Security Vulnerability
-    url: https://github.com/org/idp-platform/security/advisories/new
+    url: https://github.com/JasonTM17/Internal-_Developer_Platform_DevOps/security/advisories/new
     about: Report a security vulnerability (private disclosure)
   - name: Documentation
     url: https://docs.idp.example.com

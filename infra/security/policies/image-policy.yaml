@@ -21,19 +21,19 @@ spec:
     - target: admission.k8s.gatekeeper.sh
       rego: |
         package k8sallowedregistries
-        
+
         violation[{"msg": msg}] {
           container := input.review.object.spec.containers[_]
           not registry_allowed(container.image)
           msg := sprintf("Image '%v' is from an unauthorized registry. Allowed registries: %v", [container.image, input.parameters.registries])
         }
-        
+
         violation[{"msg": msg}] {
           container := input.review.object.spec.initContainers[_]
           not registry_allowed(container.image)
           msg := sprintf("Init container image '%v' is from an unauthorized registry", [container.image])
         }
-        
+
         registry_allowed(image) {
           registry := input.parameters.registries[_]
           startswith(image, registry)
@@ -47,17 +47,17 @@ metadata:
 spec:
   match:
     kinds:
-      - apiGroups: [""]
-        kinds: ["Pod"]
-    namespaces: ["idp-production"]
+      - apiGroups: ['']
+        kinds: ['Pod']
+    namespaces: ['idp-production']
   parameters:
     registries:
-      - "123456789012.dkr.ecr.us-east-1.amazonaws.com/"
-      - "ghcr.io/org/idp-platform/"
-      - "docker.io/library/"  # Official Docker images only
-      - "quay.io/prometheus/"
-      - "grafana/"
-      - "registry.k8s.io/"
+      - '123456789012.dkr.ecr.us-east-1.amazonaws.com/'
+      - 'ghcr.io/jasontm17/'
+      - 'docker.io/library/' # Official Docker images only
+      - 'quay.io/prometheus/'
+      - 'grafana/'
+      - 'registry.k8s.io/'
 ---
 # Slightly more permissive for staging (allows dev registry)
 apiVersion: constraints.gatekeeper.sh/v1beta1
@@ -67,17 +67,17 @@ metadata:
 spec:
   match:
     kinds:
-      - apiGroups: [""]
-        kinds: ["Pod"]
-    namespaces: ["idp-staging"]
+      - apiGroups: ['']
+        kinds: ['Pod']
+    namespaces: ['idp-staging']
   parameters:
     registries:
-      - "123456789012.dkr.ecr.us-east-1.amazonaws.com/"
-      - "ghcr.io/org/idp-platform/"
-      - "docker.io/library/"
-      - "quay.io/"
-      - "grafana/"
-      - "registry.k8s.io/"
+      - '123456789012.dkr.ecr.us-east-1.amazonaws.com/'
+      - 'ghcr.io/jasontm17/'
+      - 'docker.io/library/'
+      - 'quay.io/'
+      - 'grafana/'
+      - 'registry.k8s.io/'
 ---
 # Image pull policy enforcement
 apiVersion: templates.gatekeeper.sh/v1
@@ -93,7 +93,7 @@ spec:
     - target: admission.k8s.gatekeeper.sh
       rego: |
         package k8simagepullpolicy
-        
+
         violation[{"msg": msg}] {
           container := input.review.object.spec.containers[_]
           container.imagePullPolicy != "Always"
@@ -108,6 +108,6 @@ metadata:
 spec:
   match:
     kinds:
-      - apiGroups: [""]
-        kinds: ["Pod"]
-    namespaces: ["idp-production"]
+      - apiGroups: ['']
+        kinds: ['Pod']
+    namespaces: ['idp-production']

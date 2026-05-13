@@ -6,22 +6,22 @@ This guide will help you get up and running with the IDP in under 30 minutes.
 
 ## Prerequisites
 
-| Tool | Version | Purpose |
-|------|---------|---------|
-| Node.js | 20.x LTS | Runtime |
-| Docker | 24.x+ | Local services |
-| kubectl | 1.28+ | Kubernetes CLI |
-| Helm | 3.13+ | Package manager |
-| AWS CLI | 2.x | Cloud access |
-| Git | 2.40+ | Version control |
+| Tool    | Version  | Purpose         |
+| ------- | -------- | --------------- |
+| Node.js | 20.x LTS | Runtime         |
+| Docker  | 24.x+    | Local services  |
+| kubectl | 1.28+    | Kubernetes CLI  |
+| Helm    | 3.13+    | Package manager |
+| AWS CLI | 2.x      | Cloud access    |
+| Git     | 2.40+    | Version control |
 
 ## Quick Start
 
 ### 1. Clone the Repository
 
 ```bash
-git clone git@github.com:org/idp-platform.git
-cd idp-platform
+git clone https://github.com/JasonTM17/Internal-_Developer_Platform_DevOps.git
+cd Internal-_Developer_Platform_DevOps
 ```
 
 ### 2. Install Dependencies
@@ -53,13 +53,13 @@ npx turbo test --filter=@idp/api
 
 ### 5. Access the Platform
 
-| Service | URL | Credentials |
-|---------|-----|-------------|
-| Portal | http://localhost:5173 | dev@idp.local / dev |
-| API | http://localhost:3000 | JWT token |
-| API Docs | http://localhost:3000/docs | - |
-| pgAdmin | http://localhost:5050 | admin@idp.local / admin |
-| Grafana | http://localhost:3001 | admin / admin |
+| Service  | URL                        | Credentials             |
+| -------- | -------------------------- | ----------------------- |
+| Portal   | http://localhost:5173      | dev@idp.local / dev     |
+| API      | http://localhost:3000      | JWT token               |
+| API Docs | http://localhost:3000/docs | -                       |
+| pgAdmin  | http://localhost:5050      | admin@idp.local / admin |
+| Grafana  | http://localhost:3001      | admin / admin           |
 
 ## Project Structure
 
