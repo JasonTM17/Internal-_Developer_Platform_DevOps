@@ -1,0 +1,130 @@
+apiVersion: flagger.app/v1beta1
+kind: Canary
+metadata:
+  name: idp-api
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/name: idp-api
+    app.kubernetes.io/part-of: idp-platform
+    app.kubernetes.io/managed-by: flagger
+  annotations:
+    flagger.app/description: "IDP API canary deployment with progressive traffic shifting"
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: idp-api
+  progressDeadlineSeconds: 600
+  autoscalerRef:
+    apiVersion: autoscaling/v2
+    kind: HorizontalPodAutoscaler
+    name: idp-api
+
+  service:
+    port: 3000
+    targetPort: 3000
+    portName: http
+    portDiscovery: true
+    gateways:
+      - idp-gateway
+    hosts:
+      - api.idp.example.com
+    trafficPolicy:
+      tls:
+        mode: ISTIO_MUTUAL
+    retries:
+      attempts: 3
+      perTryTimeout: 10s
+      retryOn: "gateway-error,connect-failure,refused-stream"
+    headers:
+      request:
+        add:
+          x-canary-version: "{{ .Values.version }}"
+      response:
+        add:
+          x-served-by: "{{ .Values.subset }}"
+    match:
+      - uri:
+          prefix: /api/v1
+    rewrite:
+      uri: /api/v1
+
+  analysis:
+    interval: 1m
+    threshold: 10
+    maxWeight: 50
+    stepWeight: 5
+    stepWeightPromotion: 10
+
+    metrics:
+      - name: request-success-rate
+        thresholdRange:
+          min: 99.0
+        interval: 1m
+      - name: request-duration
+        thresholdRange:
+          max: 500
+        interval: 1m
+      - name: error-rate
+        templateRef:
+          name: error-rate-check
+          namespace: idp-platform
+        thresholdRange:
+          max: 1.0
+        interval: 1m
+      - name: latency-p99
+        templateRef:
+          name: latency-check
+          namespace: idp-platform
+        thresholdRange:
+          max: 1000
+        interval: 1m
+
+    webhooks:
+      - name: acceptance-test
+        type: pre-rollout
+        url: http://flagger-loadtester.idp-platform/
+        timeout: 60s
+        metadata:
+          type: bash
+          cmd: "curl -sf http://idp-api-canary.idp-platform:3000/healthz"
+      - name: load-test
+        type: rollout
+        url: http://flagger-loadtester.idp-platform/
+        timeout: 60s
+        metadata:
+          type: cmd
+          cmd: "hey -z 1m -q 10 -c 2 http://idp-api-canary.idp-platform:3000/api/v1/catalog"
+          logCmdOutput: "true"
+      - name: integration-test
+        type: pre-rollout
+        url: http://flagger-loadtester.idp-platform/
+        timeout: 120s
+        metadata:
+          type: bash
+          cmd: |
+            curl -sf http://idp-api-canary.idp-platform:3000/api/v1/catalog && \
+            curl -sf http://idp-api-canary.idp-platform:3000/api/v1/environments && \
+            curl -sf http://idp-api-canary.idp-platform:3000/readyz
+      - name: rollback-gate
+        type: rollback
+        url: http://flagger-loadtester.idp-platform/
+        timeout: 30s
+        metadata:
+          type: bash
+          cmd: "echo 'Canary rollback triggered for idp-api'"
+      - name: confirm-promotion
+        type: confirm-promotion
+        url: http://flagger-loadtester.idp-platform/gate/approve
+
+    alerts:
+      - name: slack-notification
+        severity: info
+        providerRef:
+          name: slack-alert
+          namespace: idp-platform
+      - name: on-call-alert
+        severity: error
+        providerRef:
+          name: slack-alert
+          namespace: idp-platform
