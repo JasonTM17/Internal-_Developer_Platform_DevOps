@@ -6,6 +6,7 @@ import { AuthProvider, useAuth } from './auth/AuthProvider';
 import { ProtectedRoute } from './auth/ProtectedRoute';
 import { AppLayout } from './layout/AppLayout';
 import { ThemeContextProvider } from './theme/ThemeContext';
+import { CommandPalette } from './components/CommandPalette';
 
 import './index.css';
 
@@ -150,6 +151,7 @@ const App: React.FC = () => {
       <CssBaseline />
       <AuthProvider>
         <Router>
+          <CommandPalette />
           <AppRoutes />
         </Router>
       </AuthProvider>
