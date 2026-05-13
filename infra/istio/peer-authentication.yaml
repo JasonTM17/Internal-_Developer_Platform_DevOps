@@ -1,0 +1,94 @@
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: default-strict-mtls
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    app.kubernetes.io/managed-by: istio
+    security.istio.io/policy: strict
+spec:
+  mtls:
+    mode: STRICT
+---
+# Mesh-wide strict mTLS policy
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: mesh-wide-strict
+  namespace: istio-system
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    app.kubernetes.io/managed-by: istio
+spec:
+  mtls:
+    mode: STRICT
+---
+# Permissive mode for monitoring namespace (Prometheus scraping)
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: monitoring-permissive
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    app.kubernetes.io/managed-by: istio
+spec:
+  mtls:
+    mode: PERMISSIVE
+  portLevelMtls:
+    9090:
+      mode: PERMISSIVE
+    3000:
+      mode: STRICT
+---
+# Strict mTLS for database connections
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: database-strict
+  namespace: idp-data
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    app.kubernetes.io/managed-by: istio
+spec:
+  selector:
+    matchLabels:
+      app: postgresql
+  mtls:
+    mode: STRICT
+  portLevelMtls:
+    5432:
+      mode: STRICT
+---
+# Request authentication for JWT validation
+apiVersion: security.istio.io/v1beta1
+kind: RequestAuthentication
+metadata:
+  name: jwt-authentication
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    app.kubernetes.io/managed-by: istio
+spec:
+  selector:
+    matchLabels:
+      app: idp-api
+  jwtRules:
+    - issuer: "https://auth.idp.example.com"
+      jwksUri: "https://auth.idp.example.com/.well-known/jwks.json"
+      audiences:
+        - "idp-api"
+        - "idp-platform"
+      forwardOriginalToken: true
+      outputPayloadToHeader: x-jwt-payload
+      fromHeaders:
+        - name: Authorization
+          prefix: "Bearer "
+      fromParams:
+        - access_token
+    - issuer: "https://accounts.google.com"
+      jwksUri: "https://www.googleapis.com/oauth2/v3/certs"
+      audiences:
+        - "idp-platform-google-client"
+      forwardOriginalToken: false
