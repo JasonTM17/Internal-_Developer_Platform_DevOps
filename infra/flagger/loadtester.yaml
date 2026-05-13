@@ -1,0 +1,139 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flagger-loadtester
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/name: flagger-loadtester
+    app.kubernetes.io/part-of: idp-platform
+    app.kubernetes.io/managed-by: flagger
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: flagger-loadtester
+  template:
+    metadata:
+      labels:
+        app: flagger-loadtester
+        app.kubernetes.io/name: flagger-loadtester
+      annotations:
+        sidecar.istio.io/inject: "true"
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+    spec:
+      serviceAccountName: flagger-loadtester
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        fsGroup: 10001
+      containers:
+        - name: loadtester
+          image: ghcr.io/fluxcd/flagger-loadtester:0.30.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          command:
+            - ./loadtester
+            - -port=8080
+            - -log-level=info
+            - -timeout=1h
+            - -log-cmd-output=true
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+            limits:
+              cpu: 1000m
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+      nodeSelector:
+        node-role: system
+      tolerations:
+        - key: node-role
+          operator: Equal
+          value: system
+          effect: NoSchedule
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: flagger-loadtester
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/name: flagger-loadtester
+    app.kubernetes.io/part-of: idp-platform
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: flagger-loadtester
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: flagger-loadtester
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/name: flagger-loadtester
+    app.kubernetes.io/part-of: idp-platform
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: flagger-loadtester
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/name: flagger-loadtester
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "services"]
+    verbs: ["get", "list"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: flagger-loadtester
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/name: flagger-loadtester
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: flagger-loadtester
+subjects:
+  - kind: ServiceAccount
+    name: flagger-loadtester
+    namespace: idp-platform
