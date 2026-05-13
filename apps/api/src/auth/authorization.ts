@@ -18,7 +18,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import type { AuthenticatedUser, AuthzResult, APIErrorResponse } from '@idp/shared';
 import { ERROR_CODES } from '@idp/shared';
-import { ROLE_PERMISSIONS, roleHasPermission } from '@idp/config';
+import { roleHasPermission } from '@idp/config';
 import type { AuthenticatedRequest } from './middleware';
 
 /**

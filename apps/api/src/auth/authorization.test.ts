@@ -5,8 +5,8 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import type { Request, Response, NextFunction } from 'express';
-import type { AuthenticatedUser, RoleAssignment } from '@idp/shared';
+import type { Response } from 'express';
+import type { AuthenticatedUser } from '@idp/shared';
 import {
   evaluatePermission,
   evaluatePermissionAcrossTeams,
