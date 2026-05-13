@@ -1,0 +1,141 @@
+apiVersion: externaldns.k8s.io/v1alpha1
+kind: DNSEndpoint
+metadata:
+  name: idp-api-global
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/name: idp-api
+    app.kubernetes.io/part-of: idp-platform
+    app.kubernetes.io/managed-by: external-dns
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: api.idp.example.com
+    external-dns.alpha.kubernetes.io/ttl: "60"
+spec:
+  endpoints:
+    - dnsName: api.idp.example.com
+      recordTTL: 60
+      recordType: A
+      targets:
+        - 10.0.1.100  # Primary cluster ingress
+        - 10.1.1.100  # Secondary cluster ingress
+      setIdentifier: idp-api-multicluster
+      providerSpecific:
+        - name: aws/failover
+          value: PRIMARY
+    - dnsName: api.idp.example.com
+      recordTTL: 60
+      recordType: A
+      targets:
+        - 10.1.1.100  # Secondary cluster ingress
+      setIdentifier: idp-api-failover
+      providerSpecific:
+        - name: aws/failover
+          value: SECONDARY
+---
+# Weighted routing for gradual traffic shifting between clusters
+apiVersion: externaldns.k8s.io/v1alpha1
+kind: DNSEndpoint
+metadata:
+  name: idp-portal-global
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/name: idp-portal
+    app.kubernetes.io/part-of: idp-platform
+    app.kubernetes.io/managed-by: external-dns
+spec:
+  endpoints:
+    - dnsName: portal.idp.example.com
+      recordTTL: 60
+      recordType: A
+      targets:
+        - 10.0.1.100
+      setIdentifier: portal-primary
+      providerSpecific:
+        - name: aws/weight
+          value: "80"
+        - name: aws/health-check-id
+          value: "primary-health-check-id"
+    - dnsName: portal.idp.example.com
+      recordTTL: 60
+      recordType: A
+      targets:
+        - 10.1.1.100
+      setIdentifier: portal-secondary
+      providerSpecific:
+        - name: aws/weight
+          value: "20"
+        - name: aws/health-check-id
+          value: "secondary-health-check-id"
+---
+# Latency-based routing for optimal user experience
+apiVersion: externaldns.k8s.io/v1alpha1
+kind: DNSEndpoint
+metadata:
+  name: idp-api-latency
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/name: idp-api
+    app.kubernetes.io/part-of: idp-platform
+    dns-strategy: latency
+spec:
+  endpoints:
+    - dnsName: api-global.idp.example.com
+      recordTTL: 60
+      recordType: A
+      targets:
+        - 10.0.1.100
+      setIdentifier: api-us-east-1
+      providerSpecific:
+        - name: aws/region
+          value: us-east-1
+    - dnsName: api-global.idp.example.com
+      recordTTL: 60
+      recordType: A
+      targets:
+        - 10.1.1.100
+      setIdentifier: api-us-west-2
+      providerSpecific:
+        - name: aws/region
+          value: us-west-2
+---
+# Health check configuration for DNS failover
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dns-health-check-config
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+data:
+  health-checks.yaml: |
+    healthChecks:
+      - name: primary-api-health
+        endpoint: https://api.idp.example.com/healthz
+        type: HTTPS
+        port: 443
+        path: /healthz
+        requestInterval: 10
+        failureThreshold: 3
+        regions:
+          - us-east-1
+          - us-west-2
+          - eu-west-1
+
+      - name: secondary-api-health
+        endpoint: https://api-secondary.idp.example.com/healthz
+        type: HTTPS
+        port: 443
+        path: /healthz
+        requestInterval: 10
+        failureThreshold: 3
+        regions:
+          - us-west-2
+          - us-east-1
+          - eu-west-1
+
+    failoverPolicy:
+      primaryCluster: idp-primary
+      secondaryCluster: idp-secondary
+      failoverThreshold: 3
+      failbackDelay: 300s
+      automaticFailback: true
