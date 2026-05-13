@@ -1,0 +1,179 @@
+apiVersion: install.istio.io/v1alpha1
+kind: IstioOperator
+metadata:
+  name: idp-istio-control-plane
+  namespace: istio-system
+spec:
+  profile: default
+  hub: docker.io/istio
+  tag: 1.20.2
+
+  meshConfig:
+    accessLogFile: /dev/stdout
+    accessLogFormat: |
+      [%START_TIME%] "%REQ(:METHOD)% %REQ(X-ENVOY-ORIGINAL-PATH?:PATH)% %PROTOCOL%"
+      %RESPONSE_CODE% %RESPONSE_FLAGS% %BYTES_RECEIVED% %BYTES_SENT%
+      %DURATION% %RESP(X-ENVOY-UPSTREAM-SERVICE-TIME)% "%REQ(X-FORWARDED-FOR)%"
+      "%REQ(USER-AGENT)%" "%REQ(X-REQUEST-ID)%" "%REQ(:AUTHORITY)%"
+      "%UPSTREAM_HOST%" %UPSTREAM_CLUSTER% %UPSTREAM_LOCAL_ADDRESS%
+    enableTracing: true
+    defaultConfig:
+      tracing:
+        zipkin:
+          address: jaeger-collector.observability.svc.cluster.local:9411
+        sampling: 100.0
+      holdApplicationUntilProxyStarts: true
+      proxyMetadata:
+        ISTIO_META_DNS_CAPTURE: "true"
+        ISTIO_META_DNS_AUTO_ALLOCATE: "true"
+    outboundTrafficPolicy:
+      mode: REGISTRY_ONLY
+    enableAutoMtls: true
+    trustDomain: idp.cluster.local
+
+  components:
+    pilot:
+      enabled: true
+      k8s:
+        resources:
+          requests:
+            cpu: 200m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 1Gi
+        hpaSpec:
+          minReplicas: 2
+          maxReplicas: 5
+          metrics:
+            - type: Resource
+              resource:
+                name: cpu
+                target:
+                  type: Utilization
+                  averageUtilization: 80
+        env:
+          - name: PILOT_ENABLE_PROTOCOL_SNIFFING_FOR_OUTBOUND
+            value: "true"
+          - name: PILOT_ENABLE_PROTOCOL_SNIFFING_FOR_INBOUND
+            value: "true"
+          - name: PILOT_TRACE_SAMPLING
+            value: "100"
+        nodeSelector:
+          node-role: system
+        tolerations:
+          - key: node-role
+            operator: Equal
+            value: system
+            effect: NoSchedule
+
+    ingressGateways:
+      - name: istio-ingressgateway
+        enabled: true
+        k8s:
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+          hpaSpec:
+            minReplicas: 2
+            maxReplicas: 10
+            metrics:
+              - type: Resource
+                resource:
+                  name: cpu
+                  target:
+                    type: Utilization
+                    averageUtilization: 70
+          service:
+            type: LoadBalancer
+            ports:
+              - name: http2
+                port: 80
+                targetPort: 8080
+              - name: https
+                port: 443
+                targetPort: 8443
+              - name: status-port
+                port: 15021
+                targetPort: 15021
+            annotations:
+              service.beta.kubernetes.io/aws-load-balancer-type: nlb
+              service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+              service.beta.kubernetes.io/aws-load-balancer-ssl-cert: arn:aws:acm:us-east-1:123456789012:certificate/abc-123
+              service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443"
+          serviceAnnotations:
+            external-dns.alpha.kubernetes.io/hostname: "*.idp.example.com"
+          podAnnotations:
+            prometheus.io/scrape: "true"
+            prometheus.io/port: "15020"
+          nodeSelector:
+            node-role: ingress
+          tolerations:
+            - key: node-role
+              operator: Equal
+              value: ingress
+              effect: NoSchedule
+
+    egressGateways:
+      - name: istio-egressgateway
+        enabled: true
+        k8s:
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          hpaSpec:
+            minReplicas: 1
+            maxReplicas: 3
+
+    cni:
+      enabled: true
+      namespace: kube-system
+
+  values:
+    global:
+      proxy:
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+        logLevel: warning
+        componentLogLevel: "misc:error"
+        lifecycle:
+          preStop:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - sleep 5
+      tracer:
+        zipkin:
+          address: jaeger-collector.observability.svc.cluster.local:9411
+    pilot:
+      traceSampling: 100.0
+      enableProtocolSniffingForOutbound: true
+      enableProtocolSniffingForInbound: true
+    cni:
+      excludeNamespaces:
+        - istio-system
+        - kube-system
+        - monitoring
+      logLevel: info
+    sidecarInjectorWebhook:
+      rewriteAppHTTPProbe: true
+      neverInjectSelector:
+        - matchExpressions:
+            - key: sidecar.istio.io/inject
+              operator: In
+              values:
+                - "false"
