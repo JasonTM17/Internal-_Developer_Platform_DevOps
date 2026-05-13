@@ -474,4 +474,265 @@ describe('ServiceCatalog', () => {
       expect(deps.edges[0].targetEntityId).toBe(target1Result.entity.id);
     });
   });
+
+  describe('update()', () => {
+    it('should increment version counter by exactly 1 on update (Requirement 2.4)', async () => {
+      const regResult = await catalog.register(validInput, actor);
+      expect(regResult.success).toBe(true);
+      if (!regResult.success) return;
+
+      expect(regResult.entity.version).toBe(1);
+
+      const updateResult = await catalog.update(
+        regResult.entity.id,
+        { description: 'Updated description' },
+        actor,
+      );
+
+      expect(updateResult.success).toBe(true);
+      if (!updateResult.success) return;
+
+      expect(updateResult.entity.version).toBe(2);
+    });
+
+    it('should preserve previous version in history on update (Requirement 2.4)', async () => {
+      const regResult = await catalog.register(validInput, actor);
+      expect(regResult.success).toBe(true);
+      if (!regResult.success) return;
+
+      await catalog.update(
+        regResult.entity.id,
+        { description: 'Updated description' },
+        actor,
+      );
+
+      const historyResult = await catalog.getVersionHistory(regResult.entity.id);
+      expect(historyResult.success).toBe(true);
+      if (!historyResult.success) return;
+
+      expect(historyResult.versions).toHaveLength(1);
+      expect(historyResult.versions[0].version).toBe(1);
+      expect(historyResult.versions[0].data.description).toBe(validInput.description);
+    });
+
+    it('should record actor for each version change (Requirement 2.4)', async () => {
+      const regResult = await catalog.register(validInput, actor);
+      expect(regResult.success).toBe(true);
+      if (!regResult.success) return;
+
+      const updater = { id: 'user-456' };
+      await catalog.update(
+        regResult.entity.id,
+        { owner: 'new-owner' },
+        updater,
+      );
+
+      const historyResult = await catalog.getVersionHistory(regResult.entity.id);
+      expect(historyResult.success).toBe(true);
+      if (!historyResult.success) return;
+
+      expect(historyResult.versions[0].changedBy).toBe('user-456');
+    });
+
+    it('should record timestamp for each version change (Requirement 2.4)', async () => {
+      const regResult = await catalog.register(validInput, actor);
+      expect(regResult.success).toBe(true);
+      if (!regResult.success) return;
+
+      const before = new Date();
+      await catalog.update(
+        regResult.entity.id,
+        { description: 'New description' },
+        actor,
+      );
+      const after = new Date();
+
+      const historyResult = await catalog.getVersionHistory(regResult.entity.id);
+      expect(historyResult.success).toBe(true);
+      if (!historyResult.success) return;
+
+      const changedAt = historyResult.versions[0].changedAt;
+      expect(changedAt.getTime()).toBeGreaterThanOrEqual(before.getTime());
+      expect(changedAt.getTime()).toBeLessThanOrEqual(after.getTime());
+    });
+
+    it('should apply partial updates correctly', async () => {
+      const regResult = await catalog.register(validInput, actor);
+      expect(regResult.success).toBe(true);
+      if (!regResult.success) return;
+
+      const updateResult = await catalog.update(
+        regResult.entity.id,
+        { owner: 'team-beta', tags: ['updated', 'service'] },
+        actor,
+      );
+
+      expect(updateResult.success).toBe(true);
+      if (!updateResult.success) return;
+
+      expect(updateResult.entity.owner).toBe('team-beta');
+      expect(updateResult.entity.tags).toEqual(['updated', 'service']);
+      // Unchanged fields should remain the same
+      expect(updateResult.entity.name).toBe(validInput.name);
+      expect(updateResult.entity.description).toBe(validInput.description);
+    });
+
+    it('should update the updatedAt timestamp', async () => {
+      const regResult = await catalog.register(validInput, actor);
+      expect(regResult.success).toBe(true);
+      if (!regResult.success) return;
+
+      const originalUpdatedAt = regResult.entity.updatedAt;
+
+      // Small delay to ensure timestamp difference
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      const updateResult = await catalog.update(
+        regResult.entity.id,
+        { description: 'Changed' },
+        actor,
+      );
+
+      expect(updateResult.success).toBe(true);
+      if (!updateResult.success) return;
+
+      expect(updateResult.entity.updatedAt.getTime()).toBeGreaterThan(originalUpdatedAt.getTime());
+    });
+
+    it('should return error when entity does not exist', async () => {
+      const result = await catalog.update(
+        'non-existent-id',
+        { description: 'Updated' },
+        actor,
+      );
+
+      expect(result.success).toBe(false);
+      if (result.success) return;
+
+      expect(result.error.code).toBe(ERROR_CODES.ENTITY_NOT_FOUND);
+    });
+
+    it('should accumulate version history across multiple updates', async () => {
+      const regResult = await catalog.register(validInput, actor);
+      expect(regResult.success).toBe(true);
+      if (!regResult.success) return;
+
+      // Perform 3 updates
+      await catalog.update(regResult.entity.id, { description: 'v2' }, actor);
+      await catalog.update(regResult.entity.id, { description: 'v3' }, actor);
+      await catalog.update(regResult.entity.id, { description: 'v4' }, actor);
+
+      const historyResult = await catalog.getVersionHistory(regResult.entity.id);
+      expect(historyResult.success).toBe(true);
+      if (!historyResult.success) return;
+
+      // Should have 3 history entries (versions 1, 2, 3 - before each update)
+      expect(historyResult.versions).toHaveLength(3);
+      // Most recent first
+      expect(historyResult.versions[0].version).toBe(3);
+      expect(historyResult.versions[1].version).toBe(2);
+      expect(historyResult.versions[2].version).toBe(1);
+    });
+
+    it('should retain at least 50 most recent versions', async () => {
+      const regResult = await catalog.register(validInput, actor);
+      expect(regResult.success).toBe(true);
+      if (!regResult.success) return;
+
+      // Perform 55 updates to exceed the 50-version retention limit
+      for (let i = 0; i < 55; i++) {
+        await catalog.update(
+          regResult.entity.id,
+          { description: `Version ${i + 2}` },
+          actor,
+        );
+      }
+
+      const historyResult = await catalog.getVersionHistory(regResult.entity.id);
+      expect(historyResult.success).toBe(true);
+      if (!historyResult.success) return;
+
+      // Should retain at least 50 versions (pruning removes oldest)
+      expect(historyResult.versions.length).toBe(50);
+      // Most recent version in history should be version 55 (the snapshot before the last update)
+      expect(historyResult.versions[0].version).toBe(55);
+    });
+
+    it('should persist the updated entity in the store', async () => {
+      const regResult = await catalog.register(validInput, actor);
+      expect(regResult.success).toBe(true);
+      if (!regResult.success) return;
+
+      await catalog.update(
+        regResult.entity.id,
+        { description: 'Persisted update' },
+        actor,
+      );
+
+      const stored = await store.getById(regResult.entity.id);
+      expect(stored).not.toBeNull();
+      expect(stored!.description).toBe('Persisted update');
+      expect(stored!.version).toBe(2);
+    });
+  });
+
+  describe('getVersionHistory()', () => {
+    it('should return empty array for entity with no updates', async () => {
+      const regResult = await catalog.register(validInput, actor);
+      expect(regResult.success).toBe(true);
+      if (!regResult.success) return;
+
+      const historyResult = await catalog.getVersionHistory(regResult.entity.id);
+      expect(historyResult.success).toBe(true);
+      if (!historyResult.success) return;
+
+      expect(historyResult.versions).toHaveLength(0);
+    });
+
+    it('should return error for non-existent entity', async () => {
+      const result = await catalog.getVersionHistory('non-existent-id');
+
+      expect(result.success).toBe(false);
+      if (result.success) return;
+
+      expect(result.error.code).toBe(ERROR_CODES.ENTITY_NOT_FOUND);
+    });
+
+    it('should respect the limit parameter', async () => {
+      const regResult = await catalog.register(validInput, actor);
+      expect(regResult.success).toBe(true);
+      if (!regResult.success) return;
+
+      // Perform 5 updates
+      for (let i = 0; i < 5; i++) {
+        await catalog.update(regResult.entity.id, { description: `v${i + 2}` }, actor);
+      }
+
+      const historyResult = await catalog.getVersionHistory(regResult.entity.id, 3);
+      expect(historyResult.success).toBe(true);
+      if (!historyResult.success) return;
+
+      expect(historyResult.versions).toHaveLength(3);
+    });
+
+    it('should return versions in reverse chronological order', async () => {
+      const regResult = await catalog.register(validInput, actor);
+      expect(regResult.success).toBe(true);
+      if (!regResult.success) return;
+
+      await catalog.update(regResult.entity.id, { description: 'Second' }, actor);
+      await catalog.update(regResult.entity.id, { description: 'Third' }, actor);
+
+      const historyResult = await catalog.getVersionHistory(regResult.entity.id);
+      expect(historyResult.success).toBe(true);
+      if (!historyResult.success) return;
+
+      // Versions should be in descending order
+      for (let i = 0; i < historyResult.versions.length - 1; i++) {
+        expect(historyResult.versions[i].version).toBeGreaterThan(
+          historyResult.versions[i + 1].version,
+        );
+      }
+    });
+  });
 });
