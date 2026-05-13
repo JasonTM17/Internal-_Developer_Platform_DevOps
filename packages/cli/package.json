@@ -1,0 +1,47 @@
+{
+  "name": "@idp/cli",
+  "version": "0.1.0",
+  "description": "Developer CLI for the Internal Developer Platform",
+  "bin": {
+    "idp": "./dist/bin/idp.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "ts-node src/index.ts",
+    "lint": "eslint . --ext .ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "clean": "rimraf dist",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "idp",
+    "developer-platform",
+    "cli",
+    "devops"
+  ],
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "commander": "^12.0.0",
+    "chalk": "^5.3.0",
+    "ora": "^8.0.0",
+    "inquirer": "^9.2.0",
+    "conf": "^12.0.0",
+    "got": "^14.0.0",
+    "cli-table3": "^0.6.3",
+    "yaml": "^2.3.0",
+    "ws": "^8.16.0"
+  },
+  "devDependencies": {
+    "@types/inquirer": "^9.0.7",
+    "@types/ws": "^8.5.10",
+    "typescript": "^5.4.0",
+    "vitest": "^1.6.0"
+  }
+}
