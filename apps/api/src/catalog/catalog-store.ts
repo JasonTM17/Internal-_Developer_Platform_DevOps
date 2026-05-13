@@ -4,10 +4,10 @@
  * Defines the contract for the data access layer used by the ServiceCatalog.
  * This allows for dependency injection and testability.
  *
- * Requirements: 1.1, 1.3, 1.5, 1.6
+ * Requirements: 1.1, 1.3, 1.5, 1.6, 2.4, 2.5, 2.6
  */
 
-import type { CatalogEntity } from '@idp/shared';
+import type { CatalogEntity, CatalogEntityVersion, DependencyEdge } from '@idp/shared';
 
 /**
  * Row representation of a catalog entity as stored in the database.
@@ -50,6 +50,56 @@ export interface CatalogStore {
    * @returns The entity or null if not found
    */
   getById(id: string): Promise<CatalogEntity | null>;
+
+  /**
+   * Search entities by case-insensitive substring match across name, owner, and tags.
+   * @param query - The search query string (at least 2 characters)
+   * @param limit - Maximum number of results to return (default 50)
+   * @returns Matching entities up to the specified limit
+   */
+  search(query: string, limit?: number): Promise<CatalogEntity[]>;
+
+  /**
+   * Store a directed dependency edge between two entities.
+   */
+  insertDependency(edge: DependencyEdge): Promise<void>;
+
+  /**
+   * Retrieve all dependency edges where the given entity is the source.
+   */
+  getDependencies(entityId: string): Promise<DependencyEdge[]>;
+
+  /**
+   * Remove a dependency edge between source and target entities.
+   * @returns true if the edge was found and removed, false if it didn't exist
+   */
+  removeDependency(sourceEntityId: string, targetEntityId: string): Promise<boolean>;
+
+  /**
+   * Update an existing entity in the store.
+   * Replaces the entity data with the provided entity (which should have an incremented version).
+   */
+  updateEntity(entity: CatalogEntity): Promise<void>;
+
+  /**
+   * Save a version history snapshot for an entity.
+   */
+  saveVersion(version: CatalogEntityVersion): Promise<void>;
+
+  /**
+   * Retrieve version history for an entity, ordered by version descending.
+   * @param entityId - The entity ID to get history for
+   * @param limit - Maximum number of versions to return (default 50)
+   * @returns Array of version snapshots, most recent first
+   */
+  getVersionHistory(entityId: string, limit?: number): Promise<CatalogEntityVersion[]>;
+
+  /**
+   * Prune old versions for an entity, retaining only the most recent `retain` versions.
+   * @param entityId - The entity ID to prune versions for
+   * @param retain - Number of most recent versions to retain (default 50)
+   */
+  pruneVersions(entityId: string, retain?: number): Promise<void>;
 }
 
 /**

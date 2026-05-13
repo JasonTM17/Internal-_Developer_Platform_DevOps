@@ -246,4 +246,232 @@ describe('ServiceCatalog', () => {
       );
     });
   });
+
+  describe('addDependency()', () => {
+    it('should store a dependency edge when target entity exists (Requirement 2.5)', async () => {
+      // Register source and target entities
+      const sourceResult = await catalog.register(validInput, actor);
+      expect(sourceResult.success).toBe(true);
+      if (!sourceResult.success) return;
+
+      const targetInput = { ...validInput, name: 'target-service' };
+      const targetResult = await catalog.register(targetInput, actor);
+      expect(targetResult.success).toBe(true);
+      if (!targetResult.success) return;
+
+      const result = await catalog.addDependency(
+        sourceResult.entity.id,
+        targetResult.entity.id,
+        'runtime',
+      );
+
+      expect(result.success).toBe(true);
+      if (!result.success) return;
+
+      expect(result.edge.sourceEntityId).toBe(sourceResult.entity.id);
+      expect(result.edge.targetEntityId).toBe(targetResult.entity.id);
+      expect(result.edge.dependencyType).toBe('runtime');
+      expect(result.edge.createdAt).toBeInstanceOf(Date);
+    });
+
+    it('should return error when target entity does not exist (Requirement 2.6)', async () => {
+      // Register only the source entity
+      const sourceResult = await catalog.register(validInput, actor);
+      expect(sourceResult.success).toBe(true);
+      if (!sourceResult.success) return;
+
+      const nonExistentTargetId = 'non-existent-id';
+      const result = await catalog.addDependency(
+        sourceResult.entity.id,
+        nonExistentTargetId,
+        'runtime',
+      );
+
+      expect(result.success).toBe(false);
+      if (result.success) return;
+
+      expect(result.error.code).toBe(ERROR_CODES.DEPENDENCY_TARGET_NOT_FOUND);
+      expect(result.error.error).toContain(nonExistentTargetId);
+      expect(result.error.details).toHaveLength(1);
+      expect(result.error.details[0].field).toBe('targetEntityId');
+      expect(result.error.details[0].constraint).toBe('referential_integrity');
+    });
+
+    it('should store directed edges with source, target, and dependency type', async () => {
+      const sourceResult = await catalog.register(validInput, actor);
+      expect(sourceResult.success).toBe(true);
+      if (!sourceResult.success) return;
+
+      const targetInput = { ...validInput, name: 'database-service' };
+      const targetResult = await catalog.register(targetInput, actor);
+      expect(targetResult.success).toBe(true);
+      if (!targetResult.success) return;
+
+      const result = await catalog.addDependency(
+        sourceResult.entity.id,
+        targetResult.entity.id,
+        'database',
+      );
+
+      expect(result.success).toBe(true);
+      if (!result.success) return;
+
+      // Verify the edge has all required fields
+      expect(result.edge).toHaveProperty('sourceEntityId');
+      expect(result.edge).toHaveProperty('targetEntityId');
+      expect(result.edge).toHaveProperty('dependencyType');
+      expect(result.edge).toHaveProperty('createdAt');
+    });
+
+    it('should allow multiple dependencies from the same source', async () => {
+      const sourceResult = await catalog.register(validInput, actor);
+      expect(sourceResult.success).toBe(true);
+      if (!sourceResult.success) return;
+
+      const target1Input = { ...validInput, name: 'target-1' };
+      const target1Result = await catalog.register(target1Input, actor);
+      expect(target1Result.success).toBe(true);
+      if (!target1Result.success) return;
+
+      const target2Input = { ...validInput, name: 'target-2' };
+      const target2Result = await catalog.register(target2Input, actor);
+      expect(target2Result.success).toBe(true);
+      if (!target2Result.success) return;
+
+      await catalog.addDependency(sourceResult.entity.id, target1Result.entity.id, 'runtime');
+      await catalog.addDependency(sourceResult.entity.id, target2Result.entity.id, 'build');
+
+      const deps = await catalog.getDependencies(sourceResult.entity.id);
+      expect(deps.success).toBe(true);
+      if (!deps.success) return;
+
+      expect(deps.edges).toHaveLength(2);
+    });
+  });
+
+  describe('getDependencies()', () => {
+    it('should return all dependencies for a given entity', async () => {
+      const sourceResult = await catalog.register(validInput, actor);
+      expect(sourceResult.success).toBe(true);
+      if (!sourceResult.success) return;
+
+      const targetInput = { ...validInput, name: 'dep-service' };
+      const targetResult = await catalog.register(targetInput, actor);
+      expect(targetResult.success).toBe(true);
+      if (!targetResult.success) return;
+
+      await catalog.addDependency(sourceResult.entity.id, targetResult.entity.id, 'runtime');
+
+      const result = await catalog.getDependencies(sourceResult.entity.id);
+
+      expect(result.success).toBe(true);
+      if (!result.success) return;
+
+      expect(result.edges).toHaveLength(1);
+      expect(result.edges[0].sourceEntityId).toBe(sourceResult.entity.id);
+      expect(result.edges[0].targetEntityId).toBe(targetResult.entity.id);
+      expect(result.edges[0].dependencyType).toBe('runtime');
+    });
+
+    it('should return empty array when entity has no dependencies', async () => {
+      const sourceResult = await catalog.register(validInput, actor);
+      expect(sourceResult.success).toBe(true);
+      if (!sourceResult.success) return;
+
+      const result = await catalog.getDependencies(sourceResult.entity.id);
+
+      expect(result.success).toBe(true);
+      if (!result.success) return;
+
+      expect(result.edges).toHaveLength(0);
+    });
+
+    it('should only return dependencies where entity is the source', async () => {
+      const entity1Result = await catalog.register(validInput, actor);
+      expect(entity1Result.success).toBe(true);
+      if (!entity1Result.success) return;
+
+      const entity2Input = { ...validInput, name: 'entity-2' };
+      const entity2Result = await catalog.register(entity2Input, actor);
+      expect(entity2Result.success).toBe(true);
+      if (!entity2Result.success) return;
+
+      // entity1 depends on entity2
+      await catalog.addDependency(entity1Result.entity.id, entity2Result.entity.id, 'runtime');
+
+      // entity2 should have no outgoing dependencies
+      const result = await catalog.getDependencies(entity2Result.entity.id);
+      expect(result.success).toBe(true);
+      if (!result.success) return;
+
+      expect(result.edges).toHaveLength(0);
+    });
+  });
+
+  describe('removeDependency()', () => {
+    it('should remove an existing dependency edge', async () => {
+      const sourceResult = await catalog.register(validInput, actor);
+      expect(sourceResult.success).toBe(true);
+      if (!sourceResult.success) return;
+
+      const targetInput = { ...validInput, name: 'removable-dep' };
+      const targetResult = await catalog.register(targetInput, actor);
+      expect(targetResult.success).toBe(true);
+      if (!targetResult.success) return;
+
+      await catalog.addDependency(sourceResult.entity.id, targetResult.entity.id, 'runtime');
+
+      const removeResult = await catalog.removeDependency(
+        sourceResult.entity.id,
+        targetResult.entity.id,
+      );
+
+      expect(removeResult.success).toBe(true);
+      if (!removeResult.success) return;
+      expect(removeResult.removed).toBe(true);
+
+      // Verify it's actually gone
+      const deps = await catalog.getDependencies(sourceResult.entity.id);
+      expect(deps.success).toBe(true);
+      if (!deps.success) return;
+      expect(deps.edges).toHaveLength(0);
+    });
+
+    it('should return removed=false when dependency does not exist', async () => {
+      const result = await catalog.removeDependency('non-existent-source', 'non-existent-target');
+
+      expect(result.success).toBe(true);
+      if (!result.success) return;
+      expect(result.removed).toBe(false);
+    });
+
+    it('should only remove the specified edge, leaving others intact', async () => {
+      const sourceResult = await catalog.register(validInput, actor);
+      expect(sourceResult.success).toBe(true);
+      if (!sourceResult.success) return;
+
+      const target1Input = { ...validInput, name: 'keep-dep' };
+      const target1Result = await catalog.register(target1Input, actor);
+      expect(target1Result.success).toBe(true);
+      if (!target1Result.success) return;
+
+      const target2Input = { ...validInput, name: 'remove-dep' };
+      const target2Result = await catalog.register(target2Input, actor);
+      expect(target2Result.success).toBe(true);
+      if (!target2Result.success) return;
+
+      await catalog.addDependency(sourceResult.entity.id, target1Result.entity.id, 'runtime');
+      await catalog.addDependency(sourceResult.entity.id, target2Result.entity.id, 'build');
+
+      // Remove only the second dependency
+      await catalog.removeDependency(sourceResult.entity.id, target2Result.entity.id);
+
+      const deps = await catalog.getDependencies(sourceResult.entity.id);
+      expect(deps.success).toBe(true);
+      if (!deps.success) return;
+
+      expect(deps.edges).toHaveLength(1);
+      expect(deps.edges[0].targetEntityId).toBe(target1Result.entity.id);
+    });
+  });
 });

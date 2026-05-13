@@ -7,7 +7,16 @@ export { validateCatalogEntityInput } from './validation';
 export type { ValidationResult } from './validation';
 
 export { ServiceCatalog } from './service-catalog';
-export type { Actor, RegisterResult } from './service-catalog';
+export type {
+  Actor,
+  RegisterResult,
+  SearchResult,
+  AddDependencyResult,
+  GetDependenciesResult,
+  RemoveDependencyResult,
+  UpdateResult,
+  VersionHistoryResult,
+} from './service-catalog';
 
 export { DuplicateEntityError } from './catalog-store';
 export type { CatalogStore, CatalogEntityRow } from './catalog-store';
