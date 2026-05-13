@@ -1,0 +1,175 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: pull-request-preview-environments
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: pr-preview-generator
+    app.kubernetes.io/part-of: platform
+    app.kubernetes.io/component: applicationset
+spec:
+  # ─────────────────────────────────────────────────────────────────────────
+  # Pull Request Generator
+  # Creates preview environments for each open PR
+  # ─────────────────────────────────────────────────────────────────────────
+  generators:
+    - pullRequest:
+        github:
+          owner: company
+          repo: platform-services
+          tokenRef:
+            secretName: github-token
+            key: token
+          labels:
+            - preview
+            - deploy
+        requeueAfterSeconds: 60
+
+  template:
+    metadata:
+      name: 'preview-pr-{{number}}'
+      namespace: argocd
+      labels:
+        app.kubernetes.io/name: 'preview-pr-{{number}}'
+        app.kubernetes.io/part-of: platform
+        environment: preview
+        pr-number: '{{number}}'
+        pr-branch: '{{branch}}'
+      annotations:
+        # Auto-cleanup after PR is closed
+        argocd.argoproj.io/manifest-generate-paths: .
+        notifications.argoproj.io/subscribe.on-sync-succeeded.slack: platform-previews
+        notifications.argoproj.io/subscribe.on-sync-failed.slack: platform-previews
+      finalizers:
+        - resources-finalizer.argocd.argoproj.io
+    spec:
+      project: preview-environments
+      source:
+        repoURL: https://github.com/company/platform-services.git
+        targetRevision: '{{head_sha}}'
+        path: deploy/preview
+        helm:
+          releaseName: 'preview-pr-{{number}}'
+          valueFiles:
+            - values-preview.yaml
+          parameters:
+            - name: global.image.tag
+              value: 'pr-{{number}}-{{head_short_sha}}'
+            - name: global.ingress.host
+              value: 'pr-{{number}}.preview.platform.internal'
+            - name: global.environment
+              value: preview
+            - name: global.prNumber
+              value: '{{number}}'
+            - name: global.prBranch
+              value: '{{branch}}'
+            - name: global.ttl
+              value: '72h'
+            - name: resources.requests.cpu
+              value: '250m'
+            - name: resources.requests.memory
+              value: '256Mi'
+            - name: resources.limits.cpu
+              value: '500m'
+            - name: resources.limits.memory
+              value: '512Mi'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: 'preview-pr-{{number}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+          allowEmpty: false
+        syncOptions:
+          - CreateNamespace=true
+          - PrunePropagationPolicy=foreground
+          - PruneLast=true
+          - ApplyOutOfSyncOnly=true
+        retry:
+          limit: 3
+          backoff:
+            duration: 30s
+            factor: 2
+            maxDuration: 3m
+      # Ignore differences that are expected in preview environments
+      ignoreDifferences:
+        - group: apps
+          kind: Deployment
+          jsonPointers:
+            - /spec/replicas
+        - group: autoscaling
+          kind: HorizontalPodAutoscaler
+          jsonPointers:
+            - /spec/minReplicas
+            - /spec/maxReplicas
+
+---
+# Project for preview environments with restricted permissions
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: preview-environments
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: platform
+spec:
+  description: Preview environments for pull requests
+  sourceRepos:
+    - https://github.com/company/platform-services.git
+    - https://github.com/company/platform-gitops.git
+  destinations:
+    - namespace: 'preview-*'
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: ''
+      kind: Namespace
+  namespaceResourceWhitelist:
+    - group: ''
+      kind: '*'
+    - group: apps
+      kind: '*'
+    - group: networking.k8s.io
+      kind: '*'
+    - group: batch
+      kind: '*'
+  # Deny production-level resources in preview
+  namespaceResourceBlacklist:
+    - group: ''
+      kind: PersistentVolumeClaim
+  # Resource quotas for preview environments
+  roles:
+    - name: preview-deployer
+      description: Can deploy to preview environments
+      policies:
+        - p, proj:preview-environments:preview-deployer, applications, *, preview-environments/*, allow
+      groups:
+        - backend-team
+        - frontend-team
+        - platform-engineers
+
+---
+# Resource quota for preview namespaces
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: preview-limits
+  namespace: argocd
+  annotations:
+    description: Applied to all preview-* namespaces via namespace provisioner
+spec:
+  limits:
+    - type: Container
+      default:
+        cpu: 500m
+        memory: 512Mi
+      defaultRequest:
+        cpu: 100m
+        memory: 128Mi
+      max:
+        cpu: "1"
+        memory: 1Gi
+    - type: Pod
+      max:
+        cpu: "2"
+        memory: 2Gi

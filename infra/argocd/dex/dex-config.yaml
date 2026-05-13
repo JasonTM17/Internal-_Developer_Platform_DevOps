@@ -1,0 +1,172 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cm
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-cm
+    app.kubernetes.io/part-of: argocd
+data:
+  # ArgoCD Server URL
+  url: https://argocd.platform.internal
+
+  # Dex SSO Configuration
+  dex.config: |
+    issuer: https://argocd.platform.internal/api/dex
+    storage:
+      type: kubernetes
+      config:
+        inCluster: true
+    
+    # Web configuration
+    web:
+      http: 0.0.0.0:5556
+    
+    # gRPC configuration
+    grpc:
+      addr: 0.0.0.0:5557
+    
+    # Telemetry
+    telemetry:
+      http: 0.0.0.0:5558
+    
+    # OAuth2 / OIDC Connectors
+    connectors:
+      # Primary: Corporate OIDC Provider (e.g., Okta, Azure AD, Auth0)
+      - type: oidc
+        id: corporate-sso
+        name: Corporate SSO
+        config:
+          issuer: https://auth.company.com
+          clientID: $dex.oidc.clientId
+          clientSecret: $dex.oidc.clientSecret
+          redirectURI: https://argocd.platform.internal/api/dex/callback
+          scopes:
+            - openid
+            - profile
+            - email
+            - groups
+          # Map OIDC claims to Dex claims
+          claimMapping:
+            preferred_username: email
+            groups: groups
+          # Request specific claims
+          getUserInfo: true
+          insecureSkipEmailVerified: false
+      
+      # Secondary: GitHub OAuth (for external contributors)
+      - type: github
+        id: github
+        name: GitHub
+        config:
+          clientID: $dex.github.clientId
+          clientSecret: $dex.github.clientSecret
+          redirectURI: https://argocd.platform.internal/api/dex/callback
+          orgs:
+            - name: company
+              teams:
+                - platform-team
+                - backend-team
+                - frontend-team
+                - sre-team
+          loadAllGroups: false
+          teamNameField: slug
+          useLoginAsID: true
+      
+      # LDAP connector (for legacy systems)
+      - type: ldap
+        id: ldap
+        name: Corporate LDAP
+        config:
+          host: ldap.company.com:636
+          insecureNoSSL: false
+          insecureSkipVerify: false
+          rootCAData: $dex.ldap.rootCA
+          bindDN: $dex.ldap.bindDN
+          bindPW: $dex.ldap.bindPW
+          userSearch:
+            baseDN: ou=People,dc=company,dc=com
+            filter: "(objectClass=person)"
+            username: uid
+            idAttr: uid
+            emailAttr: mail
+            nameAttr: cn
+          groupSearch:
+            baseDN: ou=Groups,dc=company,dc=com
+            filter: "(objectClass=groupOfNames)"
+            userMatchers:
+              - userAttr: DN
+                groupAttr: member
+            nameAttr: cn
+    
+    # Static clients (for CLI and automation)
+    staticClients:
+      - id: argocd
+        name: ArgoCD
+        redirectURIs:
+          - https://argocd.platform.internal/auth/callback
+          - http://localhost:8085/auth/callback
+        secretEnv: DEX_ARGOCD_CLIENT_SECRET
+      
+      - id: argocd-cli
+        name: ArgoCD CLI
+        public: true
+        redirectURIs:
+          - http://localhost:8085/auth/callback
+
+  # OIDC Configuration (alternative to Dex for direct OIDC)
+  oidc.config: |
+    name: Corporate SSO
+    issuer: https://auth.company.com
+    clientID: argocd-platform
+    clientSecret: $oidc.clientSecret
+    requestedScopes:
+      - openid
+      - profile
+      - email
+      - groups
+    requestedIDTokenClaims:
+      groups:
+        essential: true
+
+  # Additional ArgoCD settings
+  admin.enabled: "true"
+  users.anonymous.enabled: "false"
+  statusbadge.enabled: "true"
+  
+  # Resource tracking method
+  application.resourceTrackingMethod: annotation
+  
+  # Health check customizations
+  resource.customizations.health.argoproj.io_Application: |
+    hs = {}
+    hs.status = "Progressing"
+    hs.message = ""
+    if obj.status ~= nil then
+      if obj.status.health ~= nil then
+        hs.status = obj.status.health.status
+        if obj.status.health.message ~= nil then
+          hs.message = obj.status.health.message
+        end
+      end
+    end
+    return hs
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: argocd-secret
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-secret
+    app.kubernetes.io/part-of: argocd
+type: Opaque
+stringData:
+  # Dex secrets (referenced as $dex.* in dex.config)
+  dex.oidc.clientId: "PLACEHOLDER_REPLACE_WITH_SEALED_SECRET"
+  dex.oidc.clientSecret: "PLACEHOLDER_REPLACE_WITH_SEALED_SECRET"
+  dex.github.clientId: "PLACEHOLDER_REPLACE_WITH_SEALED_SECRET"
+  dex.github.clientSecret: "PLACEHOLDER_REPLACE_WITH_SEALED_SECRET"
+  # OIDC direct secret
+  oidc.clientSecret: "PLACEHOLDER_REPLACE_WITH_SEALED_SECRET"
