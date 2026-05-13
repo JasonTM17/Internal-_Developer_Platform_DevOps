@@ -1,0 +1,172 @@
+groups:
+  - name: idp-api-alerts
+    rules:
+      - alert: APIHighErrorRate
+        expr: |
+          sum(rate(http_requests_total{job="idp-api",status=~"5.."}[5m]))
+          /
+          sum(rate(http_requests_total{job="idp-api"}[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "IDP API error rate above 5%"
+          description: "Error rate is {{ $value | humanizePercentage }} for the last 5 minutes"
+          runbook_url: "https://docs.idp.example.com/runbooks/high-error-rate"
+
+      - alert: APIHighLatency
+        expr: |
+          histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job="idp-api"}[5m])) by (le))
+          > 2
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "IDP API P95 latency above 2 seconds"
+          description: "P95 latency is {{ $value }}s"
+
+      - alert: APIDown
+        expr: up{job="idp-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "IDP API instance is down"
+          description: "{{ $labels.instance }} has been down for more than 1 minute"
+
+  - name: infrastructure-alerts
+    rules:
+      - alert: HighCPUUsage
+        expr: |
+          100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 10m
+        labels:
+          severity: warning
+          team: sre
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: "CPU usage is {{ $value }}%"
+
+      - alert: HighMemoryUsage
+        expr: |
+          (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 10m
+        labels:
+          severity: warning
+          team: sre
+        annotations:
+          summary: "High memory usage on {{ $labels.instance }}"
+          description: "Memory usage is {{ $value }}%"
+
+      - alert: DiskSpaceLow
+        expr: |
+          (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 15
+        for: 5m
+        labels:
+          severity: warning
+          team: sre
+        annotations:
+          summary: "Low disk space on {{ $labels.instance }}"
+          description: "Only {{ $value }}% disk space remaining"
+
+      - alert: PodCrashLooping
+        expr: |
+          rate(kube_pod_container_status_restarts_total{namespace=~"idp-.*"}[15m]) > 0
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Pod {{ $labels.pod }} is crash looping"
+          description: "Pod {{ $labels.namespace }}/{{ $labels.pod }} has restarted {{ $value }} times in 15m"
+
+      - alert: PodNotReady
+        expr: |
+          kube_pod_status_ready{namespace=~"idp-.*",condition="true"} == 0
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Pod {{ $labels.pod }} is not ready"
+
+  - name: database-alerts
+    rules:
+      - alert: DatabaseConnectionsHigh
+        expr: |
+          pg_stat_activity_count{datname="idp_production"} > 80
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Database connections above 80%"
+          description: "{{ $value }} active connections"
+
+      - alert: DatabaseReplicationLag
+        expr: |
+          pg_replication_lag_seconds > 30
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Database replication lag above 30 seconds"
+          description: "Replication lag is {{ $value }}s"
+
+      - alert: DatabaseDeadlocks
+        expr: |
+          rate(pg_stat_database_deadlocks{datname="idp_production"}[5m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Database deadlocks detected"
+
+  - name: deployment-alerts
+    rules:
+      - alert: DeploymentFailed
+        expr: |
+          kube_deployment_status_replicas_unavailable{namespace=~"idp-.*"} > 0
+        for: 10m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Deployment {{ $labels.deployment }} has unavailable replicas"
+
+      - alert: HelmReleaseFailed
+        expr: |
+          helm_release_status{status="failed"} == 1
+        for: 1m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Helm release {{ $labels.release }} failed"
+
+  - name: certificate-alerts
+    rules:
+      - alert: CertificateExpiringSoon
+        expr: |
+          certmanager_certificate_expiration_timestamp_seconds - time() < 7 * 24 * 3600
+        for: 1h
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Certificate {{ $labels.name }} expires in less than 7 days"
+
+      - alert: CertificateExpired
+        expr: |
+          certmanager_certificate_expiration_timestamp_seconds - time() < 0
+        for: 0m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Certificate {{ $labels.name }} has expired"
