@@ -1,0 +1,81 @@
+apiVersion: flagger.app/v1beta1
+kind: AlertProvider
+metadata:
+  name: slack-alert
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/name: slack-alert
+    app.kubernetes.io/part-of: idp-platform
+    app.kubernetes.io/managed-by: flagger
+spec:
+  type: slack
+  channel: platform-deployments
+  username: flagger-bot
+  secretRef:
+    name: flagger-slack-webhook
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: flagger-slack-webhook
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    app.kubernetes.io/managed-by: flagger
+type: Opaque
+stringData:
+  address: https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK
+---
+# PagerDuty alert provider for critical failures
+apiVersion: flagger.app/v1beta1
+kind: AlertProvider
+metadata:
+  name: pagerduty-alert
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/name: pagerduty-alert
+    app.kubernetes.io/part-of: idp-platform
+    app.kubernetes.io/managed-by: flagger
+spec:
+  type: slack
+  channel: platform-oncall
+  username: flagger-critical
+  secretRef:
+    name: flagger-pagerduty-webhook
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: flagger-pagerduty-webhook
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+type: Opaque
+stringData:
+  address: https://events.pagerduty.com/integration/YOUR_INTEGRATION_KEY/enqueue
+---
+# Microsoft Teams alert provider
+apiVersion: flagger.app/v1beta1
+kind: AlertProvider
+metadata:
+  name: teams-alert
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/name: teams-alert
+    app.kubernetes.io/part-of: idp-platform
+    app.kubernetes.io/managed-by: flagger
+spec:
+  type: msteams
+  secretRef:
+    name: flagger-teams-webhook
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: flagger-teams-webhook
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+type: Opaque
+stringData:
+  address: https://outlook.office.com/webhook/YOUR/TEAMS/WEBHOOK
