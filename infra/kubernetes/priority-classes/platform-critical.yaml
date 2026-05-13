@@ -1,0 +1,14 @@
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: platform-critical
+  labels:
+    app.kubernetes.io/part-of: internal-developer-platform
+    priority.idp.io/tier: critical
+  annotations:
+    description: "Critical platform services that must not be preempted"
+    priority.idp.io/use-case: "Core IDP services, databases, message queues"
+value: 1000000
+globalDefault: false
+preemptionPolicy: PreemptLowerPriority
+description: "Critical platform infrastructure components - databases, caches, core APIs. These pods will preempt lower priority workloads when resources are scarce."
