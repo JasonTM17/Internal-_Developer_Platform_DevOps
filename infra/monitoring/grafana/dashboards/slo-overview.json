@@ -1,0 +1,521 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      },
+      {
+        "datasource": "Prometheus",
+        "enable": true,
+        "expr": "changes(argocd_app_sync_total{phase=\"Succeeded\"}[5m]) > 0",
+        "iconColor": "#73BF69",
+        "name": "Deployments",
+        "tagKeys": "service",
+        "titleFormat": "Deployment"
+      }
+    ]
+  },
+  "description": "Platform SLO Overview - Error Budgets, Burn Rates, and Compliance",
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "title": "API Availability SLO (Target: 99.95%)",
+      "type": "row"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "red", "value": 0.999 },
+              { "color": "orange", "value": 0.9995 },
+              { "color": "green", "value": 0.9998 }
+            ]
+          },
+          "unit": "percentunit",
+          "min": 0.99,
+          "max": 1
+        }
+      },
+      "gridPos": { "h": 6, "w": 4, "x": 0, "y": 1 },
+      "id": 1,
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "auto",
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "targets": [
+        {
+          "expr": "slo:api_availability:ratio_rate30d",
+          "legendFormat": "Availability"
+        }
+      ],
+      "title": "Current Availability (30d)",
+      "type": "gauge"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "red", "value": 0 },
+              { "color": "orange", "value": 0.25 },
+              { "color": "green", "value": 0.5 }
+            ]
+          },
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1
+        }
+      },
+      "gridPos": { "h": 6, "w": 4, "x": 4, "y": 1 },
+      "id": 2,
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "auto",
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "targets": [
+        {
+          "expr": "slo:api_availability:error_budget_remaining",
+          "legendFormat": "Budget Remaining"
+        }
+      ],
+      "title": "Error Budget Remaining",
+      "type": "gauge"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "spanNulls": true
+          },
+          "unit": "percentunit"
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "SLO Target" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } },
+              { "id": "custom.lineStyle", "value": { "dash": [10, 10], "fill": "dash" } },
+              { "id": "custom.fillOpacity", "value": 0 }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 6, "w": 10, "x": 8, "y": 1 },
+      "id": 3,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [
+        {
+          "expr": "slo:api_availability:ratio_rate5m",
+          "legendFormat": "Availability (5m)"
+        },
+        {
+          "expr": "vector(0.9995)",
+          "legendFormat": "SLO Target"
+        }
+      ],
+      "title": "API Availability Over Time",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 6 },
+              { "color": "red", "value": 14.4 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 6, "w": 6, "x": 18, "y": 1 },
+      "id": 4,
+      "targets": [
+        {
+          "expr": "slo:api_availability:burn_rate1h",
+          "legendFormat": "Burn Rate (1h)"
+        },
+        {
+          "expr": "slo:api_availability:burn_rate6h",
+          "legendFormat": "Burn Rate (6h)"
+        }
+      ],
+      "title": "Error Budget Burn Rate",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 7 },
+      "id": 101,
+      "title": "API Latency SLO (Target: 95% < 500ms)",
+      "type": "row"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "red", "value": 0.9 },
+              { "color": "orange", "value": 0.95 },
+              { "color": "green", "value": 0.97 }
+            ]
+          },
+          "unit": "percentunit"
+        }
+      },
+      "gridPos": { "h": 6, "w": 4, "x": 0, "y": 8 },
+      "id": 5,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [
+        {
+          "expr": "slo:api_latency:ratio_rate30d",
+          "legendFormat": "% Under 500ms"
+        }
+      ],
+      "title": "Requests Under 500ms (30d)",
+      "type": "gauge"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "s"
+        }
+      },
+      "gridPos": { "h": 6, "w": 10, "x": 4, "y": 8 },
+      "id": 6,
+      "targets": [
+        {
+          "expr": "slo:api_latency:p50",
+          "legendFormat": "p50"
+        },
+        {
+          "expr": "slo:api_latency:p95",
+          "legendFormat": "p95"
+        },
+        {
+          "expr": "slo:api_latency:p99",
+          "legendFormat": "p99"
+        }
+      ],
+      "title": "API Latency Percentiles",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "red", "value": 0 },
+              { "color": "orange", "value": 0.25 },
+              { "color": "green", "value": 0.5 }
+            ]
+          },
+          "unit": "percentunit"
+        }
+      },
+      "gridPos": { "h": 6, "w": 4, "x": 14, "y": 8 },
+      "id": 7,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [
+        {
+          "expr": "slo:api_latency:error_budget_remaining",
+          "legendFormat": "Budget Remaining"
+        }
+      ],
+      "title": "Latency Error Budget",
+      "type": "gauge"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 6, "w": 6, "x": 18, "y": 8 },
+      "id": 8,
+      "targets": [
+        {
+          "expr": "slo:api_latency:burn_rate1h",
+          "legendFormat": "Burn Rate (1h)"
+        }
+      ],
+      "title": "Latency Burn Rate",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 },
+      "id": 102,
+      "title": "Deployment Success SLO (Target: 99.0%)",
+      "type": "row"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "red", "value": 0.95 },
+              { "color": "orange", "value": 0.99 },
+              { "color": "green", "value": 0.995 }
+            ]
+          },
+          "unit": "percentunit"
+        }
+      },
+      "gridPos": { "h": 6, "w": 4, "x": 0, "y": 15 },
+      "id": 9,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [
+        {
+          "expr": "slo:deployment_success:ratio_rate30d",
+          "legendFormat": "Success Rate"
+        }
+      ],
+      "title": "Deployment Success (30d)",
+      "type": "gauge"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "red", "value": 0 },
+              { "color": "orange", "value": 0.25 },
+              { "color": "green", "value": 0.5 }
+            ]
+          },
+          "unit": "percentunit"
+        }
+      },
+      "gridPos": { "h": 6, "w": 4, "x": 4, "y": 15 },
+      "id": 10,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [
+        {
+          "expr": "slo:deployment_success:error_budget_remaining",
+          "legendFormat": "Budget Remaining"
+        }
+      ],
+      "title": "Deployment Error Budget",
+      "type": "gauge"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 15 },
+      "id": 11,
+      "targets": [
+        {
+          "expr": "sum(increase(argocd_app_sync_total{phase=\"Succeeded\", dest_namespace=~\"production.*\"}[24h]))",
+          "legendFormat": "Successful"
+        },
+        {
+          "expr": "sum(increase(argocd_app_sync_total{phase=\"Failed\", dest_namespace=~\"production.*\"}[24h]))",
+          "legendFormat": "Failed"
+        }
+      ],
+      "title": "Deployments (24h)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "s"
+        }
+      },
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 15 },
+      "id": 12,
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(deployment_duration_seconds_bucket{environment=\"production\"}[7d])) by (le))",
+          "legendFormat": "p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(deployment_duration_seconds_bucket{environment=\"production\"}[7d])) by (le))",
+          "legendFormat": "p95"
+        }
+      ],
+      "title": "Deployment Duration",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 21 },
+      "id": 103,
+      "title": "Environment Provisioning SLO (Target: 99.5%)",
+      "type": "row"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "red", "value": 0.98 },
+              { "color": "orange", "value": 0.995 },
+              { "color": "green", "value": 0.998 }
+            ]
+          },
+          "unit": "percentunit"
+        }
+      },
+      "gridPos": { "h": 6, "w": 4, "x": 0, "y": 22 },
+      "id": 13,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [
+        {
+          "expr": "slo:env_provisioning:ratio_rate30d",
+          "legendFormat": "Success Rate"
+        }
+      ],
+      "title": "Provisioning Success (30d)",
+      "type": "gauge"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "s"
+        }
+      },
+      "gridPos": { "h": 6, "w": 10, "x": 4, "y": 22 },
+      "id": 14,
+      "targets": [
+        {
+          "expr": "slo:env_provisioning:duration_p95",
+          "legendFormat": "Provisioning Time (p95)"
+        },
+        {
+          "expr": "vector(600)",
+          "legendFormat": "Target (10 min)"
+        }
+      ],
+      "title": "Provisioning Duration",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "red", "value": 0 },
+              { "color": "orange", "value": 0.25 },
+              { "color": "green", "value": 0.5 }
+            ]
+          },
+          "unit": "percentunit"
+        }
+      },
+      "gridPos": { "h": 6, "w": 4, "x": 14, "y": 22 },
+      "id": 15,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [
+        {
+          "expr": "slo:env_provisioning:error_budget_remaining",
+          "legendFormat": "Budget Remaining"
+        }
+      ],
+      "title": "Provisioning Error Budget",
+      "type": "gauge"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["slo", "platform", "reliability"],
+  "templating": {
+    "list": [
+      {
+        "current": { "selected": false, "text": "Prometheus", "value": "Prometheus" },
+        "hide": 0,
+        "includeAll": false,
+        "name": "datasource",
+        "options": [],
+        "query": "prometheus",
+        "refresh": 1,
+        "type": "datasource"
+      }
+    ]
+  },
+  "time": { "from": "now-30d", "to": "now" },
+  "timepicker": {},
+  "timezone": "utc",
+  "title": "Platform SLO Overview",
+  "uid": "platform-slo-overview",
+  "version": 1
+}
