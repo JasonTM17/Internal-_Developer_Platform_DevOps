@@ -1,0 +1,1233 @@
+openapi: 3.1.0
+info:
+  title: Internal Developer Platform API
+  version: 2.1.0
+  description: |
+    The IDP Platform API provides programmatic access to service catalog management,
+    deployment orchestration, environment provisioning, and platform observability.
+    
+    ## Base URL
+    - Production: `https://api.platform.internal/v2`
+    - Staging: `https://api.staging.platform.internal/v2`
+    
+    ## Authentication
+    All endpoints require a valid Bearer token obtained via OAuth2 or API key.
+    See the [Authentication Guide](./authentication.md) for details.
+  contact:
+    name: Platform Engineering Team
+    email: platform-team@company.com
+    url: https://platform.internal/docs
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+
+servers:
+  - url: https://api.platform.internal/v2
+    description: Production
+  - url: https://api.staging.platform.internal/v2
+    description: Staging
+  - url: http://localhost:3001/v2
+    description: Local Development
+
+security:
+  - BearerAuth: []
+  - ApiKeyAuth: []
+
+tags:
+  - name: Services
+    description: Service catalog management
+  - name: Deployments
+    description: Deployment orchestration and tracking
+  - name: Environments
+    description: Environment provisioning and management
+  - name: Health
+    description: Platform health and readiness
+  - name: Templates
+    description: Service template management
+  - name: Pipelines
+    description: CI/CD pipeline management
+  - name: Secrets
+    description: Secret and configuration management
+  - name: Users
+    description: User and team management
+
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      tags: [Health]
+      summary: Platform health check
+      security: []
+      responses:
+        '200':
+          description: Platform is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          description: Platform is degraded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /health/ready:
+    get:
+      operationId: getReadiness
+      tags: [Health]
+      summary: Readiness probe
+      security: []
+      responses:
+        '200':
+          description: Service is ready to accept traffic
+        '503':
+          description: Service is not ready
+
+  /services:
+    get:
+      operationId: listServices
+      tags: [Services]
+      summary: List all registered services
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - $ref: '#/components/parameters/SortParam'
+        - name: team
+          in: query
+          schema:
+            type: string
+          description: Filter by team ownership
+        - name: tier
+          in: query
+          schema:
+            type: string
+            enum: [critical, standard, experimental]
+          description: Filter by service tier
+        - name: lifecycle
+          in: query
+          schema:
+            type: string
+            enum: [production, staging, deprecated, experimental]
+          description: Filter by lifecycle stage
+      responses:
+        '200':
+          description: Paginated list of services
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceListResponse'
+          headers:
+            X-Total-Count:
+              schema:
+                type: integer
+              description: Total number of services
+            X-Page-Count:
+              schema:
+                type: integer
+              description: Total number of pages
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+    post:
+      operationId: createService
+      tags: [Services]
+      summary: Register a new service
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateServiceRequest'
+      responses:
+        '201':
+          description: Service created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Service'
+          headers:
+            Location:
+              schema:
+                type: string
+              description: URL of the created service
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /services/{serviceId}:
+    get:
+      operationId: getService
+      tags: [Services]
+      summary: Get service details
+      parameters:
+        - $ref: '#/components/parameters/ServiceIdParam'
+      responses:
+        '200':
+          description: Service details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Service'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      operationId: updateService
+      tags: [Services]
+      summary: Update service metadata
+      parameters:
+        - $ref: '#/components/parameters/ServiceIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateServiceRequest'
+      responses:
+        '200':
+          description: Service updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Service'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      operationId: deleteService
+      tags: [Services]
+      summary: Deregister a service
+      parameters:
+        - $ref: '#/components/parameters/ServiceIdParam'
+      responses:
+        '204':
+          description: Service deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /services/{serviceId}/deployments:
+    get:
+      operationId: listServiceDeployments
+      tags: [Deployments]
+      summary: List deployments for a service
+      parameters:
+        - $ref: '#/components/parameters/ServiceIdParam'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, in_progress, succeeded, failed, rolled_back]
+        - name: environment
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Deployment history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeploymentListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /deployments:
+    post:
+      operationId: createDeployment
+      tags: [Deployments]
+      summary: Trigger a new deployment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDeploymentRequest'
+      responses:
+        '202':
+          description: Deployment accepted and queued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Deployment'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: Deployment already in progress
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /deployments/{deploymentId}:
+    get:
+      operationId: getDeployment
+      tags: [Deployments]
+      summary: Get deployment status
+      parameters:
+        - $ref: '#/components/parameters/DeploymentIdParam'
+      responses:
+        '200':
+          description: Deployment details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Deployment'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /deployments/{deploymentId}/rollback:
+    post:
+      operationId: rollbackDeployment
+      tags: [Deployments]
+      summary: Rollback a deployment
+      parameters:
+        - $ref: '#/components/parameters/DeploymentIdParam'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RollbackRequest'
+      responses:
+        '202':
+          description: Rollback initiated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Deployment'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /environments:
+    get:
+      operationId: listEnvironments
+      tags: [Environments]
+      summary: List all environments
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [production, staging, development, preview]
+      responses:
+        '200':
+          description: Environment list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvironmentListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      operationId: createEnvironment
+      tags: [Environments]
+      summary: Provision a new environment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEnvironmentRequest'
+      responses:
+        '202':
+          description: Environment provisioning started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Environment'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /environments/{environmentId}:
+    get:
+      operationId: getEnvironment
+      tags: [Environments]
+      summary: Get environment details
+      parameters:
+        - $ref: '#/components/parameters/EnvironmentIdParam'
+      responses:
+        '200':
+          description: Environment details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Environment'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      operationId: deleteEnvironment
+      tags: [Environments]
+      summary: Tear down an environment
+      parameters:
+        - $ref: '#/components/parameters/EnvironmentIdParam'
+      responses:
+        '202':
+          description: Environment teardown initiated
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /templates:
+    get:
+      operationId: listTemplates
+      tags: [Templates]
+      summary: List available service templates
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - name: language
+          in: query
+          schema:
+            type: string
+          description: Filter by programming language
+      responses:
+        '200':
+          description: Template list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /templates/{templateId}/scaffold:
+    post:
+      operationId: scaffoldFromTemplate
+      tags: [Templates]
+      summary: Scaffold a new service from template
+      parameters:
+        - name: templateId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScaffoldRequest'
+      responses:
+        '202':
+          description: Scaffolding initiated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScaffoldResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /pipelines:
+    get:
+      operationId: listPipelines
+      tags: [Pipelines]
+      summary: List CI/CD pipelines
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - name: serviceId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Pipeline list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PipelineListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /pipelines/{pipelineId}/trigger:
+    post:
+      operationId: triggerPipeline
+      tags: [Pipelines]
+      summary: Manually trigger a pipeline run
+      parameters:
+        - name: pipelineId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TriggerPipelineRequest'
+      responses:
+        '202':
+          description: Pipeline triggered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PipelineRun'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /secrets:
+    get:
+      operationId: listSecrets
+      tags: [Secrets]
+      summary: List secrets (metadata only)
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - name: namespace
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Secret metadata list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SecretListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      operationId: createSecret
+      tags: [Secrets]
+      summary: Create or update a secret
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSecretRequest'
+      responses:
+        '201':
+          description: Secret created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SecretMetadata'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /users/me:
+    get:
+      operationId: getCurrentUser
+      tags: [Users]
+      summary: Get current user profile
+      responses:
+        '200':
+          description: Current user details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /teams:
+    get:
+      operationId: listTeams
+      tags: [Users]
+      summary: List teams
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+      responses:
+        '200':
+          description: Team list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: OAuth2 JWT token from identity provider
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: Platform API key for service-to-service communication
+
+  parameters:
+    PageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+      description: Page number
+    PageSizeParam:
+      name: pageSize
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+      description: Items per page
+    SortParam:
+      name: sort
+      in: query
+      schema:
+        type: string
+        default: '-updatedAt'
+      description: Sort field (prefix with - for descending)
+    ServiceIdParam:
+      name: serviceId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Service unique identifier
+    DeploymentIdParam:
+      name: deploymentId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Deployment unique identifier
+    EnvironmentIdParam:
+      name: environmentId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Environment unique identifier
+
+  schemas:
+    HealthResponse:
+      type: object
+      required: [status, version, timestamp]
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        version:
+          type: string
+          example: '2.1.0'
+        timestamp:
+          type: string
+          format: date-time
+        checks:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              status:
+                type: string
+                enum: [pass, warn, fail]
+              latency_ms:
+                type: number
+              message:
+                type: string
+
+    Service:
+      type: object
+      required: [id, name, team, tier, lifecycle, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: payment-service
+        description:
+          type: string
+        team:
+          type: string
+          example: payments-team
+        tier:
+          type: string
+          enum: [critical, standard, experimental]
+        lifecycle:
+          type: string
+          enum: [production, staging, deprecated, experimental]
+        repository:
+          type: string
+          format: uri
+        language:
+          type: string
+        framework:
+          type: string
+        dependencies:
+          type: array
+          items:
+            type: string
+            format: uuid
+        metadata:
+          type: object
+          additionalProperties: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateServiceRequest:
+      type: object
+      required: [name, team, tier]
+      properties:
+        name:
+          type: string
+          minLength: 3
+          maxLength: 63
+          pattern: '^[a-z][a-z0-9-]*[a-z0-9]$'
+        description:
+          type: string
+          maxLength: 500
+        team:
+          type: string
+        tier:
+          type: string
+          enum: [critical, standard, experimental]
+        repository:
+          type: string
+          format: uri
+        language:
+          type: string
+        framework:
+          type: string
+        metadata:
+          type: object
+          additionalProperties: true
+
+    UpdateServiceRequest:
+      type: object
+      properties:
+        description:
+          type: string
+          maxLength: 500
+        team:
+          type: string
+        tier:
+          type: string
+          enum: [critical, standard, experimental]
+        lifecycle:
+          type: string
+          enum: [production, staging, deprecated, experimental]
+        metadata:
+          type: object
+          additionalProperties: true
+
+    ServiceListResponse:
+      type: object
+      required: [data, pagination]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Service'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    Deployment:
+      type: object
+      required: [id, serviceId, version, environment, status, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        serviceId:
+          type: string
+          format: uuid
+        version:
+          type: string
+          example: '1.5.2'
+        environment:
+          type: string
+          example: production
+        status:
+          type: string
+          enum: [pending, in_progress, succeeded, failed, rolled_back]
+        strategy:
+          type: string
+          enum: [rolling, blue_green, canary]
+          default: rolling
+        initiatedBy:
+          type: string
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+        duration_seconds:
+          type: integer
+        artifacts:
+          type: object
+          properties:
+            image:
+              type: string
+            chart_version:
+              type: string
+            commit_sha:
+              type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateDeploymentRequest:
+      type: object
+      required: [serviceId, version, environment]
+      properties:
+        serviceId:
+          type: string
+          format: uuid
+        version:
+          type: string
+        environment:
+          type: string
+        strategy:
+          type: string
+          enum: [rolling, blue_green, canary]
+          default: rolling
+        canaryWeight:
+          type: integer
+          minimum: 1
+          maximum: 50
+          description: Initial canary traffic percentage
+        autoPromote:
+          type: boolean
+          default: false
+        requireApproval:
+          type: boolean
+          default: true
+
+    RollbackRequest:
+      type: object
+      properties:
+        targetVersion:
+          type: string
+          description: Specific version to rollback to (defaults to previous)
+        reason:
+          type: string
+
+    DeploymentListResponse:
+      type: object
+      required: [data, pagination]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Deployment'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    Environment:
+      type: object
+      required: [id, name, type, status, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: preview-pr-142
+        type:
+          type: string
+          enum: [production, staging, development, preview]
+        status:
+          type: string
+          enum: [provisioning, active, updating, destroying, destroyed, failed]
+        cluster:
+          type: string
+        namespace:
+          type: string
+        resources:
+          type: object
+          properties:
+            cpu_cores:
+              type: number
+            memory_gb:
+              type: number
+            storage_gb:
+              type: number
+        endpoints:
+          type: object
+          additionalProperties:
+            type: string
+            format: uri
+        ttl:
+          type: string
+          description: Time-to-live for ephemeral environments (e.g., 72h)
+        createdAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+
+    CreateEnvironmentRequest:
+      type: object
+      required: [name, type]
+      properties:
+        name:
+          type: string
+          minLength: 3
+          maxLength: 63
+        type:
+          type: string
+          enum: [development, preview, staging]
+        template:
+          type: string
+          description: Environment template to use
+        services:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Services to deploy into this environment
+        ttl:
+          type: string
+          default: '72h'
+          description: Auto-destroy after this duration
+        resources:
+          type: object
+          properties:
+            cpu_cores:
+              type: number
+              default: 2
+            memory_gb:
+              type: number
+              default: 4
+            storage_gb:
+              type: number
+              default: 20
+
+    EnvironmentListResponse:
+      type: object
+      required: [data, pagination]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Environment'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    Template:
+      type: object
+      required: [id, name, language, version]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        language:
+          type: string
+        framework:
+          type: string
+        version:
+          type: string
+        includes:
+          type: array
+          items:
+            type: string
+          description: What the template includes (e.g., CI/CD, Dockerfile, Helm chart)
+
+    TemplateListResponse:
+      type: object
+      required: [data, pagination]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Template'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    ScaffoldRequest:
+      type: object
+      required: [serviceName, team]
+      properties:
+        serviceName:
+          type: string
+        team:
+          type: string
+        repository:
+          type: string
+          description: Target repository (created if not exists)
+        variables:
+          type: object
+          additionalProperties: true
+
+    ScaffoldResponse:
+      type: object
+      properties:
+        jobId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [queued, in_progress, completed, failed]
+        repository:
+          type: string
+          format: uri
+
+    PipelineRun:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        pipelineId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [queued, running, succeeded, failed, cancelled]
+        triggeredBy:
+          type: string
+        startedAt:
+          type: string
+          format: date-time
+
+    PipelineListResponse:
+      type: object
+      required: [data, pagination]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/PipelineRun'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    TriggerPipelineRequest:
+      type: object
+      properties:
+        branch:
+          type: string
+          default: main
+        parameters:
+          type: object
+          additionalProperties: true
+
+    SecretMetadata:
+      type: object
+      properties:
+        name:
+          type: string
+        namespace:
+          type: string
+        version:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        rotateAfter:
+          type: string
+
+    CreateSecretRequest:
+      type: object
+      required: [name, namespace, value]
+      properties:
+        name:
+          type: string
+        namespace:
+          type: string
+        value:
+          type: string
+          format: password
+        rotateAfter:
+          type: string
+          description: Auto-rotation interval (e.g., 30d)
+
+    SecretListResponse:
+      type: object
+      required: [data, pagination]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/SecretMetadata'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        teams:
+          type: array
+          items:
+            type: string
+        roles:
+          type: array
+          items:
+            type: string
+            enum: [admin, platform-engineer, developer, viewer]
+
+    TeamListResponse:
+      type: object
+      required: [data, pagination]
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              name:
+                type: string
+              members:
+                type: integer
+              services:
+                type: integer
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    Pagination:
+      type: object
+      required: [page, pageSize, total, totalPages]
+      properties:
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        total:
+          type: integer
+        totalPages:
+          type: integer
+        hasNext:
+          type: boolean
+        hasPrevious:
+          type: boolean
+
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              example: VALIDATION_ERROR
+            message:
+              type: string
+              example: Invalid request parameters
+            details:
+              type: array
+              items:
+                type: object
+                properties:
+                  field:
+                    type: string
+                  message:
+                    type: string
+                  code:
+                    type: string
+            requestId:
+              type: string
+              format: uuid
+
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Conflict:
+      description: Resource already exists
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    RateLimited:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+      headers:
+        X-RateLimit-Limit:
+          schema:
+            type: integer
+          description: Request limit per window
+        X-RateLimit-Remaining:
+          schema:
+            type: integer
+          description: Remaining requests in window
+        X-RateLimit-Reset:
+          schema:
+            type: integer
+          description: Unix timestamp when the window resets
+        Retry-After:
+          schema:
+            type: integer
+          description: Seconds to wait before retrying
