@@ -11,7 +11,7 @@ services:
   api:
     environment:
       # Enable verbose logging
-      LOG_LEVEL: trace
+      LOG_LEVEL: debug
       DEBUG: "idp:*,express:*"
       # Enable source maps
       NODE_OPTIONS: "--enable-source-maps"
