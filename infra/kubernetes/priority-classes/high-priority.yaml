@@ -1,0 +1,42 @@
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: high-priority
+  labels:
+    app.kubernetes.io/part-of: internal-developer-platform
+    priority.idp.io/tier: high
+  annotations:
+    description: "High priority workloads that should be scheduled before standard workloads"
+    priority.idp.io/use-case: "Production API services, user-facing applications"
+value: 750000
+globalDefault: false
+preemptionPolicy: PreemptLowerPriority
+description: "High priority production workloads - API services, portals, and user-facing applications. Will preempt batch jobs and dev workloads."
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: default-priority
+  labels:
+    app.kubernetes.io/part-of: internal-developer-platform
+    priority.idp.io/tier: default
+  annotations:
+    description: "Default priority for standard workloads"
+value: 500000
+globalDefault: true
+preemptionPolicy: PreemptLowerPriority
+description: "Default priority class for standard workloads. Applied automatically to pods without explicit priority class."
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: batch-priority
+  labels:
+    app.kubernetes.io/part-of: internal-developer-platform
+    priority.idp.io/tier: batch
+  annotations:
+    description: "Low priority for batch jobs and non-critical workloads"
+value: 250000
+globalDefault: false
+preemptionPolicy: Never
+description: "Batch processing and non-critical workloads. These pods will not preempt other workloads and may be evicted when resources are needed."
