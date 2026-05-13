@@ -1,0 +1,196 @@
+name: Terraform Plan
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'infra/terraform/**'
+      - '.github/workflows/terraform-*.yaml'
+
+concurrency:
+  group: terraform-${{ github.head_ref }}
+  cancel-in-progress: true
+
+env:
+  TF_VERSION: '1.7.0'
+  TF_WORKING_DIR: infra/terraform
+  AWS_REGION: us-east-1
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+jobs:
+  detect-changes:
+    name: Detect Infrastructure Changes
+    runs-on: ubuntu-latest
+    outputs:
+      environments: ${{ steps.changes.outputs.environments }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect changed environments
+        id: changes
+        run: |
+          CHANGED_DIRS=$(git diff --name-only origin/main...HEAD -- infra/terraform/ | \
+            grep -oP 'infra/terraform/environments/\K[^/]+' | sort -u | jq -R -s -c 'split("\n")[:-1]')
+          
+          if [[ "$CHANGED_DIRS" == "[]" ]] || [[ -z "$CHANGED_DIRS" ]]; then
+            # Check for module changes that affect all environments
+            MODULE_CHANGES=$(git diff --name-only origin/main...HEAD -- infra/terraform/modules/)
+            if [[ -n "$MODULE_CHANGES" ]]; then
+              echo 'environments=["dev","staging","production"]' >> $GITHUB_OUTPUT
+            else
+              echo 'environments=[]' >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "environments=${CHANGED_DIRS}" >> $GITHUB_OUTPUT
+          fi
+
+  validate:
+    name: Validate Terraform
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+      - name: Run tflint
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: latest
+
+      - name: Initialize tflint
+        run: tflint --init
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+      - name: Run tflint
+        run: tflint --recursive --format=compact
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+      - name: Run tfsec
+        uses: aquasecurity/tfsec-action@v1.0.3
+        with:
+          working_directory: ${{ env.TF_WORKING_DIR }}
+          soft_fail: false
+
+      - name: Run checkov
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: ${{ env.TF_WORKING_DIR }}
+          framework: terraform
+          output_format: sarif
+          download_external_modules: true
+
+  plan:
+    name: Plan - ${{ matrix.environment }}
+    runs-on: ubuntu-latest
+    needs: [detect-changes, validate]
+    if: needs.detect-changes.outputs.environments != '[]'
+    strategy:
+      matrix:
+        environment: ${{ fromJson(needs.detect-changes.outputs.environments) }}
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_TERRAFORM_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Terraform Init
+        run: |
+          terraform init \
+            -backend-config="bucket=idp-terraform-state-${{ matrix.environment }}" \
+            -backend-config="key=infrastructure/terraform.tfstate" \
+            -backend-config="region=${{ env.AWS_REGION }}" \
+            -backend-config="dynamodb_table=terraform-locks"
+        working-directory: ${{ env.TF_WORKING_DIR }}/environments/${{ matrix.environment }}
+
+      - name: Terraform Plan
+        id: plan
+        run: |
+          terraform plan \
+            -var-file="terraform.tfvars" \
+            -out=tfplan \
+            -detailed-exitcode \
+            -no-color 2>&1 | tee plan-output.txt
+          echo "exitcode=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
+        working-directory: ${{ env.TF_WORKING_DIR }}/environments/${{ matrix.environment }}
+        continue-on-error: true
+
+      - name: Generate plan summary
+        id: summary
+        run: |
+          terraform show -no-color tfplan > plan-summary.txt
+          
+          ADDS=$(grep -c '# .* will be created' plan-summary.txt || echo "0")
+          CHANGES=$(grep -c '# .* will be updated' plan-summary.txt || echo "0")
+          DESTROYS=$(grep -c '# .* will be destroyed' plan-summary.txt || echo "0")
+          
+          echo "adds=${ADDS}" >> $GITHUB_OUTPUT
+          echo "changes=${CHANGES}" >> $GITHUB_OUTPUT
+          echo "destroys=${DESTROYS}" >> $GITHUB_OUTPUT
+        working-directory: ${{ env.TF_WORKING_DIR }}/environments/${{ matrix.environment }}
+
+      - name: Comment PR with plan
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const plan = fs.readFileSync('${{ env.TF_WORKING_DIR }}/environments/${{ matrix.environment }}/plan-output.txt', 'utf8');
+            const truncatedPlan = plan.length > 60000 ? plan.substring(0, 60000) + '\n... (truncated)' : plan;
+            
+            const body = `### Terraform Plan - \`${{ matrix.environment }}\`
+            
+            | Action | Count |
+            |--------|-------|
+            | ➕ Create | ${{ steps.summary.outputs.adds }} |
+            | 🔄 Update | ${{ steps.summary.outputs.changes }} |
+            | ❌ Destroy | ${{ steps.summary.outputs.destroys }} |
+            
+            <details><summary>Show Plan Output</summary>
+            
+            \`\`\`hcl
+            ${truncatedPlan}
+            \`\`\`
+            
+            </details>
+            
+            *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+
+      - name: Upload plan artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-${{ matrix.environment }}
+          path: ${{ env.TF_WORKING_DIR }}/environments/${{ matrix.environment }}/tfplan
+          retention-days: 5
+
+      - name: Fail on destroy in production
+        if: matrix.environment == 'production' && steps.summary.outputs.destroys != '0'
+        run: |
+          echo "::error::Production plan includes resource destruction. Manual review required."
+          echo "Destroyed resources: ${{ steps.summary.outputs.destroys }}"
+          exit 1
