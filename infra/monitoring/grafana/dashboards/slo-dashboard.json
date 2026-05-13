@@ -1,0 +1,113 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 1,
+      "title": "Service Level Objectives",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "orange", "value": 0 },
+              { "color": "green", "value": 50 }
+            ]
+          },
+          "unit": "percentunit",
+          "min": -100,
+          "max": 100
+        }
+      },
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 1 },
+      "id": 2,
+      "title": "Error Budget Remaining (30d)",
+      "description": "SLO Target: 99.9% availability. Shows remaining error budget as percentage.",
+      "type": "gauge",
+      "targets": [
+        { "expr": "idp:slo:error_budget_remaining:30d * 100", "legendFormat": "Budget" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 99.9 }
+            ]
+          },
+          "unit": "percentunit"
+        }
+      },
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 1 },
+      "id": 3,
+      "title": "Availability SLI (5m rolling)",
+      "type": "stat",
+      "targets": [
+        { "expr": "idp:slo:availability:5m * 100", "legendFormat": "Availability" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 95 }
+            ]
+          },
+          "unit": "percentunit"
+        }
+      },
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 1 },
+      "id": 4,
+      "title": "Latency SLI (requests < 500ms)",
+      "type": "stat",
+      "targets": [
+        { "expr": "idp:slo:latency:5m * 100", "legendFormat": "Within SLO" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percentunit" } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 7 },
+      "id": 5,
+      "title": "Error Budget Burn Rate (30d window)",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "idp:slo:error_budget_remaining:30d * 100", "legendFormat": "Budget Remaining %" },
+        { "expr": "0", "legendFormat": "Budget Exhausted" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percentunit" } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 7 },
+      "id": 6,
+      "title": "Availability Over Time",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "idp:slo:availability:5m * 100", "legendFormat": "Actual" },
+        { "expr": "99.9", "legendFormat": "SLO Target (99.9%)" }
+      ]
+    }
+  ],
+  "schemaVersion": 38,
+  "tags": ["idp", "slo", "reliability"],
+  "time": { "from": "now-30d", "to": "now" },
+  "title": "IDP SLO Dashboard",
+  "uid": "idp-slo-dashboard",
+  "version": 1
+}
