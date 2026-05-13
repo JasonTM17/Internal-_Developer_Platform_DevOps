@@ -1,0 +1,158 @@
+{
+  "description": "Redis metrics - memory, connections, commands, and keyspace",
+  "editable": true,
+  "graphTooltip": 1,
+  "panels": [
+    { "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 }, "id": 100, "title": "Overview", "type": "row" },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "thresholds": { "steps": [{ "color": "green", "value": null }] } } },
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 1 },
+      "id": 1,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "redis_uptime_in_seconds{instance=\"$instance\"}", "legendFormat": "Uptime" }],
+      "title": "Uptime (seconds)",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "orange", "value": 80 }, { "color": "red", "value": 95 }] }, "unit": "percent" } },
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 1 },
+      "id": 2,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "100 * redis_memory_used_bytes{instance=\"$instance\"} / redis_memory_max_bytes{instance=\"$instance\"}", "legendFormat": "Memory %" }],
+      "title": "Memory Usage",
+      "type": "gauge"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "thresholds": { "steps": [{ "color": "green", "value": null }] } } },
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 1 },
+      "id": 3,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "redis_connected_clients{instance=\"$instance\"}", "legendFormat": "Clients" }],
+      "title": "Connected Clients",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "thresholds": { "steps": [{ "color": "green", "value": null }] }, "unit": "ops" } },
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 1 },
+      "id": 4,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "rate(redis_commands_processed_total{instance=\"$instance\"}[5m])", "legendFormat": "Ops/s" }],
+      "title": "Commands/sec",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] }, "unit": "percent" } },
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 1 },
+      "id": 5,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "100 * redis_keyspace_hits_total{instance=\"$instance\"} / (redis_keyspace_hits_total{instance=\"$instance\"} + redis_keyspace_misses_total{instance=\"$instance\"})", "legendFormat": "Hit Rate" }],
+      "title": "Cache Hit Rate",
+      "type": "gauge"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "thresholds": { "steps": [{ "color": "green", "value": null }] } } },
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 1 },
+      "id": 6,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "sum(redis_db_keys{instance=\"$instance\"})", "legendFormat": "Keys" }],
+      "title": "Total Keys",
+      "type": "stat"
+    },
+    { "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 }, "id": 101, "title": "Memory", "type": "row" },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "custom": { "lineWidth": 2, "fillOpacity": 20 }, "unit": "bytes" } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "id": 7,
+      "targets": [
+        { "expr": "redis_memory_used_bytes{instance=\"$instance\"}", "legendFormat": "Used Memory" },
+        { "expr": "redis_memory_max_bytes{instance=\"$instance\"}", "legendFormat": "Max Memory" },
+        { "expr": "redis_memory_used_rss_bytes{instance=\"$instance\"}", "legendFormat": "RSS" }
+      ],
+      "title": "Memory Usage",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "custom": { "lineWidth": 2, "fillOpacity": 10 }, "unit": "short" } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "id": 8,
+      "targets": [
+        { "expr": "rate(redis_evicted_keys_total{instance=\"$instance\"}[5m])", "legendFormat": "Evictions/s" },
+        { "expr": "rate(redis_expired_keys_total{instance=\"$instance\"}[5m])", "legendFormat": "Expirations/s" }
+      ],
+      "title": "Evictions & Expirations",
+      "type": "timeseries"
+    },
+    { "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 }, "id": 102, "title": "Commands", "type": "row" },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "custom": { "lineWidth": 2, "fillOpacity": 10 }, "unit": "ops" } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 15 },
+      "id": 9,
+      "targets": [
+        { "expr": "rate(redis_commands_total{instance=\"$instance\", cmd=\"get\"}[5m])", "legendFormat": "GET" },
+        { "expr": "rate(redis_commands_total{instance=\"$instance\", cmd=\"set\"}[5m])", "legendFormat": "SET" },
+        { "expr": "rate(redis_commands_total{instance=\"$instance\", cmd=\"del\"}[5m])", "legendFormat": "DEL" },
+        { "expr": "rate(redis_commands_total{instance=\"$instance\", cmd=\"hget\"}[5m])", "legendFormat": "HGET" },
+        { "expr": "rate(redis_commands_total{instance=\"$instance\", cmd=\"hset\"}[5m])", "legendFormat": "HSET" }
+      ],
+      "title": "Command Rate by Type",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "custom": { "lineWidth": 2, "fillOpacity": 10 }, "unit": "s" } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 15 },
+      "id": 10,
+      "targets": [
+        { "expr": "rate(redis_commands_duration_seconds_total{instance=\"$instance\"}[5m]) / rate(redis_commands_total{instance=\"$instance\"}[5m])", "legendFormat": "{{cmd}}" }
+      ],
+      "title": "Command Latency (avg)",
+      "type": "timeseries"
+    },
+    { "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 23 }, "id": 103, "title": "Network & Replication", "type": "row" },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "custom": { "lineWidth": 2, "fillOpacity": 10 }, "unit": "Bps" } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+      "id": 11,
+      "targets": [
+        { "expr": "rate(redis_net_input_bytes_total{instance=\"$instance\"}[5m])", "legendFormat": "Input" },
+        { "expr": "rate(redis_net_output_bytes_total{instance=\"$instance\"}[5m])", "legendFormat": "Output" }
+      ],
+      "title": "Network I/O",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "custom": { "lineWidth": 2, "fillOpacity": 10 }, "unit": "bytes" } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+      "id": 12,
+      "targets": [
+        { "expr": "redis_replication_offset{instance=\"$instance\"}", "legendFormat": "Replication Offset" }
+      ],
+      "title": "Replication Offset",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "tags": ["redis", "cache", "redis-exporter"],
+  "templating": {
+    "list": [
+      { "name": "datasource", "query": "prometheus", "type": "datasource" },
+      { "datasource": "Prometheus", "name": "instance", "query": "label_values(redis_uptime_in_seconds, instance)", "type": "query" }
+    ]
+  },
+  "time": { "from": "now-6h", "to": "now" },
+  "title": "Redis Metrics",
+  "uid": "redis-exporter-metrics",
+  "version": 1
+}

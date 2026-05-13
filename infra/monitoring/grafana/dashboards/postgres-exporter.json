@@ -1,0 +1,142 @@
+{
+  "description": "PostgreSQL database metrics - connections, queries, replication, and performance",
+  "editable": true,
+  "graphTooltip": 1,
+  "panels": [
+    { "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 }, "id": 100, "title": "Connection Pool", "type": "row" },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "orange", "value": 70 }, { "color": "red", "value": 90 }] }, "unit": "percent" } },
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 1 },
+      "id": 1,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "100 * pg_stat_activity_count{datname=\"$database\"} / pg_settings_max_connections", "legendFormat": "Utilization" }],
+      "title": "Connection Pool Utilization",
+      "type": "gauge"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "custom": { "lineWidth": 2, "fillOpacity": 10 } } },
+      "gridPos": { "h": 6, "w": 9, "x": 6, "y": 1 },
+      "id": 2,
+      "targets": [
+        { "expr": "pg_stat_activity_count{datname=\"$database\", state=\"active\"}", "legendFormat": "Active" },
+        { "expr": "pg_stat_activity_count{datname=\"$database\", state=\"idle\"}", "legendFormat": "Idle" },
+        { "expr": "pg_stat_activity_count{datname=\"$database\", state=\"idle in transaction\"}", "legendFormat": "Idle in Transaction" }
+      ],
+      "title": "Connections by State",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "custom": { "lineWidth": 2, "fillOpacity": 10 } } },
+      "gridPos": { "h": 6, "w": 9, "x": 15, "y": 1 },
+      "id": 3,
+      "targets": [
+        { "expr": "pg_stat_activity_count{datname=\"$database\"}", "legendFormat": "Total" },
+        { "expr": "pg_settings_max_connections", "legendFormat": "Max" }
+      ],
+      "title": "Total Connections vs Max",
+      "type": "timeseries"
+    },
+    { "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 7 }, "id": 101, "title": "Query Performance", "type": "row" },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "custom": { "lineWidth": 2, "fillOpacity": 10 }, "unit": "ops" } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "id": 4,
+      "targets": [
+        { "expr": "rate(pg_stat_database_tup_fetched{datname=\"$database\"}[5m])", "legendFormat": "Rows Fetched" },
+        { "expr": "rate(pg_stat_database_tup_inserted{datname=\"$database\"}[5m])", "legendFormat": "Rows Inserted" },
+        { "expr": "rate(pg_stat_database_tup_updated{datname=\"$database\"}[5m])", "legendFormat": "Rows Updated" },
+        { "expr": "rate(pg_stat_database_tup_deleted{datname=\"$database\"}[5m])", "legendFormat": "Rows Deleted" }
+      ],
+      "title": "Row Operations/sec",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "custom": { "lineWidth": 2, "fillOpacity": 10 }, "unit": "ops" } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "id": 5,
+      "targets": [
+        { "expr": "rate(pg_stat_database_xact_commit{datname=\"$database\"}[5m])", "legendFormat": "Commits/s" },
+        { "expr": "rate(pg_stat_database_xact_rollback{datname=\"$database\"}[5m])", "legendFormat": "Rollbacks/s" }
+      ],
+      "title": "Transactions/sec",
+      "type": "timeseries"
+    },
+    { "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 16 }, "id": 102, "title": "Cache & I/O", "type": "row" },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "thresholds": { "steps": [{ "color": "red", "value": null }, { "color": "orange", "value": 90 }, { "color": "green", "value": 95 }] }, "unit": "percent" } },
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 17 },
+      "id": 6,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "100 * pg_stat_database_blks_hit{datname=\"$database\"} / (pg_stat_database_blks_hit{datname=\"$database\"} + pg_stat_database_blks_read{datname=\"$database\"})", "legendFormat": "Hit Ratio" }],
+      "title": "Buffer Cache Hit Ratio",
+      "type": "gauge"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "custom": { "lineWidth": 2, "fillOpacity": 10 }, "unit": "ops" } },
+      "gridPos": { "h": 6, "w": 9, "x": 6, "y": 17 },
+      "id": 7,
+      "targets": [
+        { "expr": "rate(pg_stat_database_blks_hit{datname=\"$database\"}[5m])", "legendFormat": "Cache Hits" },
+        { "expr": "rate(pg_stat_database_blks_read{datname=\"$database\"}[5m])", "legendFormat": "Disk Reads" }
+      ],
+      "title": "Block I/O",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "custom": { "lineWidth": 2, "fillOpacity": 10 }, "unit": "bytes" } },
+      "gridPos": { "h": 6, "w": 9, "x": 15, "y": 17 },
+      "id": 8,
+      "targets": [
+        { "expr": "pg_database_size_bytes{datname=\"$database\"}", "legendFormat": "Database Size" }
+      ],
+      "title": "Database Size",
+      "type": "timeseries"
+    },
+    { "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 23 }, "id": 103, "title": "Replication & Locks", "type": "row" },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "custom": { "lineWidth": 2, "fillOpacity": 10 }, "unit": "bytes" } },
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 24 },
+      "id": 9,
+      "targets": [
+        { "expr": "pg_replication_lag_bytes", "legendFormat": "Replication Lag (bytes)" }
+      ],
+      "title": "Replication Lag",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "custom": { "lineWidth": 2, "fillOpacity": 10 } } },
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 24 },
+      "id": 10,
+      "targets": [
+        { "expr": "pg_locks_count{datname=\"$database\", mode=\"accessexclusivelock\"}", "legendFormat": "Exclusive Locks" },
+        { "expr": "pg_locks_count{datname=\"$database\", mode=\"rowexclusivelock\"}", "legendFormat": "Row Exclusive" },
+        { "expr": "pg_stat_activity_count{datname=\"$database\", wait_event_type=\"Lock\"}", "legendFormat": "Waiting on Lock" }
+      ],
+      "title": "Lock Activity",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "tags": ["postgresql", "database", "postgres-exporter"],
+  "templating": {
+    "list": [
+      { "name": "datasource", "query": "prometheus", "type": "datasource" },
+      { "datasource": "Prometheus", "name": "database", "query": "label_values(pg_stat_database_tup_fetched, datname)", "type": "query" }
+    ]
+  },
+  "time": { "from": "now-6h", "to": "now" },
+  "title": "PostgreSQL Metrics",
+  "uid": "postgres-exporter-metrics",
+  "version": 1
+}
