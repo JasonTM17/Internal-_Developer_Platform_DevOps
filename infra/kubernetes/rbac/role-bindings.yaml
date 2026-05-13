@@ -1,0 +1,66 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: platform-admins-binding
+  labels:
+    app.kubernetes.io/part-of: internal-developer-platform
+    rbac.idp.io/level: admin
+subjects:
+  - kind: Group
+    name: platform-admins
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: platform-admin
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: dev-team-developers
+  namespace: platform
+  labels:
+    app.kubernetes.io/part-of: internal-developer-platform
+    rbac.idp.io/level: developer
+subjects:
+  - kind: Group
+    name: dev-team
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: platform-developer
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: qa-team-readonly
+  namespace: platform
+  labels:
+    app.kubernetes.io/part-of: internal-developer-platform
+    rbac.idp.io/level: readonly
+subjects:
+  - kind: Group
+    name: qa-team
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: platform-readonly
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: sre-team-admin
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: internal-developer-platform
+    rbac.idp.io/level: admin
+subjects:
+  - kind: Group
+    name: sre-team
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: platform-admin
+  apiGroup: rbac.authorization.k8s.io
