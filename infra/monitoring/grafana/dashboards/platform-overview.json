@@ -1,0 +1,193 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 1,
+      "title": "Platform Health",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "orange", "value": 95 },
+              { "color": "green", "value": 99 }
+            ]
+          },
+          "unit": "percentunit"
+        }
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 1 },
+      "id": 2,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "Availability (SLO: 99.9%)",
+      "type": "stat",
+      "targets": [
+        { "expr": "idp:slo:availability:5m", "legendFormat": "Availability" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 500 },
+              { "color": "red", "value": 2000 }
+            ]
+          },
+          "unit": "ms"
+        }
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 1 },
+      "id": 3,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "P95 Latency",
+      "type": "stat",
+      "targets": [
+        { "expr": "idp:api:latency_p95:5m * 1000", "legendFormat": "P95" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 1 },
+              { "color": "red", "value": 5 }
+            ]
+          },
+          "unit": "percentunit"
+        }
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 1 },
+      "id": 4,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "Error Rate",
+      "type": "stat",
+      "targets": [
+        { "expr": "idp:api:error_rate:5m", "legendFormat": "Error Rate" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 500 },
+              { "color": "red", "value": 1000 }
+            ]
+          },
+          "unit": "reqps"
+        }
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 1 },
+      "id": 5,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "Request Rate",
+      "type": "stat",
+      "targets": [
+        { "expr": "idp:api:request_rate_total:5m", "legendFormat": "RPS" }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "id": 6,
+      "title": "Request Traffic",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "reqps" } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "id": 7,
+      "title": "Request Rate by Status",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "sum(rate(http_requests_total{job=\"idp-api\"}[5m])) by (status)", "legendFormat": "{{status}}" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "s" } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "id": 8,
+      "title": "Response Time Percentiles",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "idp:api:latency_p50:5m", "legendFormat": "P50" },
+        { "expr": "idp:api:latency_p95:5m", "legendFormat": "P95" },
+        { "expr": "idp:api:latency_p99:5m", "legendFormat": "P99" }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 },
+      "id": 9,
+      "title": "Infrastructure",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percent" } },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 15 },
+      "id": 10,
+      "title": "Node CPU Utilization",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "idp:node:cpu_utilization:5m", "legendFormat": "{{instance}}" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percent" } },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 15 },
+      "id": 11,
+      "title": "Node Memory Utilization",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "idp:node:memory_utilization:5m", "legendFormat": "{{instance}}" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percent" } },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 15 },
+      "id": 12,
+      "title": "Database Connection Pool",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "idp:db:connection_pool_utilization", "legendFormat": "Utilization" }
+      ]
+    }
+  ],
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["idp", "platform", "overview"],
+  "templating": { "list": [] },
+  "time": { "from": "now-6h", "to": "now" },
+  "title": "IDP Platform Overview",
+  "uid": "idp-platform-overview",
+  "version": 1
+}
