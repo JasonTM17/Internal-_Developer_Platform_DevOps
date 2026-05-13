@@ -1,0 +1,99 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-rbac-cm
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-rbac
+    app.kubernetes.io/part-of: argocd
+data:
+  # Default policy for authenticated users (minimal read access)
+  policy.default: role:readonly
+
+  # Scoped accounts for CI/CD automation
+  policy.csv: |
+    # ─────────────────────────────────────────────────────────────────────────
+    # Role Definitions
+    # ─────────────────────────────────────────────────────────────────────────
+    
+    # Platform Admin - Full access to all ArgoCD resources
+    p, role:platform-admin, applications, *, */*, allow
+    p, role:platform-admin, clusters, *, *, allow
+    p, role:platform-admin, repositories, *, *, allow
+    p, role:platform-admin, certificates, *, *, allow
+    p, role:platform-admin, accounts, *, *, allow
+    p, role:platform-admin, gpgkeys, *, *, allow
+    p, role:platform-admin, logs, get, */*, allow
+    p, role:platform-admin, exec, create, */*, allow
+    p, role:platform-admin, projects, *, *, allow
+    
+    # Platform Engineer - Manage applications and sync, no cluster/repo admin
+    p, role:platform-engineer, applications, get, */*, allow
+    p, role:platform-engineer, applications, create, */*, allow
+    p, role:platform-engineer, applications, update, */*, allow
+    p, role:platform-engineer, applications, delete, */*, allow
+    p, role:platform-engineer, applications, sync, */*, allow
+    p, role:platform-engineer, applications, override, */*, allow
+    p, role:platform-engineer, applications, action/*, */*, allow
+    p, role:platform-engineer, logs, get, */*, allow
+    p, role:platform-engineer, exec, create, */*, allow
+    p, role:platform-engineer, repositories, get, *, allow
+    p, role:platform-engineer, projects, get, *, allow
+    
+    # Developer - View and sync own team's applications only
+    p, role:developer, applications, get, */*, allow
+    p, role:developer, applications, sync, */*, allow
+    p, role:developer, logs, get, */*, allow
+    p, role:developer, repositories, get, *, allow
+    p, role:developer, projects, get, *, allow
+    
+    # CI/CD Bot - Sync and update applications (no delete)
+    p, role:ci-bot, applications, get, */*, allow
+    p, role:ci-bot, applications, sync, */*, allow
+    p, role:ci-bot, applications, update, */*, allow
+    p, role:ci-bot, applications, action/*, */*, allow
+    p, role:ci-bot, repositories, get, *, allow
+    
+    # Viewer - Read-only access (default for authenticated users)
+    p, role:readonly, applications, get, */*, allow
+    p, role:readonly, repositories, get, *, allow
+    p, role:readonly, projects, get, *, allow
+    p, role:readonly, logs, get, */*, allow
+    
+    # Production Gatekeeper - Can only sync to production (approval role)
+    p, role:prod-gatekeeper, applications, get, */*, allow
+    p, role:prod-gatekeeper, applications, sync, production/*, allow
+    p, role:prod-gatekeeper, applications, action/*, production/*, allow
+    p, role:prod-gatekeeper, logs, get, */*, allow
+    
+    # ─────────────────────────────────────────────────────────────────────────
+    # Group Bindings (SSO groups → ArgoCD roles)
+    # ─────────────────────────────────────────────────────────────────────────
+    
+    # Platform team gets full admin
+    g, platform-admins, role:platform-admin
+    
+    # Platform engineers
+    g, platform-engineers, role:platform-engineer
+    
+    # Development teams get developer access
+    g, backend-team, role:developer
+    g, frontend-team, role:developer
+    g, data-team, role:developer
+    g, mobile-team, role:developer
+    g, payments-team, role:developer
+    g, commerce-team, role:developer
+    
+    # CI/CD service accounts
+    g, ci-bot, role:ci-bot
+    g, image-updater, role:ci-bot
+    
+    # Production approvers
+    g, release-managers, role:prod-gatekeeper
+    g, sre-team, role:prod-gatekeeper
+    
+    # Everyone else gets read-only
+    g, engineering, role:readonly
+
+  # Match SSO groups from OIDC claims
+  scopes: '[groups, email]'
