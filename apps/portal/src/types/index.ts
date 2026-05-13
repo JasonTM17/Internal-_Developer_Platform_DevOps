@@ -12,6 +12,10 @@ export interface Service {
   repository?: string;
   language?: string;
   framework?: string;
+  tags?: string[];
+  owner?: string;
+  healthStatus?: 'healthy' | 'degraded' | 'unhealthy' | 'unknown';
+  lastDeployedAt?: string;
   metadata?: {
     healthStatus?: 'healthy' | 'degraded' | 'unhealthy' | 'unknown';
     lastDeployedAt?: string;

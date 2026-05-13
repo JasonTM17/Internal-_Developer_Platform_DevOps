@@ -179,7 +179,7 @@ export const CatalogPage: React.FC = () => {
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
                       <Box>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                          <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: getHealthColor((service as any).healthStatus) }} />
+                          <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: getHealthColor(service.healthStatus || service.metadata?.healthStatus) }} />
                           <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'white' }}>
                             {service.name}
                           </Typography>
@@ -187,7 +187,7 @@ export const CatalogPage: React.FC = () => {
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                           <PersonIcon sx={{ fontSize: 14, color: '#8b949e' }} />
                           <Typography variant="caption" sx={{ color: '#8b949e' }}>
-                            {(service as any).owner || service.team || 'Unassigned'}
+                            {service.owner || service.team || 'Unassigned'}
                           </Typography>
                         </Box>
                       </Box>
@@ -211,7 +211,7 @@ export const CatalogPage: React.FC = () => {
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1.5 }}>
                       <AccessTimeIcon sx={{ fontSize: 14, color: '#8b949e' }} />
                       <Typography variant="caption" sx={{ color: '#8b949e' }}>
-                        Last deployed: {timeAgo((service as any).lastDeployedAt || service.updatedAt)}
+                        Last deployed: {timeAgo(service.lastDeployedAt || service.metadata?.lastDeployedAt || service.updatedAt)}
                       </Typography>
                     </Box>
 
