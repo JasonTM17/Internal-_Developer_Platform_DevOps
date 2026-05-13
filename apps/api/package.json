@@ -5,7 +5,7 @@
   "description": "Backend API server (Node.js/TypeScript/Express)",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "dev": "echo 'api dev server'",
+    "dev": "tsx watch src/index.ts",
     "lint": "eslint . --ext .ts,.tsx",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
     "typecheck": "tsc --noEmit",

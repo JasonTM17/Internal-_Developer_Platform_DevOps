@@ -61,5 +61,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Helm chart for platform deployment
 - ArgoCD application definitions
 
-[Unreleased]: https://github.com/org/idp-platform/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/org/idp-platform/releases/tag/v0.1.0
+[Unreleased]: https://github.com/JasonTM17/Internal-_Developer_Platform_DevOps/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/JasonTM17/Internal-_Developer_Platform_DevOps/releases/tag/v0.1.0

@@ -28,7 +28,7 @@ We are committed to providing a welcoming and inclusive experience for everyone.
 
 ### Prerequisites
 
-- Node.js 20 LTS
+- Node.js >= 18.0.0 (LTS)
 - pnpm 8+
 - Docker Desktop
 - kubectl configured for local cluster
@@ -38,8 +38,8 @@ We are committed to providing a welcoming and inclusive experience for everyone.
 
 ```bash
 # Clone the repository
-git clone https://github.com/company/internal-developer-platform.git
-cd internal-developer-platform
+git clone https://github.com/JasonTM17/Internal-_Developer_Platform_DevOps.git
+cd Internal-_Developer_Platform_DevOps
 
 # Install dependencies
 pnpm install
@@ -61,12 +61,13 @@ pnpm dev
 
 ```
 ├── apps/
-│   ├── api/          # Platform API (NestJS)
-│   └── portal/       # Developer Portal (React)
+│   ├── api/          # Platform API (Express + TypeScript)
+│   └── portal/       # Developer Portal (React + Vite)
 ├── packages/
 │   ├── shared/       # Shared types and utilities
-│   ├── config/       # Shared configuration
-│   └── testing/      # Test utilities
+│   ├── config/       # ESLint and Prettier configs
+│   ├── ui/           # Shared UI component library
+│   └── cli/          # CLI tooling
 ├── infra/
 │   ├── terraform/    # Infrastructure as Code
 │   ├── argocd/       # GitOps configurations

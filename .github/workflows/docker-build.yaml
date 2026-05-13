@@ -2,17 +2,13 @@ name: Docker Build
 
 on:
   push:
-    branches: [main, develop]
-    paths:
-      - 'apps/*/Dockerfile'
-      - 'apps/*/Dockerfile.*'
-      - 'apps/*/src/**'
-      - 'packages/**'
+    tags: ['v*']
   pull_request:
     branches: [main]
     paths:
       - 'apps/*/Dockerfile'
       - 'apps/*/Dockerfile.*'
+  workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
