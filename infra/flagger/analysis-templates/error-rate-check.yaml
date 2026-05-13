@@ -1,0 +1,157 @@
+apiVersion: flagger.app/v1beta1
+kind: MetricTemplate
+metadata:
+  name: error-rate-check
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/name: error-rate-check
+    app.kubernetes.io/part-of: idp-platform
+    app.kubernetes.io/managed-by: flagger
+  annotations:
+    flagger.app/description: |
+      Calculates the percentage of 5xx errors for canary workloads.
+      Returns the error rate as a percentage (0-100). Canary analysis
+      should set a max threshold (e.g., 1.0 for 1% error rate).
+spec:
+  provider:
+    type: prometheus
+    address: http://prometheus.monitoring.svc.cluster.local:9090
+  query: |
+    100 - (
+      sum(
+        rate(
+          istio_requests_total{
+            reporter="destination",
+            destination_workload_namespace="{{ namespace }}",
+            destination_workload=~"{{ target }}",
+            response_code!~"5.*"
+          }[{{ interval }}]
+        )
+      )
+      /
+      sum(
+        rate(
+          istio_requests_total{
+            reporter="destination",
+            destination_workload_namespace="{{ namespace }}",
+            destination_workload=~"{{ target }}"
+          }[{{ interval }}]
+        )
+      )
+      * 100
+    )
+---
+apiVersion: flagger.app/v1beta1
+kind: MetricTemplate
+metadata:
+  name: error-rate-4xx-check
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/name: error-rate-4xx-check
+    app.kubernetes.io/part-of: idp-platform
+    app.kubernetes.io/managed-by: flagger
+  annotations:
+    flagger.app/description: |
+      Calculates the percentage of 4xx client errors. A spike in 4xx
+      errors during canary may indicate breaking API changes or
+      incompatible request formats.
+spec:
+  provider:
+    type: prometheus
+    address: http://prometheus.monitoring.svc.cluster.local:9090
+  query: |
+    sum(
+      rate(
+        istio_requests_total{
+          reporter="destination",
+          destination_workload_namespace="{{ namespace }}",
+          destination_workload=~"{{ target }}",
+          response_code=~"4.*"
+        }[{{ interval }}]
+      )
+    )
+    /
+    sum(
+      rate(
+        istio_requests_total{
+          reporter="destination",
+          destination_workload_namespace="{{ namespace }}",
+          destination_workload=~"{{ target }}"
+        }[{{ interval }}]
+      )
+    )
+    * 100
+---
+apiVersion: flagger.app/v1beta1
+kind: MetricTemplate
+metadata:
+  name: retry-rate-check
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/name: retry-rate-check
+    app.kubernetes.io/part-of: idp-platform
+    app.kubernetes.io/managed-by: flagger
+  annotations:
+    flagger.app/description: |
+      Measures the rate of retried requests. High retry rates indicate
+      instability even if final success rate is acceptable.
+spec:
+  provider:
+    type: prometheus
+    address: http://prometheus.monitoring.svc.cluster.local:9090
+  query: |
+    sum(
+      rate(
+        envoy_cluster_upstream_rq_retry{
+          namespace="{{ namespace }}",
+          pod=~"{{ target }}-[0-9a-zA-Z]+(-[0-9a-zA-Z]+)"
+        }[{{ interval }}]
+      )
+    )
+    /
+    sum(
+      rate(
+        envoy_cluster_upstream_rq_total{
+          namespace="{{ namespace }}",
+          pod=~"{{ target }}-[0-9a-zA-Z]+(-[0-9a-zA-Z]+)"
+        }[{{ interval }}]
+      )
+    )
+    * 100
+---
+apiVersion: flagger.app/v1beta1
+kind: MetricTemplate
+metadata:
+  name: connection-error-check
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/name: connection-error-check
+    app.kubernetes.io/part-of: idp-platform
+    app.kubernetes.io/managed-by: flagger
+  annotations:
+    flagger.app/description: |
+      Monitors connection-level errors (timeouts, resets, overflows).
+      These indicate infrastructure-level issues that may not show
+      up in HTTP error rates.
+spec:
+  provider:
+    type: prometheus
+    address: http://prometheus.monitoring.svc.cluster.local:9090
+  query: |
+    sum(
+      rate(
+        envoy_cluster_upstream_cx_connect_fail{
+          namespace="{{ namespace }}",
+          pod=~"{{ target }}-[0-9a-zA-Z]+(-[0-9a-zA-Z]+)"
+        }[{{ interval }}]
+      )
+    )
+    +
+    sum(
+      rate(
+        envoy_cluster_upstream_cx_destroy_with_active_rq{
+          namespace="{{ namespace }}",
+          pod=~"{{ target }}-[0-9a-zA-Z]+(-[0-9a-zA-Z]+)"
+        }[{{ interval }}]
+      )
+    )
