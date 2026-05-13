@@ -1,0 +1,29 @@
+{{- if .Values.monitoring.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "idp-platform.fullname" . }}
+  labels:
+    {{- include "idp-platform.labels" . | nindent 4 }}
+    prometheus: kube-prometheus
+spec:
+  selector:
+    matchLabels:
+      {{- include "idp-platform.selectorLabels" . | nindent 6 }}
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+  endpoints:
+    - port: http
+      path: {{ .Values.monitoring.serviceMonitor.path | default "/metrics" }}
+      interval: {{ .Values.monitoring.serviceMonitor.interval | default "15s" }}
+      scrapeTimeout: 10s
+      honorLabels: true
+      metricRelabelings:
+        - sourceLabels: [__name__]
+          regex: 'go_.*'
+          action: drop
+        - sourceLabels: [__name__]
+          regex: 'process_.*'
+          action: drop
+{{- end }}
