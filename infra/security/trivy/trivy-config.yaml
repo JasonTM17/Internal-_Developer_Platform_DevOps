@@ -1,0 +1,105 @@
+# Trivy vulnerability scanning configuration
+# Used in CI/CD pipelines and scheduled scans
+
+scan:
+  # Security checks to perform
+  security-checks:
+    - vuln        # Vulnerability scanning
+    - config      # Misconfiguration scanning
+    - secret      # Secret detection
+    - license     # License compliance
+
+severity:
+  # Fail CI on these severities
+  - CRITICAL
+  - HIGH
+
+vulnerability:
+  # Vulnerability database settings
+  type:
+    - os          # OS package vulnerabilities
+    - library     # Application library vulnerabilities
+
+  # Ignore unfixed vulnerabilities
+  ignore-unfixed: true
+
+  # Ignore specific CVEs (with justification)
+  ignorefile: .trivyignore
+
+misconfiguration:
+  # IaC scanning settings
+  include-non-failures: false
+  
+  # Terraform-specific checks
+  terraform:
+    vars:
+      - infra/terraform/environments/production/terraform.tfvars
+
+  # Kubernetes manifest checks
+  kubernetes:
+    - infra/helm/
+    - infra/security/
+
+secret:
+  # Secret detection configuration
+  config: trivy-secret.yaml
+
+license:
+  # Forbidden licenses
+  forbidden:
+    - AGPL-3.0
+    - GPL-3.0
+    - SSPL-1.0
+
+  # Allowed licenses
+  permitted:
+    - MIT
+    - Apache-2.0
+    - BSD-2-Clause
+    - BSD-3-Clause
+    - ISC
+    - MPL-2.0
+
+cache:
+  # Cache directory for vulnerability database
+  dir: /tmp/trivy-cache
+  
+  # Cache TTL
+  ttl: 24h
+
+report:
+  # Output formats
+  format: table
+  
+  # Additional output for CI
+  output: trivy-report.json
+  
+  # Template for custom reporting
+  template: "@/usr/local/share/trivy/templates/sarif.tpl"
+
+# Registry authentication for private images
+registry:
+  credentials:
+    - registry: "*.dkr.ecr.*.amazonaws.com"
+      # Uses AWS IAM authentication
+    - registry: "ghcr.io"
+      # Uses GITHUB_TOKEN
+
+# Custom policies directory
+policy:
+  - infra/security/trivy/policies/
+
+# Kubernetes operator settings (for in-cluster scanning)
+operator:
+  # Scan schedule
+  vulnerability-scanner:
+    scan-schedule: "0 */6 * * *"  # Every 6 hours
+  
+  # Config audit schedule
+  config-audit-scanner:
+    scan-schedule: "0 */12 * * *"  # Every 12 hours
+  
+  # Exposed secret scanning
+  exposed-secret-scanner:
+    enabled: true
+    scan-schedule: "0 */4 * * *"  # Every 4 hours
