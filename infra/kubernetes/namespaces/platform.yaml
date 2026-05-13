@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: platform
+  labels:
+    app.kubernetes.io/part-of: internal-developer-platform
+    app.kubernetes.io/managed-by: argocd
+    environment: shared
+    team: platform-engineering
+    istio-injection: enabled
+  annotations:
+    description: "Core platform services namespace for IDP components"
+    owner: platform-engineering@company.com
+    cost-center: "engineering-platform"
+---
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: platform-default-limits
+  namespace: platform
+spec:
+  limits:
+    - default:
+        cpu: "500m"
+        memory: "512Mi"
+      defaultRequest:
+        cpu: "100m"
+        memory: "128Mi"
+      type: Container
