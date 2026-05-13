@@ -1,0 +1,98 @@
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosEngine
+metadata:
+  name: idp-api-cpu-stress
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    chaos.litmus.io/experiment-type: resource-stress
+    chaos.litmus.io/severity: medium
+  annotations:
+    litmuschaos.io/description: |
+      Injects CPU stress into IDP API pods to validate autoscaling behavior,
+      resource limits enforcement, and performance degradation patterns under
+      high CPU utilization.
+spec:
+  engineState: active
+  appinfo:
+    appns: idp-platform
+    applabel: app=idp-api
+    appkind: deployment
+  chaosServiceAccount: chaos-serviceaccount
+  monitoring: true
+  annotationCheck: "true"
+  jobCleanUpPolicy: retain
+  experiments:
+    - name: pod-cpu-hog-exec
+      spec:
+        probe:
+          - name: api-response-time
+            type: httpProbe
+            mode: Continuous
+            httpProbe/inputs:
+              url: http://idp-api.idp-platform.svc.cluster.local:3000/healthz
+              insecureSkipVerify: false
+              responseTimeout: 5000
+              method:
+                get:
+                  criteria: ==
+                  responseCode: "200"
+            runProperties:
+              probeTimeout: 10s
+              interval: 10s
+              retry: 3
+              probePollingInterval: 5s
+              initialDelay: 10s
+              stopOnFailure: false
+          - name: hpa-scaling-check
+            type: cmdProbe
+            mode: Continuous
+            cmdProbe/inputs:
+              command: "kubectl get hpa idp-api -n idp-platform -o jsonpath='{.status.currentReplicas}'"
+              comparator:
+                type: int
+                criteria: ">="
+                value: "3"
+            runProperties:
+              probeTimeout: 30s
+              interval: 30s
+              retry: 5
+              initialDelay: 60s
+          - name: latency-within-sla
+            type: promProbe
+            mode: Continuous
+            promProbe/inputs:
+              endpoint: http://prometheus.monitoring.svc.cluster.local:9090
+              query: |
+                histogram_quantile(0.99, sum(rate(istio_request_duration_milliseconds_bucket{destination_workload="idp-api",destination_workload_namespace="idp-platform"}[1m])) by (le))
+              comparator:
+                type: float
+                criteria: "<="
+                value: "2000"
+            runProperties:
+              probeTimeout: 15s
+              interval: 15s
+              retry: 3
+        components:
+          env:
+            - name: TOTAL_CHAOS_DURATION
+              value: "180"
+            - name: CPU_CORES
+              value: "2"
+            - name: CPU_LOAD
+              value: "80"
+            - name: CONTAINER_RUNTIME
+              value: "containerd"
+            - name: SOCKET_PATH
+              value: "/run/containerd/containerd.sock"
+            - name: TARGET_CONTAINER
+              value: "idp-api"
+            - name: PODS_AFFECTED_PERC
+              value: "50"
+            - name: RAMP_TIME
+              value: "15"
+            - name: SEQUENCE
+              value: "parallel"
+          statusCheckTimeouts:
+            delay: 5
+            timeout: 300
