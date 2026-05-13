@@ -1,0 +1,176 @@
+version: '3.9'
+
+# =============================================================================
+# IDP Platform - Full Local Development Stack
+# =============================================================================
+# Usage:
+#   docker compose up -d          # Start all services
+#   docker compose up api portal  # Start specific services
+#   docker compose logs -f api    # Follow API logs
+#   docker compose down -v        # Stop and remove volumes
+# =============================================================================
+
+x-common-env: &common-env
+  NODE_ENV: development
+  LOG_LEVEL: debug
+
+services:
+  # ---------------------------------------------------------------------------
+  # Application Services
+  # ---------------------------------------------------------------------------
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile.dev
+    ports:
+      - "3000:3000"
+      - "9229:9229" # Debug port
+    volumes:
+      - ./apps/api/src:/app/apps/api/src:delegated
+      - ./packages:/app/packages:delegated
+      - api_node_modules:/app/node_modules
+    environment:
+      <<: *common-env
+      PORT: 3000
+      DATABASE_URL: postgresql://idp:idp_secret@postgres:5432/idp_dev
+      REDIS_URL: redis://redis:6379/0
+      JWT_SECRET: dev-jwt-secret-do-not-use-in-production
+      CORS_ORIGINS: http://localhost:5173,http://localhost:3001
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - idp-network
+
+  portal:
+    build:
+      context: .
+      dockerfile: apps/portal/Dockerfile.dev
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./apps/portal/src:/app/apps/portal/src:delegated
+      - ./packages:/app/packages:delegated
+      - portal_node_modules:/app/node_modules
+    environment:
+      <<: *common-env
+      VITE_API_URL: http://localhost:3000
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5173"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - idp-network
+
+  # ---------------------------------------------------------------------------
+  # Data Services
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: idp
+      POSTGRES_PASSWORD: idp_secret
+      POSTGRES_DB: idp_dev
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U idp -d idp_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - idp-network
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - idp-network
+
+  # ---------------------------------------------------------------------------
+  # Infrastructure Services
+  # ---------------------------------------------------------------------------
+  localstack:
+    image: localstack/localstack:3
+    ports:
+      - "4566:4566"
+      - "4510-4559:4510-4559"
+    environment:
+      SERVICES: s3,sqs,sns,secretsmanager,ssm,iam
+      DEBUG: 0
+      PERSISTENCE: 1
+    volumes:
+      - localstack_data:/var/lib/localstack
+      - /var/run/docker.sock:/var/run/docker.sock
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - idp-network
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    ports:
+      - "1025:1025" # SMTP
+      - "8025:8025" # Web UI
+    restart: unless-stopped
+    networks:
+      - idp-network
+
+# ---------------------------------------------------------------------------
+# Volumes
+# ---------------------------------------------------------------------------
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  localstack_data:
+    driver: local
+  api_node_modules:
+    driver: local
+  portal_node_modules:
+    driver: local
+
+# ---------------------------------------------------------------------------
+# Networks
+# ---------------------------------------------------------------------------
+networks:
+  idp-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
