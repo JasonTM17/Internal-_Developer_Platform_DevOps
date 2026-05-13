@@ -1,43 +1,27 @@
-<p align="center">
-  <img src="docs/assets/logo.png" alt="Internal Developer Platform" width="200" />
-</p>
+# Internal Developer Platform (IDP)
 
-<h1 align="center">Internal Developer Platform (IDP)</h1>
+**Enterprise-grade platform engineering solution for modern DevOps teams**
 
-<p align="center">
-  <strong>Enterprise-grade platform engineering solution for modern DevOps teams</strong>
-</p>
-
-<p align="center">
-  <a href="https://github.com/JasonTM17/Internal-_Developer_Platform_DevOps/actions/workflows/ci.yaml"><img src="https://github.com/JasonTM17/Internal-_Developer_Platform_DevOps/actions/workflows/ci.yaml/badge.svg" alt="CI Pipeline" /></a>
-  <a href="https://github.com/JasonTM17/Internal-_Developer_Platform_DevOps/actions/workflows/security-scan.yaml"><img src="https://github.com/JasonTM17/Internal-_Developer_Platform_DevOps/actions/workflows/security-scan.yaml/badge.svg" alt="Security Scan" /></a>
-  <a href="https://github.com/JasonTM17/Internal-_Developer_Platform_DevOps/blob/main/LICENSE"><img src="https://img.shields.io/github/license/JasonTM17/Internal-_Developer_Platform_DevOps" alt="License" /></a>
-  <img src="https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen" alt="Node Version" />
-  <img src="https://img.shields.io/badge/TypeScript-5.4-blue?logo=typescript&logoColor=white" alt="TypeScript" />
-  <img src="https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white" alt="Docker" />
-</p>
-
-<p align="center">
-  <a href="#-quick-start">Quick Start</a> •
-  <a href="#-features">Features</a> •
-  <a href="#-architecture">Architecture</a> •
-  <a href="#-documentation">Documentation</a> •
-  <a href="#-contributing">Contributing</a>
-</p>
+[![CI Pipeline](https://github.com/JasonTM17/Internal-_Developer_Platform_DevOps/actions/workflows/ci.yaml/badge.svg)](https://github.com/JasonTM17/Internal-_Developer_Platform_DevOps/actions/workflows/ci.yaml)
+[![Security Scan](https://github.com/JasonTM17/Internal-_Developer_Platform_DevOps/actions/workflows/security-scan.yaml/badge.svg)](https://github.com/JasonTM17/Internal-_Developer_Platform_DevOps/actions/workflows/security-scan.yaml)
+[![License](https://img.shields.io/github/license/JasonTM17/Internal-_Developer_Platform_DevOps)](https://github.com/JasonTM17/Internal-_Developer_Platform_DevOps/blob/main/LICENSE)
+![Node Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.4-blue?logo=typescript&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)
 
 ---
 
-## 📖 About
+## About
 
-The **Internal Developer Platform (IDP)** is a comprehensive, production-ready platform engineering solution designed to streamline the software delivery lifecycle for enterprise teams. It provides a unified self-service interface where developers can provision infrastructure, deploy applications, and manage environments without deep operational expertise.
+The Internal Developer Platform (IDP) is a production-ready platform engineering solution designed to streamline the software delivery lifecycle for enterprise teams. It provides a unified self-service interface where developers can provision infrastructure, deploy applications, and manage environments without deep operational expertise.
 
-Built on modern cloud-native principles, this platform integrates GitOps workflows with Kubernetes orchestration, Terraform infrastructure-as-code, and automated CI/CD pipelines. It abstracts away infrastructure complexity while maintaining full auditability, security compliance, and operational visibility through integrated monitoring and alerting.
+Built on cloud-native principles, the platform integrates GitOps workflows with Kubernetes orchestration, Terraform infrastructure-as-code, and automated CI/CD pipelines. It abstracts infrastructure complexity while maintaining full auditability, security compliance, and operational visibility through integrated monitoring and alerting.
 
 The IDP follows a monorepo architecture powered by Turborepo, featuring a React-based developer portal, a Node.js API backend, and shared packages for consistent tooling across the stack. It implements enterprise patterns including RBAC, audit logging, real-time notifications, and multi-environment deployment strategies with automated rollbacks.
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
@@ -70,49 +54,30 @@ The IDP follows a monorepo architecture powered by Turborepo, featuring a React-
 
 ---
 
-## ✨ Features
+## Features
 
 | Category | Features |
 |----------|----------|
-| 🚀 **Self-Service Portal** | Service catalog, one-click deployments, environment provisioning |
-| 🔐 **Security & Compliance** | RBAC, audit logging, secret management, vulnerability scanning |
-| 🏗️ **Infrastructure as Code** | Terraform modules, Kubernetes manifests, GitOps with ArgoCD |
-| 📦 **CI/CD Pipelines** | Multi-stage builds, automated testing, canary deployments |
-| 📊 **Observability** | Prometheus metrics, Grafana dashboards, distributed tracing |
-| 🔔 **Notifications** | Real-time WebSocket updates, Slack integration, email alerts |
-| 🌍 **Multi-Environment** | Dev, staging, production with automated promotion workflows |
-| 📋 **Service Catalog** | Backstage-inspired catalog with templates and scaffolding |
-| ⚡ **Performance** | Turborepo caching, Docker layer optimization, CDN integration |
-| 🧪 **Testing** | Unit, integration, E2E tests with parallel execution |
+| **Self-Service Portal** | Service catalog, one-click deployments, environment provisioning |
+| **Security and Compliance** | RBAC, audit logging, secret management, vulnerability scanning |
+| **Infrastructure as Code** | Terraform modules, Kubernetes manifests, GitOps with ArgoCD |
+| **CI/CD Pipelines** | Multi-stage builds, automated testing, canary deployments |
+| **Observability** | Prometheus metrics, Grafana dashboards, distributed tracing |
+| **Notifications** | Real-time WebSocket updates, Slack integration, email alerts |
+| **Multi-Environment** | Dev, staging, production with automated promotion workflows |
+| **Service Catalog** | Backstage-inspired catalog with templates and scaffolding |
+| **Performance** | Turborepo caching, Docker layer optimization, CDN integration |
+| **Testing** | Unit, integration, E2E tests with parallel execution |
 
 ---
 
-## 📸 Screenshots
-
-<p align="center">
-  <img src="docs/assets/screenshots/dashboard.png" alt="Dashboard" width="80%" />
-  <br /><em>Developer Portal Dashboard</em>
-</p>
-
-<p align="center">
-  <img src="docs/assets/screenshots/service-catalog.png" alt="Service Catalog" width="80%" />
-  <br /><em>Service Catalog with Templates</em>
-</p>
-
-<p align="center">
-  <img src="docs/assets/screenshots/deployment.png" alt="Deployment Pipeline" width="80%" />
-  <br /><em>Deployment Pipeline Visualization</em>
-</p>
-
----
-
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
-- **Docker** & **Docker Compose** v2.20+
-- **Node.js** >= 18.0.0
-- **pnpm** >= 8.0.0
+- Docker and Docker Compose v2.20+
+- Node.js >= 18.0.0
+- pnpm >= 8.0.0
 
 ### Using Docker Compose (Recommended)
 
@@ -128,8 +93,8 @@ cp .env.example .env
 docker compose up -d
 
 # Access the platform
-# Portal:  http://localhost:3000
-# API:     http://localhost:4000
+# Portal:  http://localhost:5173
+# API:     http://localhost:3000
 # Grafana: http://localhost:3001
 ```
 
@@ -151,7 +116,7 @@ pnpm build
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Layer | Technology | Purpose |
 |-------|-----------|---------|
@@ -173,7 +138,7 @@ pnpm build
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 ├── apps/
@@ -182,8 +147,7 @@ pnpm build
 ├── packages/
 │   ├── shared/                 # Shared utilities and types
 │   ├── ui/                     # Shared UI component library
-│   ├── config/                 # Shared configuration
-│   └── logger/                 # Structured logging package
+│   └── config/                 # Shared configuration
 ├── infra/
 │   ├── terraform/              # Infrastructure as Code modules
 │   ├── kubernetes/             # K8s manifests and Helm charts
@@ -207,7 +171,7 @@ pnpm build
 
 ---
 
-## 📚 Documentation
+## Documentation
 
 | Document | Description |
 |----------|-------------|
@@ -225,7 +189,7 @@ pnpm build
 
 ---
 
-## 💻 Development Commands
+## Development Commands
 
 ```bash
 # Development
@@ -253,15 +217,15 @@ make k8s-deploy             # Deploy to Kubernetes
 
 ---
 
-## 🚢 Deployment
+## Deployment
 
 ### Environments
 
 | Environment | Branch | URL | Auto-Deploy |
 |-------------|--------|-----|-------------|
-| Development | `develop` | `dev.idp.internal` | ✅ On push |
-| Staging | `release/*` | `staging.idp.internal` | ✅ On push |
-| Production | `main` | `idp.internal` | 🔒 Manual approval |
+| Development | `develop` | `dev.idp.internal` | On push |
+| Staging | `release/*` | `staging.idp.internal` | On push |
+| Production | `main` | `idp.internal` | Manual approval |
 
 ### Deployment Pipeline
 
@@ -290,7 +254,25 @@ kubectl rollout undo deployment/<deployment-name>
 
 ---
 
-## 🧪 Testing
+## Container Images
+
+Published to GitHub Container Registry on every push to `main`:
+
+```
+ghcr.io/jasontm17/idp-api:latest
+ghcr.io/jasontm17/idp-portal:latest
+```
+
+Tagged releases are also available:
+
+```
+ghcr.io/jasontm17/idp-api:v1.0.0
+ghcr.io/jasontm17/idp-portal:v1.0.0
+```
+
+---
+
+## Testing
 
 ```bash
 # Run full test suite
@@ -308,17 +290,17 @@ pnpm test:integration
 
 ### Test Coverage Targets
 
-| Package | Target | Current |
-|---------|--------|---------|
-| API | 80% | ![Coverage](https://img.shields.io/badge/coverage-82%25-green) |
-| Portal | 75% | ![Coverage](https://img.shields.io/badge/coverage-78%25-green) |
-| Packages | 90% | ![Coverage](https://img.shields.io/badge/coverage-91%25-brightgreen) |
+| Package | Target |
+|---------|--------|
+| API | 80% |
+| Portal | 75% |
+| Packages | 90% |
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+Contributions are welcome. See the [Contributing Guide](CONTRIBUTING.md) for details.
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/amazing-feature`)
@@ -330,42 +312,17 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 
 This project uses [Conventional Commits](https://www.conventionalcommits.org/):
 
-- `feat:` — New features
-- `fix:` — Bug fixes
-- `docs:` — Documentation changes
-- `chore:` — Maintenance tasks
-- `ci:` — CI/CD changes
-- `refactor:` — Code refactoring
-- `test:` — Test additions/changes
-- `perf:` — Performance improvements
+- `feat:` New features
+- `fix:` Bug fixes
+- `docs:` Documentation changes
+- `chore:` Maintenance tasks
+- `ci:` CI/CD changes
+- `refactor:` Code refactoring
+- `test:` Test additions/changes
+- `perf:` Performance improvements
 
 ---
 
-## 📄 License
+## License
 
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
-
----
-
-## 🏗️ Built With
-
-<p align="center">
-  <img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
-  <img src="https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React" />
-  <img src="https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=node.js&logoColor=white" alt="Node.js" />
-  <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" />
-  <img src="https://img.shields.io/badge/Kubernetes-326CE5?style=for-the-badge&logo=kubernetes&logoColor=white" alt="Kubernetes" />
-  <img src="https://img.shields.io/badge/Terraform-7B42BC?style=for-the-badge&logo=terraform&logoColor=white" alt="Terraform" />
-  <img src="https://img.shields.io/badge/GitHub_Actions-2088FF?style=for-the-badge&logo=github-actions&logoColor=white" alt="GitHub Actions" />
-  <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL" />
-  <img src="https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white" alt="Redis" />
-  <img src="https://img.shields.io/badge/Prometheus-E6522C?style=for-the-badge&logo=prometheus&logoColor=white" alt="Prometheus" />
-  <img src="https://img.shields.io/badge/Grafana-F46800?style=for-the-badge&logo=grafana&logoColor=white" alt="Grafana" />
-  <img src="https://img.shields.io/badge/ArgoCD-EF7B4D?style=for-the-badge&logo=argo&logoColor=white" alt="ArgoCD" />
-</p>
-
----
-
-<p align="center">
-  Made with ❤️ by <a href="https://github.com/JasonTM17">JasonTM17</a>
-</p>
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
