@@ -1,0 +1,54 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-from-ingress-controller
+  namespace: platform
+  labels:
+    app.kubernetes.io/part-of: internal-developer-platform
+    network-policy.idp.io/type: ingress
+  annotations:
+    description: "Allow inbound traffic from ingress controller namespace"
+    security.policy/reason: "Required for external traffic routing via NGINX/Envoy"
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: api
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              purpose: ingress
+      ports:
+        - protocol: TCP
+          port: 3000
+        - protocol: TCP
+          port: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-portal-from-ingress
+  namespace: platform
+  labels:
+    app.kubernetes.io/part-of: internal-developer-platform
+    network-policy.idp.io/type: ingress
+  annotations:
+    description: "Allow inbound traffic to portal from ingress controller"
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: portal
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              purpose: ingress
+      ports:
+        - protocol: TCP
+          port: 3000
+        - protocol: TCP
+          port: 80
