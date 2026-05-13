@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <!-- Hexagonal base -->
+  <path d="M256 32L456 144V368L256 480L56 368V144L256 32Z" fill="#1a1a2e" stroke="#6C63FF" stroke-width="8"/>
+  <!-- Inner hexagon accent -->
+  <path d="M256 80L416 172V348L256 440L96 348V172L256 80Z" fill="none" stroke="#03DAC6" stroke-width="3" stroke-dasharray="12 6"/>
+  <!-- Circuit lines left -->
+  <path d="M140 200L180 200L200 220L200 260" stroke="#6C63FF" stroke-width="4" stroke-linecap="round"/>
+  <path d="M140 320L180 320L200 300L200 260" stroke="#6C63FF" stroke-width="4" stroke-linecap="round"/>
+  <!-- Circuit lines right -->
+  <path d="M372 200L332 200L312 220L312 260" stroke="#6C63FF" stroke-width="4" stroke-linecap="round"/>
+  <path d="M372 320L332 320L312 300L312 260" stroke="#6C63FF" stroke-width="4" stroke-linecap="round"/>
+  <!-- IDP Text -->
+  <text x="256" y="275" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-weight="700" font-size="72" fill="white" letter-spacing="-2">IDP</text>
+  <!-- Subtitle -->
+  <text x="256" y="340" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-weight="400" font-size="24" fill="#03DAC6">PLATFORM</text>
+  <!-- Node dots -->
+  <circle cx="140" cy="200" r="6" fill="#03DAC6"/>
+  <circle cx="140" cy="320" r="6" fill="#03DAC6"/>
+  <circle cx="372" cy="200" r="6" fill="#03DAC6"/>
+  <circle cx="372" cy="320" r="6" fill="#03DAC6"/>
+  <circle cx="200" cy="260" r="5" fill="#6C63FF"/>
+  <circle cx="312" cy="260" r="5" fill="#6C63FF"/>
+</svg>
