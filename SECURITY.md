@@ -2,10 +2,10 @@
 
 ## Supported Versions
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 1.x.x   | :white_check_mark: |
-| 0.x.x   | :white_check_mark: |
+| Version | Supported |
+| ------- | --------- |
+| 1.x.x   | Supported |
+| 0.x.x   | Supported |
 
 ## Reporting a Vulnerability
 
@@ -14,7 +14,7 @@ We take security seriously. If you discover a security vulnerability, please rep
 ### How to Report
 
 1. **DO NOT** create a public GitHub issue for security vulnerabilities
-2. Email security findings to: **security@idp.example.com**
+2. Report via GitHub Security Advisories: https://github.com/JasonTM17/Internal-_Developer_Platform_DevOps/security/advisories/new
 3. Include:
    - Description of the vulnerability
    - Steps to reproduce
@@ -23,12 +23,12 @@ We take security seriously. If you discover a security vulnerability, please rep
 
 ### Response Timeline
 
-| Action | Timeline |
-|--------|----------|
-| Acknowledgment | Within 24 hours |
-| Initial assessment | Within 48 hours |
-| Fix development | Within 7 days (critical), 30 days (high) |
-| Public disclosure | After fix is deployed |
+| Action             | Timeline                                 |
+| ------------------ | ---------------------------------------- |
+| Acknowledgment     | Within 24 hours                          |
+| Initial assessment | Within 48 hours                          |
+| Fix development    | Within 7 days (critical), 30 days (high) |
+| Public disclosure  | After fix is deployed                    |
 
 ### Scope
 
@@ -108,6 +108,5 @@ This platform is designed to support:
 
 ## Security Contacts
 
-- **Security Team**: security@idp.example.com
+- **Security Team**: Report via [GitHub Security Advisories](https://github.com/JasonTM17/Internal-_Developer_Platform_DevOps/security/advisories/new)
 - **On-call Engineer**: PagerDuty escalation
-- **CISO**: ciso@example.com
