@@ -1,0 +1,53 @@
+# CODEOWNERS - Define code ownership for automated review assignment
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owners for everything in the repo
+* @platform-team
+
+# Infrastructure and Terraform
+/infra/ @platform-team @sre-team
+/infra/terraform/ @platform-team @sre-team
+/infra/terraform/environments/production/ @platform-team @sre-team @security-team
+/infra/helm/ @platform-team @sre-team
+/infra/monitoring/ @sre-team @observability-team
+/infra/security/ @security-team @platform-team
+
+# CI/CD Workflows
+/.github/workflows/ @platform-team @sre-team
+/.github/workflows/cd-production.yaml @platform-team @sre-team @engineering-leads
+
+# Application code
+/apps/api/ @backend-team @platform-team
+/apps/portal/ @frontend-team @platform-team
+
+# Shared packages
+/packages/ @platform-team @backend-team
+
+# Database migrations (require DBA review)
+/apps/api/src/db/migrations/ @dba-team @backend-team
+
+# Security-sensitive files
+/infra/security/ @security-team
+/.github/dependabot.yml @security-team @platform-team
+/SECURITY.md @security-team
+
+# Documentation
+/docs/ @platform-team
+/docs/architecture/ @platform-team @engineering-leads
+/docs/adr/ @platform-team @engineering-leads
+/docs/runbooks/ @sre-team @platform-team
+
+# Configuration files
+/.eslintrc.js @platform-team
+/.prettierrc.js @platform-team
+/turbo.json @platform-team
+/tsconfig.json @platform-team
+/docker-compose*.yaml @platform-team @sre-team
+
+# Scripts
+/scripts/ @platform-team @sre-team
+
+# Root config (high impact)
+/package.json @platform-team
+/.gitignore @platform-team
+/Makefile @platform-team
