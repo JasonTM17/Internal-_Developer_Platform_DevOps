@@ -1,0 +1,48 @@
+apiVersion: 1
+
+providers:
+  - name: Platform Dashboards
+    orgId: 1
+    folder: Platform
+    folderUid: platform-dashboards
+    type: file
+    disableDeletion: false
+    editable: true
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/platform
+      foldersFromFilesStructure: false
+
+  - name: SLO Dashboards
+    orgId: 1
+    folder: SLO
+    folderUid: slo-dashboards
+    type: file
+    disableDeletion: false
+    editable: true
+    updateIntervalSeconds: 30
+    options:
+      path: /var/lib/grafana/dashboards/slo
+
+  - name: Infrastructure Dashboards
+    orgId: 1
+    folder: Infrastructure
+    folderUid: infra-dashboards
+    type: file
+    disableDeletion: false
+    editable: true
+    updateIntervalSeconds: 30
+    options:
+      path: /var/lib/grafana/dashboards/infrastructure
+
+  - name: Database Dashboards
+    orgId: 1
+    folder: Databases
+    folderUid: database-dashboards
+    type: file
+    disableDeletion: false
+    editable: true
+    updateIntervalSeconds: 30
+    options:
+      path: /var/lib/grafana/dashboards/databases

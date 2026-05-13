@@ -1,0 +1,104 @@
+apiVersion: 1
+
+datasources:
+  # Primary Prometheus instance
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus-server.monitoring.svc.cluster.local:9090
+    isDefault: true
+    editable: false
+    uid: prometheus
+    jsonData:
+      httpMethod: POST
+      timeInterval: 15s
+      queryTimeout: 60s
+      exemplarTraceIdDestinations:
+        - name: traceID
+          datasourceUid: tempo
+      incrementalQuerying: true
+      incrementalQueryOverlapWindow: 10m
+
+  # Thanos (long-term storage)
+  - name: Thanos
+    type: prometheus
+    access: proxy
+    url: http://thanos-query.monitoring.svc.cluster.local:9090
+    editable: false
+    uid: thanos
+    jsonData:
+      httpMethod: POST
+      timeInterval: 60s
+      queryTimeout: 120s
+      customQueryParameters: "dedup=true&partial_response=true"
+
+  # Loki (logs)
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://loki-gateway.monitoring.svc.cluster.local:3100
+    editable: false
+    uid: loki
+    jsonData:
+      maxLines: 1000
+      derivedFields:
+        - datasourceUid: tempo
+          matcherRegex: "traceID=(\\w+)"
+          name: TraceID
+          url: "$${__value.raw}"
+
+  # Tempo (traces)
+  - name: Tempo
+    type: tempo
+    access: proxy
+    url: http://tempo-query-frontend.monitoring.svc.cluster.local:3200
+    editable: false
+    uid: tempo
+    jsonData:
+      httpMethod: GET
+      tracesToLogs:
+        datasourceUid: loki
+        filterByTraceID: true
+        filterBySpanID: true
+        mapTagNamesEnabled: true
+        mappedTags:
+          - key: service.name
+            value: service
+      tracesToMetrics:
+        datasourceUid: prometheus
+        queries:
+          - name: Request rate
+            query: "sum(rate(http_requests_total{service=\"$${__span.tags.service.name}\"}[$__rate_interval]))"
+          - name: Error rate
+            query: "sum(rate(http_requests_total{service=\"$${__span.tags.service.name}\", code=~\"5..\"}[$__rate_interval]))"
+      serviceMap:
+        datasourceUid: prometheus
+      nodeGraph:
+        enabled: true
+      search:
+        hide: false
+      lokiSearch:
+        datasourceUid: loki
+
+  # AlertManager
+  - name: AlertManager
+    type: alertmanager
+    access: proxy
+    url: http://alertmanager.monitoring.svc.cluster.local:9093
+    editable: false
+    uid: alertmanager
+    jsonData:
+      implementation: prometheus
+      handleGrafanaManagedAlerts: false
+
+  # CloudWatch (AWS metrics)
+  - name: CloudWatch
+    type: cloudwatch
+    access: proxy
+    editable: false
+    uid: cloudwatch
+    jsonData:
+      authType: default
+      defaultRegion: us-east-1
+      assumeRoleArn: ""
+      customMetricsNamespaces: "Platform/API,Platform/Deployments"
