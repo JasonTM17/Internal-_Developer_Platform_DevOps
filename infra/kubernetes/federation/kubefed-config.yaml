@@ -1,0 +1,149 @@
+apiVersion: core.kubefed.io/v1beta1
+kind: KubeFedConfig
+metadata:
+  name: kubefed
+  namespace: kube-federation-system
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    app.kubernetes.io/managed-by: kubefed
+spec:
+  scope: Cluster
+  controllerDuration:
+    availableDelay: 20s
+    unavailableDelay: 60s
+  leaderElect:
+    leaseDuration: 15s
+    renewDeadline: 10s
+    retryPeriod: 5s
+    resourceLock: configmaps
+  featureGates:
+    - name: PushReconciler
+      configuration: Enabled
+    - name: SchedulerPreferences
+      configuration: Enabled
+    - name: CrossClusterServiceDiscovery
+      configuration: Enabled
+    - name: FederatedIngress
+      configuration: Enabled
+  clusterHealthCheck:
+    period: 10s
+    failureThreshold: 3
+    successThreshold: 1
+    timeout: 3s
+  syncController:
+    adoptResources: Enabled
+---
+# Primary cluster registration
+apiVersion: core.kubefed.io/v1beta1
+kind: KubeFedCluster
+metadata:
+  name: idp-primary
+  namespace: kube-federation-system
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    federation/role: primary
+    topology.kubernetes.io/region: us-east-1
+spec:
+  apiEndpoint: https://primary-cluster.eks.amazonaws.com
+  secretRef:
+    name: idp-primary-token
+  caBundle: ""
+---
+# Secondary cluster registration
+apiVersion: core.kubefed.io/v1beta1
+kind: KubeFedCluster
+metadata:
+  name: idp-secondary
+  namespace: kube-federation-system
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    federation/role: secondary
+    topology.kubernetes.io/region: us-west-2
+spec:
+  apiEndpoint: https://secondary-cluster.eks.amazonaws.com
+  secretRef:
+    name: idp-secondary-token
+  caBundle: ""
+---
+# Federated type configurations
+apiVersion: core.kubefed.io/v1beta1
+kind: FederatedTypeConfig
+metadata:
+  name: deployments.apps
+  namespace: kube-federation-system
+spec:
+  federatedType:
+    group: types.kubefed.io
+    kind: FederatedDeployment
+    pluralName: federateddeployments
+    scope: Namespaced
+    version: v1beta1
+  propagation: Enabled
+  targetType:
+    group: apps
+    kind: Deployment
+    pluralName: deployments
+    scope: Namespaced
+    version: v1
+---
+apiVersion: core.kubefed.io/v1beta1
+kind: FederatedTypeConfig
+metadata:
+  name: services
+  namespace: kube-federation-system
+spec:
+  federatedType:
+    group: types.kubefed.io
+    kind: FederatedService
+    pluralName: federatedservices
+    scope: Namespaced
+    version: v1beta1
+  propagation: Enabled
+  targetType:
+    group: ""
+    kind: Service
+    pluralName: services
+    scope: Namespaced
+    version: v1
+---
+apiVersion: core.kubefed.io/v1beta1
+kind: FederatedTypeConfig
+metadata:
+  name: configmaps
+  namespace: kube-federation-system
+spec:
+  federatedType:
+    group: types.kubefed.io
+    kind: FederatedConfigMap
+    pluralName: federatedconfigmaps
+    scope: Namespaced
+    version: v1beta1
+  propagation: Enabled
+  targetType:
+    group: ""
+    kind: ConfigMap
+    pluralName: configmaps
+    scope: Namespaced
+    version: v1
+---
+# Replica scheduling preference
+apiVersion: scheduling.kubefed.io/v1alpha1
+kind: ReplicaSchedulingPreference
+metadata:
+  name: idp-api-scheduling
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+spec:
+  targetKind: FederatedDeployment
+  totalReplicas: 6
+  rebalance: true
+  clusters:
+    idp-primary:
+      minReplicas: 3
+      maxReplicas: 10
+      weight: 70
+    idp-secondary:
+      minReplicas: 2
+      maxReplicas: 8
+      weight: 30
