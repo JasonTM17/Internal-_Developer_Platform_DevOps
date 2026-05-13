@@ -1,0 +1,135 @@
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosEngine
+metadata:
+  name: idp-api-network-loss
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    chaos.litmus.io/experiment-type: network-level
+    chaos.litmus.io/severity: high
+  annotations:
+    litmuschaos.io/description: |
+      Simulates network partition and packet loss between the IDP API
+      and its dependencies (database, cache, event bus). Validates
+      circuit breaker patterns, retry logic, and graceful degradation.
+spec:
+  engineState: active
+  appinfo:
+    appns: idp-platform
+    applabel: app=idp-api
+    appkind: deployment
+  chaosServiceAccount: chaos-serviceaccount
+  monitoring: true
+  annotationCheck: "true"
+  jobCleanUpPolicy: retain
+  experiments:
+    - name: pod-network-loss
+      spec:
+        probe:
+          - name: api-availability
+            type: httpProbe
+            mode: Continuous
+            httpProbe/inputs:
+              url: http://idp-api.idp-platform.svc.cluster.local:3000/healthz
+              insecureSkipVerify: false
+              method:
+                get:
+                  criteria: ==
+                  responseCode: "200"
+            runProperties:
+              probeTimeout: 10s
+              interval: 5s
+              retry: 5
+              probePollingInterval: 3s
+              initialDelay: 10s
+              stopOnFailure: false
+          - name: circuit-breaker-active
+            type: cmdProbe
+            mode: Continuous
+            cmdProbe/inputs:
+              command: |
+                kubectl exec -n idp-platform $(kubectl get pod -n idp-platform -l app=idp-api -o jsonpath='{.items[0].metadata.name}') -c istio-proxy -- pilot-agent request GET stats | grep -c "upstream_rq_pending_overflow"
+              comparator:
+                type: int
+                criteria: ">="
+                value: "0"
+            runProperties:
+              probeTimeout: 15s
+              interval: 15s
+              retry: 2
+          - name: graceful-degradation
+            type: httpProbe
+            mode: Continuous
+            httpProbe/inputs:
+              url: http://idp-api.idp-platform.svc.cluster.local:3000/api/v1/catalog
+              insecureSkipVerify: false
+              method:
+                get:
+                  criteria: "!="
+                  responseCode: "500"
+            runProperties:
+              probeTimeout: 10s
+              interval: 10s
+              retry: 3
+              probePollingInterval: 5s
+        components:
+          env:
+            - name: TOTAL_CHAOS_DURATION
+              value: "120"
+            - name: NETWORK_INTERFACE
+              value: "eth0"
+            - name: NETWORK_PACKET_LOSS_PERCENTAGE
+              value: "60"
+            - name: CONTAINER_RUNTIME
+              value: "containerd"
+            - name: SOCKET_PATH
+              value: "/run/containerd/containerd.sock"
+            - name: TARGET_CONTAINER
+              value: "idp-api"
+            - name: DESTINATION_IPS
+              value: ""
+            - name: DESTINATION_HOSTS
+              value: "postgresql.idp-data.svc.cluster.local,redis.idp-data.svc.cluster.local"
+            - name: PODS_AFFECTED_PERC
+              value: "100"
+            - name: RAMP_TIME
+              value: "10"
+          statusCheckTimeouts:
+            delay: 2
+            timeout: 300
+    - name: pod-network-partition
+      spec:
+        probe:
+          - name: api-still-responds
+            type: httpProbe
+            mode: Continuous
+            httpProbe/inputs:
+              url: http://idp-api.idp-platform.svc.cluster.local:3000/healthz
+              insecureSkipVerify: false
+              method:
+                get:
+                  criteria: "!="
+                  responseCode: "500"
+            runProperties:
+              probeTimeout: 10s
+              interval: 10s
+              retry: 5
+        components:
+          env:
+            - name: TOTAL_CHAOS_DURATION
+              value: "90"
+            - name: NETWORK_INTERFACE
+              value: "eth0"
+            - name: CONTAINER_RUNTIME
+              value: "containerd"
+            - name: SOCKET_PATH
+              value: "/run/containerd/containerd.sock"
+            - name: TARGET_CONTAINER
+              value: "idp-api"
+            - name: DESTINATION_HOSTS
+              value: "nats.idp-platform.svc.cluster.local"
+            - name: POLICY
+              value: "OUTPUT"
+          statusCheckTimeouts:
+            delay: 2
+            timeout: 240
