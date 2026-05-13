@@ -1,0 +1,111 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: idp-services-environments
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: internal-developer-platform
+    app.kubernetes.io/managed-by: argocd
+  annotations:
+    description: "ApplicationSet for deploying IDP services across all environments"
+    notifications.argoproj.io/subscribe.on-sync-failed.slack: platform-alerts
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - matrix:
+        generators:
+          # Service definitions
+          - list:
+              elements:
+                - service: idp-api
+                  path: infra/helm/idp-api
+                  component: api
+                - service: idp-portal
+                  path: infra/helm/idp-portal
+                  component: portal
+          # Environment definitions
+          - list:
+              elements:
+                - environment: dev
+                  targetRevision: develop
+                  namespace: platform
+                  autoSync: "true"
+                  valuesFile: values-dev.yaml
+                  clusterUrl: https://kubernetes.default.svc
+                - environment: staging
+                  targetRevision: "release/*"
+                  namespace: platform
+                  autoSync: "true"
+                  valuesFile: values-staging.yaml
+                  clusterUrl: https://kubernetes.default.svc
+                - environment: production
+                  targetRevision: main
+                  namespace: platform
+                  autoSync: "false"
+                  valuesFile: values-production.yaml
+                  clusterUrl: https://kubernetes.default.svc
+  template:
+    metadata:
+      name: "{{.service}}-{{.environment}}"
+      labels:
+        app.kubernetes.io/part-of: internal-developer-platform
+        app.kubernetes.io/component: "{{.component}}"
+        environment: "{{.environment}}"
+      annotations:
+        notifications.argoproj.io/subscribe.on-sync-succeeded.slack: "platform-{{.environment}}"
+      finalizers:
+        - resources-finalizer.argocd.argoproj.io
+    spec:
+      project: internal-developer-platform
+      source:
+        repoURL: https://github.com/company/internal-developer-platform.git
+        targetRevision: "{{.targetRevision}}"
+        path: "{{.path}}"
+        helm:
+          valueFiles:
+            - values.yaml
+            - "{{.valuesFile}}"
+      destination:
+        server: "{{.clusterUrl}}"
+        namespace: "{{.namespace}}"
+      syncPolicy:
+        syncOptions:
+          - CreateNamespace=false
+          - PrunePropagationPolicy=foreground
+          - PruneLast=true
+          - ApplyOutOfSyncOnly=true
+          - ServerSideApply=true
+        retry:
+          limit: 3
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 5m
+      revisionHistoryLimit: 10
+      ignoreDifferences:
+        - group: apps
+          kind: Deployment
+          jsonPointers:
+            - /spec/replicas
+  strategy:
+    type: RollingSync
+    rollingSync:
+      steps:
+        - matchExpressions:
+            - key: environment
+              operator: In
+              values:
+                - dev
+        - matchExpressions:
+            - key: environment
+              operator: In
+              values:
+                - staging
+        - matchExpressions:
+            - key: environment
+              operator: In
+              values:
+                - production
+  preservedFields:
+    - ".spec.syncPolicy.automated"
