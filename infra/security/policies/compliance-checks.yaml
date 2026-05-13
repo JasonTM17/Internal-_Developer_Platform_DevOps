@@ -1,0 +1,204 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sRequiredLabels
+metadata:
+  name: require-data-classification
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    compliance.idp/control: CC5.3
+spec:
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Secret", "ConfigMap"]
+      - apiGroups: ["apps"]
+        kinds: ["Deployment", "StatefulSet"]
+    namespaces:
+      - idp-platform
+      - idp-data
+  parameters:
+    labels:
+      - key: data-classification
+        allowedRegex: "^(public|internal|confidential|restricted)$"
+---
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sDisallowedTags
+metadata:
+  name: no-latest-tag
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    compliance.idp/control: CC8.2
+spec:
+  match:
+    kinds:
+      - apiGroups: ["apps"]
+        kinds: ["Deployment", "StatefulSet", "DaemonSet"]
+    namespaces:
+      - idp-platform
+  parameters:
+    tags:
+      - "latest"
+---
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sPSPPrivilegedContainer
+metadata:
+  name: deny-privileged-containers
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    compliance.idp/control: CC6.4
+spec:
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod"]
+      - apiGroups: ["apps"]
+        kinds: ["Deployment", "StatefulSet", "DaemonSet"]
+    excludedNamespaces:
+      - kube-system
+      - istio-system
+---
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sRequireSecurityContext
+metadata:
+  name: require-security-context
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    compliance.idp/control: CC6.1
+spec:
+  match:
+    kinds:
+      - apiGroups: ["apps"]
+        kinds: ["Deployment", "StatefulSet"]
+    namespaces:
+      - idp-platform
+  parameters:
+    requiredFields:
+      - runAsNonRoot
+      - readOnlyRootFilesystem
+---
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sResourceLimits
+metadata:
+  name: require-resource-limits
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    compliance.idp/control: A1.1
+spec:
+  match:
+    kinds:
+      - apiGroups: ["apps"]
+        kinds: ["Deployment", "StatefulSet"]
+    namespaces:
+      - idp-platform
+  parameters:
+    requireLimits: true
+    requireRequests: true
+---
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sRequireProbes
+metadata:
+  name: require-health-probes
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    compliance.idp/control: CC7.1
+spec:
+  match:
+    kinds:
+      - apiGroups: ["apps"]
+        kinds: ["Deployment"]
+    namespaces:
+      - idp-platform
+  parameters:
+    probes:
+      - livenessProbe
+      - readinessProbe
+---
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sBlockNodePort
+metadata:
+  name: deny-nodeport-services
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    compliance.idp/control: CC6.6
+spec:
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Service"]
+    namespaces:
+      - idp-platform
+---
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sRequireNamespace
+metadata:
+  name: deny-default-namespace
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    compliance.idp/control: CC6.4
+spec:
+  match:
+    kinds:
+      - apiGroups: ["apps"]
+        kinds: ["Deployment", "StatefulSet", "DaemonSet"]
+  parameters:
+    deniedNamespaces:
+      - default
+---
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sImageDigests
+metadata:
+  name: require-image-digests
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    compliance.idp/control: CC8.3
+spec:
+  match:
+    kinds:
+      - apiGroups: ["apps"]
+        kinds: ["Deployment", "StatefulSet"]
+    namespaces:
+      - idp-platform
+  parameters:
+    exemptImages:
+      - "ghcr.io/idp-platform/*"
+---
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sAllowedRepos
+metadata:
+  name: allowed-container-registries
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    compliance.idp/control: CC9.2
+spec:
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod"]
+      - apiGroups: ["apps"]
+        kinds: ["Deployment", "StatefulSet", "DaemonSet"]
+    namespaces:
+      - idp-platform
+  parameters:
+    repos:
+      - "ghcr.io/idp-platform/"
+      - "docker.io/library/"
+      - "public.ecr.aws/"
+      - "quay.io/prometheus/"
+      - "grafana/"
+---
+# Network policy enforcement
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sRequireNetworkPolicy
+metadata:
+  name: require-network-policy
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    compliance.idp/control: CC6.4
+spec:
+  match:
+    kinds:
+      - apiGroups: ["apps"]
+        kinds: ["Deployment"]
+    namespaces:
+      - idp-platform
+  parameters:
+    message: "All deployments must have an associated NetworkPolicy"
