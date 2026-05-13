@@ -1,0 +1,124 @@
+apiVersion: flagger.app/v1beta1
+kind: MetricTemplate
+metadata:
+  name: latency-check
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/name: latency-check
+    app.kubernetes.io/part-of: idp-platform
+    app.kubernetes.io/managed-by: flagger
+  annotations:
+    flagger.app/description: |
+      Checks P99 latency for canary workloads. Fails if latency exceeds
+      the configured threshold (default 1000ms). Uses Istio request
+      duration histogram for accurate service mesh measurements.
+spec:
+  provider:
+    type: prometheus
+    address: http://prometheus.monitoring.svc.cluster.local:9090
+  query: |
+    histogram_quantile(
+      0.99,
+      sum(
+        rate(
+          istio_request_duration_milliseconds_bucket{
+            reporter="destination",
+            destination_workload_namespace="{{ namespace }}",
+            destination_workload=~"{{ target }}"
+          }[{{ interval }}]
+        )
+      ) by (le)
+    )
+---
+apiVersion: flagger.app/v1beta1
+kind: MetricTemplate
+metadata:
+  name: latency-p95-check
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/name: latency-p95-check
+    app.kubernetes.io/part-of: idp-platform
+    app.kubernetes.io/managed-by: flagger
+  annotations:
+    flagger.app/description: |
+      Checks P95 latency for canary workloads. More lenient than P99
+      but catches sustained latency degradation.
+spec:
+  provider:
+    type: prometheus
+    address: http://prometheus.monitoring.svc.cluster.local:9090
+  query: |
+    histogram_quantile(
+      0.95,
+      sum(
+        rate(
+          istio_request_duration_milliseconds_bucket{
+            reporter="destination",
+            destination_workload_namespace="{{ namespace }}",
+            destination_workload=~"{{ target }}"
+          }[{{ interval }}]
+        )
+      ) by (le)
+    )
+---
+apiVersion: flagger.app/v1beta1
+kind: MetricTemplate
+metadata:
+  name: latency-p50-check
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/name: latency-p50-check
+    app.kubernetes.io/part-of: idp-platform
+    app.kubernetes.io/managed-by: flagger
+  annotations:
+    flagger.app/description: |
+      Checks median (P50) latency. Useful for detecting broad latency
+      shifts that affect the majority of requests.
+spec:
+  provider:
+    type: prometheus
+    address: http://prometheus.monitoring.svc.cluster.local:9090
+  query: |
+    histogram_quantile(
+      0.50,
+      sum(
+        rate(
+          istio_request_duration_milliseconds_bucket{
+            reporter="destination",
+            destination_workload_namespace="{{ namespace }}",
+            destination_workload=~"{{ target }}"
+          }[{{ interval }}]
+        )
+      ) by (le)
+    )
+---
+apiVersion: flagger.app/v1beta1
+kind: MetricTemplate
+metadata:
+  name: upstream-latency-check
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/name: upstream-latency-check
+    app.kubernetes.io/part-of: idp-platform
+    app.kubernetes.io/managed-by: flagger
+  annotations:
+    flagger.app/description: |
+      Measures upstream service latency (time spent in the application
+      excluding Envoy proxy overhead). Helps isolate application-level
+      performance issues from network/proxy issues.
+spec:
+  provider:
+    type: prometheus
+    address: http://prometheus.monitoring.svc.cluster.local:9090
+  query: |
+    histogram_quantile(
+      0.99,
+      sum(
+        rate(
+          envoy_cluster_upstream_rq_time_bucket{
+            namespace="{{ namespace }}",
+            pod=~"{{ target }}-[0-9a-zA-Z]+(-[0-9a-zA-Z]+)"
+          }[{{ interval }}]
+        )
+      ) by (le)
+    )
