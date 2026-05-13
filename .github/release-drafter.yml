@@ -1,0 +1,31 @@
+name-template: 'v$RESOLVED_VERSION'
+tag-template: 'v$RESOLVED_VERSION'
+categories:
+  - title: '🚀 Features'
+    labels: ['feature', 'enhancement']
+  - title: '🐛 Bug Fixes'
+    labels: ['fix', 'bugfix', 'bug']
+  - title: '🧰 Maintenance'
+    labels: ['chore', 'maintenance']
+  - title: '📖 Documentation'
+    labels: ['documentation', 'docs']
+  - title: '🔒 Security'
+    labels: ['security']
+  - title: '⚡ Performance'
+    labels: ['performance']
+change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
+change-title-escapes: '\<*_&'
+version-resolver:
+  major:
+    labels: ['major', 'breaking']
+  minor:
+    labels: ['feature', 'enhancement']
+  patch:
+    labels: ['fix', 'bugfix', 'maintenance']
+  default: patch
+template: |
+  ## What's Changed
+
+  $CHANGES
+
+  **Full Changelog**: https://github.com/JasonTM17/Internal-_Developer_Platform_DevOps/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION
