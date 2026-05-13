@@ -1,0 +1,95 @@
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosEngine
+metadata:
+  name: idp-api-disk-fill
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    chaos.litmus.io/experiment-type: resource-stress
+    chaos.litmus.io/severity: high
+  annotations:
+    litmuschaos.io/description: |
+      Fills ephemeral storage in IDP API pods to validate disk pressure
+      handling, log rotation, eviction behavior, and application resilience
+      when storage is exhausted.
+spec:
+  engineState: active
+  appinfo:
+    appns: idp-platform
+    applabel: app=idp-api
+    appkind: deployment
+  chaosServiceAccount: chaos-serviceaccount
+  monitoring: true
+  annotationCheck: "true"
+  jobCleanUpPolicy: retain
+  experiments:
+    - name: disk-fill
+      spec:
+        probe:
+          - name: api-health-during-disk-pressure
+            type: httpProbe
+            mode: Continuous
+            httpProbe/inputs:
+              url: http://idp-api.idp-platform.svc.cluster.local:3000/healthz
+              insecureSkipVerify: false
+              method:
+                get:
+                  criteria: ==
+                  responseCode: "200"
+            runProperties:
+              probeTimeout: 10s
+              interval: 10s
+              retry: 3
+              probePollingInterval: 5s
+              initialDelay: 10s
+              stopOnFailure: false
+          - name: disk-usage-check
+            type: cmdProbe
+            mode: Continuous
+            cmdProbe/inputs:
+              command: |
+                kubectl exec -n idp-platform $(kubectl get pod -n idp-platform -l app=idp-api -o jsonpath='{.items[0].metadata.name}') -c idp-api -- df -h /tmp | tail -1 | awk '{print $5}' | tr -d '%'
+              comparator:
+                type: int
+                criteria: "<="
+                value: "95"
+            runProperties:
+              probeTimeout: 15s
+              interval: 30s
+              retry: 2
+          - name: no-eviction-check
+            type: cmdProbe
+            mode: Edge
+            cmdProbe/inputs:
+              command: "kubectl get events -n idp-platform --field-selector reason=Evicted --no-headers | wc -l"
+              comparator:
+                type: int
+                criteria: "=="
+                value: "0"
+            runProperties:
+              probeTimeout: 15s
+              interval: 30s
+              retry: 2
+        components:
+          env:
+            - name: TOTAL_CHAOS_DURATION
+              value: "120"
+            - name: FILL_PERCENTAGE
+              value: "80"
+            - name: EPHEMERAL_STORAGE_MEBIBYTES
+              value: ""
+            - name: CONTAINER_RUNTIME
+              value: "containerd"
+            - name: SOCKET_PATH
+              value: "/run/containerd/containerd.sock"
+            - name: TARGET_CONTAINER
+              value: "idp-api"
+            - name: DATA_BLOCK_SIZE
+              value: "256"
+            - name: PODS_AFFECTED_PERC
+              value: "50"
+            - name: RAMP_TIME
+              value: "10"
+          statusCheckTimeouts:
+            delay: 5
+            timeout: 240
