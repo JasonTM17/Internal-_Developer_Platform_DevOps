@@ -1,0 +1,117 @@
+groups:
+  - name: idp-api-recording-rules
+    interval: 30s
+    rules:
+      # Request rate by status code
+      - record: idp:api:request_rate:5m
+        expr: sum(rate(http_requests_total{job="idp-api"}[5m])) by (method, path, status)
+
+      # Total request rate
+      - record: idp:api:request_rate_total:5m
+        expr: sum(rate(http_requests_total{job="idp-api"}[5m]))
+
+      # Error rate percentage
+      - record: idp:api:error_rate:5m
+        expr: |
+          sum(rate(http_requests_total{job="idp-api",status=~"5.."}[5m]))
+          /
+          sum(rate(http_requests_total{job="idp-api"}[5m]))
+
+      # P50 latency
+      - record: idp:api:latency_p50:5m
+        expr: histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{job="idp-api"}[5m])) by (le))
+
+      # P95 latency
+      - record: idp:api:latency_p95:5m
+        expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job="idp-api"}[5m])) by (le))
+
+      # P99 latency
+      - record: idp:api:latency_p99:5m
+        expr: histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job="idp-api"}[5m])) by (le))
+
+      # Latency by endpoint
+      - record: idp:api:latency_p95_by_endpoint:5m
+        expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job="idp-api"}[5m])) by (le, path))
+
+  - name: idp-deployment-recording-rules
+    interval: 60s
+    rules:
+      # Deployment frequency (per day)
+      - record: idp:deployments:frequency:24h
+        expr: sum(increase(deployment_total[24h])) by (environment, service)
+
+      # Deployment success rate
+      - record: idp:deployments:success_rate:24h
+        expr: |
+          sum(increase(deployment_total{status="success"}[24h])) by (environment)
+          /
+          sum(increase(deployment_total[24h])) by (environment)
+
+      # Mean time to deploy
+      - record: idp:deployments:duration_avg:24h
+        expr: avg(deployment_duration_seconds) by (environment, service)
+
+      # Change failure rate (DORA metric)
+      - record: idp:dora:change_failure_rate:7d
+        expr: |
+          sum(increase(deployment_total{status="failed"}[7d]))
+          /
+          sum(increase(deployment_total[7d]))
+
+  - name: idp-infrastructure-recording-rules
+    interval: 60s
+    rules:
+      # Node CPU utilization
+      - record: idp:node:cpu_utilization:5m
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
+
+      # Node memory utilization
+      - record: idp:node:memory_utilization:5m
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100
+
+      # Pod resource utilization
+      - record: idp:pod:cpu_utilization:5m
+        expr: |
+          sum(rate(container_cpu_usage_seconds_total{namespace=~"idp-.*"}[5m])) by (pod, namespace)
+          /
+          sum(kube_pod_container_resource_requests{resource="cpu",namespace=~"idp-.*"}) by (pod, namespace)
+          * 100
+
+      # Database connection pool utilization
+      - record: idp:db:connection_pool_utilization
+        expr: |
+          pg_stat_activity_count{datname="idp_production"}
+          /
+          pg_settings_max_connections * 100
+
+      # Redis memory utilization
+      - record: idp:redis:memory_utilization
+        expr: redis_memory_used_bytes / redis_memory_max_bytes * 100
+
+  - name: idp-slo-recording-rules
+    interval: 30s
+    rules:
+      # Availability SLI (successful requests / total requests)
+      - record: idp:slo:availability:5m
+        expr: |
+          1 - (
+            sum(rate(http_requests_total{job="idp-api",status=~"5.."}[5m]))
+            /
+            sum(rate(http_requests_total{job="idp-api"}[5m]))
+          )
+
+      # Latency SLI (requests under 500ms / total requests)
+      - record: idp:slo:latency:5m
+        expr: |
+          sum(rate(http_request_duration_seconds_bucket{job="idp-api",le="0.5"}[5m]))
+          /
+          sum(rate(http_request_duration_seconds_count{job="idp-api"}[5m]))
+
+      # Error budget remaining (target: 99.9% availability)
+      - record: idp:slo:error_budget_remaining:30d
+        expr: |
+          1 - (
+            (1 - idp:slo:availability:5m)
+            /
+            (1 - 0.999)
+          )
