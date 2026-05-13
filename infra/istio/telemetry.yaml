@@ -1,0 +1,166 @@
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: mesh-telemetry
+  namespace: istio-system
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    app.kubernetes.io/managed-by: istio
+spec:
+  tracing:
+    - providers:
+        - name: zipkin
+      randomSamplingPercentage: 10.0
+      customTags:
+        environment:
+          literal:
+            value: production
+        platform:
+          literal:
+            value: idp
+        cluster:
+          environment:
+            name: CLUSTER_NAME
+            defaultValue: primary
+  metrics:
+    - providers:
+        - name: prometheus
+      overrides:
+        - match:
+            metric: REQUEST_COUNT
+            mode: CLIENT_AND_SERVER
+          tagOverrides:
+            request_host:
+              operation: UPSERT
+              value: request.host
+            destination_service_name:
+              operation: UPSERT
+              value: destination.service.name
+        - match:
+            metric: REQUEST_DURATION
+            mode: CLIENT_AND_SERVER
+          tagOverrides:
+            request_protocol:
+              operation: UPSERT
+              value: request.protocol
+        - match:
+            metric: REQUEST_SIZE
+            mode: CLIENT_AND_SERVER
+          disabled: false
+        - match:
+            metric: RESPONSE_SIZE
+            mode: CLIENT_AND_SERVER
+          disabled: false
+  accessLogging:
+    - providers:
+        - name: envoy
+      filter:
+        expression: "response.code >= 400 || connection.mtls == false"
+---
+# Namespace-specific telemetry for IDP platform
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: idp-platform-telemetry
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    app.kubernetes.io/managed-by: istio
+spec:
+  tracing:
+    - providers:
+        - name: zipkin
+      randomSamplingPercentage: 100.0
+      customTags:
+        service.name:
+          environment:
+            name: SERVICE_NAME
+            defaultValue: unknown
+        service.version:
+          environment:
+            name: SERVICE_VERSION
+            defaultValue: unknown
+        deployment.environment:
+          literal:
+            value: production
+        trace.id:
+          header:
+            name: x-request-id
+            defaultValue: ""
+  metrics:
+    - providers:
+        - name: prometheus
+      overrides:
+        - match:
+            metric: REQUEST_COUNT
+            mode: CLIENT_AND_SERVER
+          tagOverrides:
+            idp_tenant:
+              operation: UPSERT
+              value: "request.headers['x-idp-tenant'] | 'default'"
+            idp_api_version:
+              operation: UPSERT
+              value: "request.url_path.split('/')[2] | 'unknown'"
+        - match:
+            metric: REQUEST_DURATION
+            mode: SERVER
+          tagOverrides:
+            response_content_type:
+              operation: UPSERT
+              value: "response.headers['content-type'] | 'unknown'"
+  accessLogging:
+    - providers:
+        - name: envoy
+      filter:
+        expression: "true"
+---
+# Prometheus monitor for Istio metrics
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: istio-mesh-metrics
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    monitoring: istio
+spec:
+  selector:
+    matchLabels:
+      istio: pilot
+  namespaceSelector:
+    matchNames:
+      - istio-system
+  endpoints:
+    - port: http-monitoring
+      interval: 15s
+      path: /metrics
+      relabelings:
+        - sourceLabels: [__meta_kubernetes_pod_label_app]
+          targetLabel: app
+        - sourceLabels: [__meta_kubernetes_namespace]
+          targetLabel: namespace
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: envoy-stats
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    monitoring: envoy
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/part-of: idp-platform
+  namespaceSelector:
+    matchNames:
+      - idp-platform
+  endpoints:
+    - port: http-envoy-prom
+      interval: 15s
+      path: /stats/prometheus
+      relabelings:
+        - sourceLabels: [__meta_kubernetes_pod_label_app]
+          targetLabel: app
+        - sourceLabels: [__meta_kubernetes_pod_label_version]
+          targetLabel: version
