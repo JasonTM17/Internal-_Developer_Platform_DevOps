@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+  labels:
+    app.kubernetes.io/part-of: internal-developer-platform
+    app.kubernetes.io/managed-by: argocd
+    purpose: observability
+    team: platform-engineering
+    istio-injection: enabled
+  annotations:
+    description: "Monitoring and observability stack - Prometheus, Grafana, Alertmanager"
+    owner: platform-engineering@company.com
+    cost-center: "engineering-platform"
+    scheduler.alpha.kubernetes.io/node-selector: "node-role.kubernetes.io/monitoring=true"
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: monitoring-quota
+  namespace: monitoring
+spec:
+  hard:
+    requests.cpu: "8"
+    requests.memory: "32Gi"
+    limits.cpu: "16"
+    limits.memory: "64Gi"
+    persistentvolumeclaims: "20"
+    pods: "50"
