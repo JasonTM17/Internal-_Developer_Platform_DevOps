@@ -1,0 +1,101 @@
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: idp-api-destination
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/name: idp-api
+    app.kubernetes.io/part-of: idp-platform
+    app.kubernetes.io/managed-by: istio
+spec:
+  host: idp-api.idp-platform.svc.cluster.local
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 1000
+        connectTimeout: 10s
+        tcpKeepalive:
+          time: 7200s
+          interval: 75s
+          probes: 9
+      http:
+        h2UpgradePolicy: DEFAULT
+        http1MaxPendingRequests: 1024
+        http2MaxRequests: 1024
+        maxRequestsPerConnection: 100
+        maxRetries: 3
+        idleTimeout: 300s
+    loadBalancer:
+      simple: LEAST_REQUEST
+      localityLbSetting:
+        enabled: true
+        failover:
+          - from: us-east-1
+            to: us-west-2
+          - from: us-west-2
+            to: us-east-1
+        failoverPriority:
+          - "topology.kubernetes.io/zone"
+          - "topology.kubernetes.io/region"
+    outlierDetection:
+      consecutive5xxErrors: 5
+      interval: 10s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+      minHealthPercent: 30
+      splitExternalLocalOriginErrors: true
+      consecutiveLocalOriginFailures: 5
+      consecutiveGatewayErrors: 5
+    tls:
+      mode: ISTIO_MUTUAL
+      subjectAltNames:
+        - spiffe://idp.cluster.local/ns/idp-platform/sa/idp-api
+
+  subsets:
+    - name: stable
+      labels:
+        app: idp-api
+        version: stable
+      trafficPolicy:
+        connectionPool:
+          tcp:
+            maxConnections: 1000
+          http:
+            http1MaxPendingRequests: 1024
+            http2MaxRequests: 1024
+            maxRequestsPerConnection: 100
+        outlierDetection:
+          consecutive5xxErrors: 5
+          interval: 10s
+          baseEjectionTime: 30s
+          maxEjectionPercent: 50
+
+    - name: canary
+      labels:
+        app: idp-api
+        version: canary
+      trafficPolicy:
+        connectionPool:
+          tcp:
+            maxConnections: 100
+          http:
+            http1MaxPendingRequests: 128
+            http2MaxRequests: 128
+            maxRequestsPerConnection: 50
+        outlierDetection:
+          consecutive5xxErrors: 3
+          interval: 5s
+          baseEjectionTime: 60s
+          maxEjectionPercent: 100
+
+    - name: shadow
+      labels:
+        app: idp-api
+        version: shadow
+      trafficPolicy:
+        connectionPool:
+          tcp:
+            maxConnections: 50
+          http:
+            http1MaxPendingRequests: 64
+            http2MaxRequests: 64
