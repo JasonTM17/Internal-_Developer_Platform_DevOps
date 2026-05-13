@@ -8,7 +8,7 @@ Build the most developer-friendly internal platform that eliminates infrastructu
 
 ## Current Quarter (Q1 2024)
 
-### 🟢 Completed
+### Completed
 
 - [x] Service catalog with full CRUD and search
 - [x] Deployment orchestration (rolling, blue/green, canary)
@@ -19,14 +19,14 @@ Build the most developer-friendly internal platform that eliminates infrastructu
 - [x] API documentation (OpenAPI 3.1)
 - [x] Cost visibility dashboard
 
-### 🟡 In Progress
+### In Progress
 
 - [ ] Service dependency graph visualization
 - [ ] Automated canary analysis (metrics-based promotion)
 - [ ] Developer portal plugin marketplace
 - [ ] Multi-cluster deployment support
 
-### 🔴 Blocked
+### Blocked
 
 - [ ] FinOps integration (waiting on finance team API access)
 
