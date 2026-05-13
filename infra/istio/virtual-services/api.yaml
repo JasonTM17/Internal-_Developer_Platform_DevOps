@@ -1,0 +1,167 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: api-virtualservice
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/name: idp-api
+    app.kubernetes.io/part-of: idp-platform
+    app.kubernetes.io/managed-by: istio
+spec:
+  hosts:
+    - "api.idp.example.com"
+  gateways:
+    - idp-gateway
+    - mesh
+  http:
+    # Health check endpoint - no auth required
+    - name: health-check
+      match:
+        - uri:
+            exact: /healthz
+        - uri:
+            exact: /readyz
+      route:
+        - destination:
+            host: idp-api.idp-platform.svc.cluster.local
+            port:
+              number: 3000
+      timeout: 5s
+      retries:
+        attempts: 2
+        perTryTimeout: 2s
+
+    # API v1 routes with canary traffic splitting
+    - name: api-v1-canary
+      match:
+        - uri:
+            prefix: /api/v1
+          headers:
+            x-canary:
+              exact: "true"
+      route:
+        - destination:
+            host: idp-api.idp-platform.svc.cluster.local
+            subset: canary
+            port:
+              number: 3000
+      timeout: 30s
+      retries:
+        attempts: 3
+        perTryTimeout: 10s
+        retryOn: gateway-error,connect-failure,refused-stream,unavailable,cancelled,retriable-status-codes
+        retriableStatusCodes:
+          - 503
+          - 502
+
+    # Primary API v1 routes with weighted traffic
+    - name: api-v1-primary
+      match:
+        - uri:
+            prefix: /api/v1
+      route:
+        - destination:
+            host: idp-api.idp-platform.svc.cluster.local
+            subset: stable
+            port:
+              number: 3000
+          weight: 100
+        - destination:
+            host: idp-api.idp-platform.svc.cluster.local
+            subset: canary
+            port:
+              number: 3000
+          weight: 0
+      timeout: 30s
+      retries:
+        attempts: 3
+        perTryTimeout: 10s
+        retryOn: gateway-error,connect-failure,refused-stream
+      corsPolicy:
+        allowOrigins:
+          - regex: "https://.*\\.idp\\.example\\.com"
+        allowMethods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - PATCH
+          - OPTIONS
+        allowHeaders:
+          - authorization
+          - content-type
+          - x-request-id
+          - x-correlation-id
+          - x-idp-tenant
+        exposeHeaders:
+          - x-request-id
+          - x-correlation-id
+          - x-ratelimit-limit
+          - x-ratelimit-remaining
+          - x-ratelimit-reset
+        maxAge: "86400"
+        allowCredentials: true
+      fault:
+        delay:
+          percentage:
+            value: 0.0
+          fixedDelay: 0s
+        abort:
+          percentage:
+            value: 0.0
+          httpStatus: 503
+      headers:
+        request:
+          set:
+            x-envoy-upstream-rq-timeout-ms: "30000"
+          add:
+            x-forwarded-service: idp-api
+        response:
+          set:
+            strict-transport-security: "max-age=31536000; includeSubDomains"
+            x-content-type-options: nosniff
+            x-frame-options: DENY
+            x-xss-protection: "1; mode=block"
+            referrer-policy: strict-origin-when-cross-origin
+
+    # GraphQL endpoint
+    - name: graphql
+      match:
+        - uri:
+            exact: /graphql
+      route:
+        - destination:
+            host: idp-api.idp-platform.svc.cluster.local
+            subset: stable
+            port:
+              number: 3000
+      timeout: 60s
+      retries:
+        attempts: 1
+        perTryTimeout: 55s
+
+    # WebSocket endpoint for real-time updates
+    - name: websocket
+      match:
+        - uri:
+            prefix: /ws
+          headers:
+            upgrade:
+              exact: websocket
+      route:
+        - destination:
+            host: idp-api.idp-platform.svc.cluster.local
+            subset: stable
+            port:
+              number: 3000
+      timeout: 0s
+
+    # Default catch-all route
+    - name: default
+      route:
+        - destination:
+            host: idp-api.idp-platform.svc.cluster.local
+            subset: stable
+            port:
+              number: 3000
+      timeout: 15s
