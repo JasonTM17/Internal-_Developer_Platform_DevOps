@@ -1,0 +1,247 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: slo-recording-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/component: recording-rules
+    prometheus: platform
+    role: slo-rules
+spec:
+  groups:
+    # ─────────────────────────────────────────────────────────────────────────
+    # API Availability SLO Recording Rules
+    # ─────────────────────────────────────────────────────────────────────────
+    - name: slo:api_availability
+      interval: 30s
+      rules:
+        # Total requests (excluding health checks and rate-limited)
+        - record: slo:api_requests:rate5m
+          expr: |
+            sum(rate(http_requests_total{
+              job="platform-api",
+              handler!~"/health.*",
+              code!="429"
+            }[5m]))
+
+        # Failed requests (5xx only)
+        - record: slo:api_errors:rate5m
+          expr: |
+            sum(rate(http_requests_total{
+              job="platform-api",
+              handler!~"/health.*",
+              code=~"5.."
+            }[5m]))
+
+        # Availability ratio (5-minute window)
+        - record: slo:api_availability:ratio_rate5m
+          expr: |
+            1 - (slo:api_errors:rate5m / slo:api_requests:rate5m)
+
+        # Availability ratio (1-hour window)
+        - record: slo:api_availability:ratio_rate1h
+          expr: |
+            1 - (
+              sum(rate(http_requests_total{job="platform-api", handler!~"/health.*", code=~"5.."}[1h]))
+              /
+              sum(rate(http_requests_total{job="platform-api", handler!~"/health.*", code!="429"}[1h]))
+            )
+
+        # Availability ratio (6-hour window)
+        - record: slo:api_availability:ratio_rate6h
+          expr: |
+            1 - (
+              sum(rate(http_requests_total{job="platform-api", handler!~"/health.*", code=~"5.."}[6h]))
+              /
+              sum(rate(http_requests_total{job="platform-api", handler!~"/health.*", code!="429"}[6h]))
+            )
+
+        # Availability ratio (30-day window)
+        - record: slo:api_availability:ratio_rate30d
+          expr: |
+            1 - (
+              sum(rate(http_requests_total{job="platform-api", handler!~"/health.*", code=~"5.."}[30d]))
+              /
+              sum(rate(http_requests_total{job="platform-api", handler!~"/health.*", code!="429"}[30d]))
+            )
+
+        # Error budget remaining (target: 99.95%)
+        - record: slo:api_availability:error_budget_remaining
+          expr: |
+            1 - (
+              (1 - slo:api_availability:ratio_rate30d)
+              /
+              (1 - 0.9995)
+            )
+
+        # Burn rate (1-hour window)
+        - record: slo:api_availability:burn_rate1h
+          expr: |
+            (1 - slo:api_availability:ratio_rate1h) / (1 - 0.9995)
+
+        # Burn rate (6-hour window)
+        - record: slo:api_availability:burn_rate6h
+          expr: |
+            (1 - slo:api_availability:ratio_rate6h) / (1 - 0.9995)
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # API Latency SLO Recording Rules
+    # ─────────────────────────────────────────────────────────────────────────
+    - name: slo:api_latency
+      interval: 30s
+      rules:
+        # Proportion of requests under 500ms (p95 target)
+        - record: slo:api_latency:ratio_rate5m
+          expr: |
+            sum(rate(http_request_duration_seconds_bucket{
+              job="platform-api",
+              le="0.5"
+            }[5m]))
+            /
+            sum(rate(http_request_duration_seconds_count{
+              job="platform-api"
+            }[5m]))
+
+        # Proportion of requests under 500ms (1-hour window)
+        - record: slo:api_latency:ratio_rate1h
+          expr: |
+            sum(rate(http_request_duration_seconds_bucket{job="platform-api", le="0.5"}[1h]))
+            /
+            sum(rate(http_request_duration_seconds_count{job="platform-api"}[1h]))
+
+        # Proportion of requests under 500ms (30-day window)
+        - record: slo:api_latency:ratio_rate30d
+          expr: |
+            sum(rate(http_request_duration_seconds_bucket{job="platform-api", le="0.5"}[30d]))
+            /
+            sum(rate(http_request_duration_seconds_count{job="platform-api"}[30d]))
+
+        # Latency error budget remaining (target: 95% under 500ms)
+        - record: slo:api_latency:error_budget_remaining
+          expr: |
+            1 - (
+              (1 - slo:api_latency:ratio_rate30d)
+              /
+              (1 - 0.95)
+            )
+
+        # Latency burn rate (1-hour)
+        - record: slo:api_latency:burn_rate1h
+          expr: |
+            (1 - slo:api_latency:ratio_rate1h) / (1 - 0.95)
+
+        # Actual percentiles for dashboards
+        - record: slo:api_latency:p50
+          expr: |
+            histogram_quantile(0.50,
+              sum(rate(http_request_duration_seconds_bucket{job="platform-api"}[5m])) by (le)
+            )
+
+        - record: slo:api_latency:p95
+          expr: |
+            histogram_quantile(0.95,
+              sum(rate(http_request_duration_seconds_bucket{job="platform-api"}[5m])) by (le)
+            )
+
+        - record: slo:api_latency:p99
+          expr: |
+            histogram_quantile(0.99,
+              sum(rate(http_request_duration_seconds_bucket{job="platform-api"}[5m])) by (le)
+            )
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Deployment Success SLO Recording Rules
+    # ─────────────────────────────────────────────────────────────────────────
+    - name: slo:deployment_success
+      interval: 60s
+      rules:
+        # Deployment success rate (30-day window)
+        - record: slo:deployment_success:ratio_rate30d
+          expr: |
+            sum(increase(argocd_app_sync_total{phase="Succeeded", dest_namespace=~"production.*"}[30d]))
+            /
+            (
+              sum(increase(argocd_app_sync_total{phase="Succeeded", dest_namespace=~"production.*"}[30d]))
+              +
+              sum(increase(argocd_app_sync_total{phase="Failed", dest_namespace=~"production.*"}[30d]))
+            )
+
+        # Deployment success rate (1-hour window)
+        - record: slo:deployment_success:ratio_rate1h
+          expr: |
+            sum(increase(argocd_app_sync_total{phase="Succeeded", dest_namespace=~"production.*"}[1h]))
+            /
+            (
+              sum(increase(argocd_app_sync_total{phase="Succeeded", dest_namespace=~"production.*"}[1h]))
+              +
+              sum(increase(argocd_app_sync_total{phase="Failed", dest_namespace=~"production.*"}[1h]))
+            )
+
+        # Error budget remaining (target: 99.0%)
+        - record: slo:deployment_success:error_budget_remaining
+          expr: |
+            1 - (
+              (1 - slo:deployment_success:ratio_rate30d)
+              /
+              (1 - 0.99)
+            )
+
+        # Burn rate (1-hour)
+        - record: slo:deployment_success:burn_rate1h
+          expr: |
+            (1 - slo:deployment_success:ratio_rate1h) / (1 - 0.99)
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Portal Availability SLO Recording Rules
+    # ─────────────────────────────────────────────────────────────────────────
+    - name: slo:portal_availability
+      interval: 30s
+      rules:
+        # Portal availability from synthetic probes
+        - record: slo:portal_availability:ratio_rate5m
+          expr: |
+            avg_over_time(probe_success{job="portal-synthetic"}[5m])
+
+        # Portal availability (30-day window)
+        - record: slo:portal_availability:ratio_rate30d
+          expr: |
+            avg_over_time(probe_success{job="portal-synthetic"}[30d])
+
+        # Error budget remaining (target: 99.9%)
+        - record: slo:portal_availability:error_budget_remaining
+          expr: |
+            1 - (
+              (1 - slo:portal_availability:ratio_rate30d)
+              /
+              (1 - 0.999)
+            )
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Environment Provisioning SLO Recording Rules
+    # ─────────────────────────────────────────────────────────────────────────
+    - name: slo:environment_provisioning
+      interval: 60s
+      rules:
+        # Provisioning success rate (30-day window)
+        - record: slo:env_provisioning:ratio_rate30d
+          expr: |
+            sum(increase(environment_provisioning_total{status="success"}[30d]))
+            /
+            sum(increase(environment_provisioning_total[30d]))
+
+        # Provisioning time (p95)
+        - record: slo:env_provisioning:duration_p95
+          expr: |
+            histogram_quantile(0.95,
+              sum(rate(environment_provisioning_duration_seconds_bucket[7d])) by (le)
+            )
+
+        # Error budget remaining (target: 99.5%)
+        - record: slo:env_provisioning:error_budget_remaining
+          expr: |
+            1 - (
+              (1 - slo:env_provisioning:ratio_rate30d)
+              /
+              (1 - 0.995)
+            )
