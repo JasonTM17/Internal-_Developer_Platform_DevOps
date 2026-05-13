@@ -30,3 +30,19 @@ infra/terraform/.terraform.lock.hcl
 
 # Logs
 *.log
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Certificates and keys
+*.pem
+*.key
+*.crt
+*.p12
+
+# pnpm debug
+pnpm-debug.log
+
+# Test artifacts
+test-results/
+playwright-report/
