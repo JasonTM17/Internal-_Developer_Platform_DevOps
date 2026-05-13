@@ -1,19 +1,82 @@
 version: '3.9'
 
 # =============================================================================
-# IDP Platform - Test Environment
+# IDP Platform - CI Integration Test Environment
 # =============================================================================
-# Isolated test environment for CI and local test execution.
+# Lightweight test environment optimized for CI pipelines.
+# Starts dependencies, runs migrations, executes tests, and exits with result.
 #
 # Usage:
-#   docker compose -f docker-compose.test.yaml up -d
 #   docker compose -f docker-compose.test.yaml run --rm test-runner
 #   docker compose -f docker-compose.test.yaml down -v
+#
+# CI Usage:
+#   docker compose -f docker-compose.test.yaml up --abort-on-container-exit --exit-code-from test-runner
 # =============================================================================
 
 services:
   # ---------------------------------------------------------------------------
-  # Test Runner
+  # Test Database
+  # ---------------------------------------------------------------------------
+  postgres-test:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test_secret
+      POSTGRES_DB: idp_test
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test -d idp_test"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+    networks:
+      - test-network
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  # ---------------------------------------------------------------------------
+  # Test Cache
+  # ---------------------------------------------------------------------------
+  redis-test:
+    image: redis:7-alpine
+    command: redis-server --appendonly no --maxmemory 64mb --save ""
+    tmpfs:
+      - /data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+    networks:
+      - test-network
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+  # ---------------------------------------------------------------------------
+  # Database Migrations
+  # ---------------------------------------------------------------------------
+  migrations:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile.dev
+    command: npx turbo db:migrate --filter=@idp/api
+    environment:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://test:test_secret@postgres-test:5432/idp_test
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+    networks:
+      - test-network
+
+  # ---------------------------------------------------------------------------
+  # Test Runner (unit + integration)
   # ---------------------------------------------------------------------------
   test-runner:
     build:
@@ -24,23 +87,24 @@ services:
       NODE_ENV: test
       DATABASE_URL: postgresql://test:test_secret@postgres-test:5432/idp_test
       REDIS_URL: redis://redis-test:6379/0
-      JWT_SECRET: test-jwt-secret
+      JWT_SECRET: test-jwt-secret-ci
       LOG_LEVEL: warn
       CI: "true"
+      FORCE_COLOR: "1"
     depends_on:
       postgres-test:
         condition: service_healthy
       redis-test:
         condition: service_healthy
+      migrations:
+        condition: service_completed_successfully
     volumes:
-      - ./apps:/app/apps:ro
-      - ./packages:/app/packages:ro
       - test_coverage:/app/coverage
     networks:
       - test-network
 
   # ---------------------------------------------------------------------------
-  # Integration Test Runner
+  # Integration Test Runner (with external services)
   # ---------------------------------------------------------------------------
   integration-tests:
     build:
@@ -51,150 +115,59 @@ services:
       NODE_ENV: test
       DATABASE_URL: postgresql://test:test_secret@postgres-test:5432/idp_test
       REDIS_URL: redis://redis-test:6379/0
-      JWT_SECRET: test-jwt-secret
+      JWT_SECRET: test-jwt-secret-ci
       LOG_LEVEL: warn
       AWS_ENDPOINT: http://localstack-test:4566
       AWS_ACCESS_KEY_ID: test
       AWS_SECRET_ACCESS_KEY: test
       AWS_REGION: us-east-1
+      CI: "true"
     depends_on:
       postgres-test:
         condition: service_healthy
       redis-test:
         condition: service_healthy
+      migrations:
+        condition: service_completed_successfully
       localstack-test:
         condition: service_healthy
     volumes:
-      - ./apps:/app/apps:ro
-      - ./packages:/app/packages:ro
       - test_coverage:/app/coverage
     networks:
       - test-network
+    profiles:
+      - integration
 
   # ---------------------------------------------------------------------------
-  # E2E Test Runner
+  # LocalStack (for integration tests only)
   # ---------------------------------------------------------------------------
-  e2e-tests:
-    build:
-      context: .
-      dockerfile: apps/portal/Dockerfile.dev
-    command: npx playwright test
-    environment:
-      BASE_URL: http://portal-test:5173
-      API_URL: http://api-test:3000
-      CI: "true"
-    depends_on:
-      api-test:
-        condition: service_healthy
-      portal-test:
-        condition: service_healthy
-    volumes:
-      - ./tests/e2e:/app/tests/e2e:ro
-      - e2e_results:/app/test-results
-    networks:
-      - test-network
-
-  # ---------------------------------------------------------------------------
-  # Application Under Test
-  # ---------------------------------------------------------------------------
-  api-test:
-    build:
-      context: .
-      dockerfile: apps/api/Dockerfile.dev
-    environment:
-      NODE_ENV: test
-      PORT: 3000
-      DATABASE_URL: postgresql://test:test_secret@postgres-test:5432/idp_test
-      REDIS_URL: redis://redis-test:6379/0
-      JWT_SECRET: test-jwt-secret
-      LOG_LEVEL: error
-    depends_on:
-      postgres-test:
-        condition: service_healthy
-      redis-test:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
-      start_period: 20s
-    networks:
-      - test-network
-
-  portal-test:
-    build:
-      context: .
-      dockerfile: apps/portal/Dockerfile.dev
-    environment:
-      NODE_ENV: test
-      VITE_API_URL: http://api-test:3000
-    depends_on:
-      api-test:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5173"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
-      start_period: 20s
-    networks:
-      - test-network
-
-  # ---------------------------------------------------------------------------
-  # Test Infrastructure
-  # ---------------------------------------------------------------------------
-  postgres-test:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_USER: test
-      POSTGRES_PASSWORD: test_secret
-      POSTGRES_DB: idp_test
-    tmpfs:
-      - /var/lib/postgresql/data # RAM-backed for speed
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U test -d idp_test"]
-      interval: 3s
-      timeout: 3s
-      retries: 10
-    networks:
-      - test-network
-
-  redis-test:
-    image: redis:7-alpine
-    command: redis-server --appendonly no --maxmemory 64mb
-    tmpfs:
-      - /data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 3s
-      timeout: 3s
-      retries: 10
-    networks:
-      - test-network
-
   localstack-test:
     image: localstack/localstack:3
     environment:
       SERVICES: s3,sqs,sns,secretsmanager
-      DEBUG: 0
+      DEBUG: "0"
+      EAGER_SERVICE_LOADING: "1"
     tmpfs:
       - /var/lib/localstack
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
-      interval: 5s
+      interval: 3s
       timeout: 3s
       retries: 10
     networks:
       - test-network
+    profiles:
+      - integration
+    deploy:
+      resources:
+        limits:
+          memory: 512M
 
 # ---------------------------------------------------------------------------
 # Volumes
 # ---------------------------------------------------------------------------
 volumes:
   test_coverage:
-    driver: local
-  e2e_results:
     driver: local
 
 # ---------------------------------------------------------------------------
