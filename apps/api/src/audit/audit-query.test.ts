@@ -13,7 +13,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { AuditLogger, MAX_QUERY_LIMIT, MIN_RETENTION_DAYS } from './audit-logger';
 import { InMemoryAuditStore } from './in-memory-audit-store';
-import type { AuditEntry, AuditQueryFilters } from '@idp/shared';
+import type { AuditEntry } from '@idp/shared';
 
 describe('Audit Log Query - Filtering and Pagination', () => {
   let store: InMemoryAuditStore;

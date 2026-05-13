@@ -46,7 +46,7 @@ This implementation plan breaks down the Internal Developer Platform into increm
     - **Property 4: CatalogEntity Validation Rejects Invalid Inputs Without Persistence**
     - **Validates: Requirements 1.4, 2.1, 2.2, 2.3**
 
-  - [-] 2.3 Implement Service Catalog registration and persistence
+  - [x] 2.3 Implement Service Catalog registration and persistence
     - Create PostgreSQL schema for catalog entities with unique constraint on (name, namespace)
     - Implement `register()` method that persists entity with audit metadata (user, timestamp, source repo)
     - Implement duplicate name detection within namespace returning conflict error
@@ -109,7 +109,7 @@ This implementation plan breaks down the Internal Developer Platform into increm
     - **Property 12: Expired or Invalid Token Rejection**
     - **Validates: Requirements 9.5**
 
-  - [~] 4.3 Implement role-based permission evaluation engine
+  - [-] 4.3 Implement role-based permission evaluation engine
     - Define three base roles: viewer (read-only), developer (read + deploy non-prod + provision + config), admin (all)
     - Implement team-scoped permission resolution (permissions apply only to team-owned resources)
     - Support multiple team memberships with independent per-team evaluation
@@ -137,7 +137,7 @@ This implementation plan breaks down the Internal Developer Platform into increm
     - **Property 24: Audit Fail-Closed Behavior**
     - **Validates: Requirements 10.5**
 
-  - [~] 5.3 Implement audit log query with filtering and pagination
+  - [-] 5.3 Implement audit log query with filtering and pagination
     - Support filters: actor, action, time range
     - Return results within 2 seconds for most recent 90 days
     - Limit to 1000 entries per response with pagination support
