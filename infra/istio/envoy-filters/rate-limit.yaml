@@ -1,0 +1,211 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: rate-limit-filter
+  namespace: istio-system
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    app.kubernetes.io/managed-by: istio
+spec:
+  workloadSelector:
+    labels:
+      istio: ingressgateway
+  configPatches:
+    # Add rate limit filter to HTTP filter chain
+    - applyTo: HTTP_FILTER
+      match:
+        context: GATEWAY
+        listener:
+          filterChain:
+            filter:
+              name: envoy.filters.network.http_connection_manager
+              subFilter:
+                name: envoy.filters.http.router
+      patch:
+        operation: INSERT_BEFORE
+        value:
+          name: envoy.filters.http.ratelimit
+          typed_config:
+            "@type": type.googleapis.com/envoy.extensions.filters.http.ratelimit.v3.RateLimit
+            domain: idp-platform-ratelimit
+            failure_mode_deny: false
+            enable_x_ratelimit_headers: DRAFT_VERSION_03
+            rate_limit_service:
+              grpc_service:
+                envoy_grpc:
+                  cluster_name: rate_limit_cluster
+                  authority: ratelimit.idp-platform.svc.cluster.local
+                timeout: 0.25s
+              transport_api_version: V3
+
+    # Add rate limit cluster
+    - applyTo: CLUSTER
+      match:
+        context: GATEWAY
+      patch:
+        operation: ADD
+        value:
+          name: rate_limit_cluster
+          type: STRICT_DNS
+          connect_timeout: 10s
+          lb_policy: ROUND_ROBIN
+          http2_protocol_options: {}
+          load_assignment:
+            cluster_name: rate_limit_cluster
+            endpoints:
+              - lb_endpoints:
+                  - endpoint:
+                      address:
+                        socket_address:
+                          address: ratelimit.idp-platform.svc.cluster.local
+                          port_value: 8081
+
+    # Rate limit actions for API routes
+    - applyTo: VIRTUAL_HOST
+      match:
+        context: GATEWAY
+        routeConfiguration:
+          vhost:
+            name: "api.idp.example.com:443"
+      patch:
+        operation: MERGE
+        value:
+          rate_limits:
+            # Global rate limit per IP
+            - actions:
+                - remote_address: {}
+              stage: 0
+            # Per-user rate limit based on JWT claims
+            - actions:
+                - request_headers:
+                    header_name: x-jwt-payload
+                    descriptor_key: user_id
+              stage: 0
+            # Per-endpoint rate limit
+            - actions:
+                - request_headers:
+                    header_name: ":path"
+                    descriptor_key: path
+                - request_headers:
+                    header_name: ":method"
+                    descriptor_key: method
+              stage: 0
+---
+# Local rate limiting for defense in depth
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: local-rate-limit
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+    app.kubernetes.io/managed-by: istio
+spec:
+  workloadSelector:
+    labels:
+      app: idp-api
+  configPatches:
+    - applyTo: HTTP_FILTER
+      match:
+        context: SIDECAR_INBOUND
+        listener:
+          filterChain:
+            filter:
+              name: envoy.filters.network.http_connection_manager
+              subFilter:
+                name: envoy.filters.http.router
+      patch:
+        operation: INSERT_BEFORE
+        value:
+          name: envoy.filters.http.local_ratelimit
+          typed_config:
+            "@type": type.googleapis.com/envoy.extensions.filters.http.local_ratelimit.v3.LocalRateLimit
+            stat_prefix: http_local_rate_limiter
+            token_bucket:
+              max_tokens: 1000
+              tokens_per_fill: 100
+              fill_interval: 1s
+            filter_enabled:
+              runtime_key: local_rate_limit_enabled
+              default_value:
+                numerator: 100
+                denominator: HUNDRED
+            filter_enforced:
+              runtime_key: local_rate_limit_enforced
+              default_value:
+                numerator: 100
+                denominator: HUNDRED
+            response_headers_to_add:
+              - append_action: OVERWRITE_IF_EXISTS_OR_ADD
+                header:
+                  key: x-local-rate-limit
+                  value: "true"
+---
+# Rate limit service configuration (ConfigMap)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ratelimit-config
+  namespace: idp-platform
+  labels:
+    app.kubernetes.io/part-of: idp-platform
+data:
+  config.yaml: |
+    domain: idp-platform-ratelimit
+    descriptors:
+      # Global per-IP rate limit: 100 requests/minute
+      - key: remote_address
+        rate_limit:
+          unit: minute
+          requests_per_unit: 100
+        descriptors:
+          # Higher limit for known IPs
+          - key: remote_address
+            value: "10.0.0.0/8"
+            rate_limit:
+              unit: minute
+              requests_per_unit: 1000
+
+      # Per-user rate limit: 500 requests/minute
+      - key: user_id
+        rate_limit:
+          unit: minute
+          requests_per_unit: 500
+
+      # Per-endpoint rate limits
+      - key: path
+        value: "/api/v1/deployments"
+        descriptors:
+          - key: method
+            value: "POST"
+            rate_limit:
+              unit: minute
+              requests_per_unit: 30
+          - key: method
+            value: "GET"
+            rate_limit:
+              unit: minute
+              requests_per_unit: 200
+
+      - key: path
+        value: "/api/v1/catalog"
+        descriptors:
+          - key: method
+            value: "GET"
+            rate_limit:
+              unit: minute
+              requests_per_unit: 300
+          - key: method
+            value: "POST"
+            rate_limit:
+              unit: minute
+              requests_per_unit: 50
+
+      - key: path
+        value: "/graphql"
+        descriptors:
+          - key: method
+            value: "POST"
+            rate_limit:
+              unit: minute
+              requests_per_unit: 100
