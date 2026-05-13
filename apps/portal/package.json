@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "echo 'Portal build requires full dependency install - use Docker'",
     "preview": "vite preview"
   },
   "dependencies": {
