@@ -369,6 +369,7 @@ export class DeploymentEngine {
             if (!current || current.state !== 'verifying') return;
 
             await this.store.updateState(deploymentId, 'completed');
+            this.activeDeployments.delete(deploymentId);
             await this.emitEvent({
               deploymentId,
               type: 'deployment_completed',

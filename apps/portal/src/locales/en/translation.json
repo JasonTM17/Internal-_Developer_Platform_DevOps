@@ -115,6 +115,35 @@
       "resolved": "resolved"
     }
   },
+  "cost": {
+    "title": "Cost Analysis",
+    "subtitle": "Infrastructure spending breakdown and optimization insights",
+    "monthlySpend": "Monthly Spend",
+    "forecast": "Forecast",
+    "potentialSavings": "Potential Savings",
+    "budgetUtilization": "Budget Utilization",
+    "byService": "Cost by Service",
+    "byEnvironment": "Cost by Environment",
+    "recommendations": "Optimization Recommendations",
+    "spendingForecast": "Spending Forecast",
+    "thisMonth": "This Month (Projected)",
+    "nextMonth": "Next Month (Estimated)",
+    "quarterly": "Quarterly Estimate"
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Manage your account preferences and configuration",
+    "profile": "Profile",
+    "notifications": "Notifications",
+    "apiKeys": "API Keys",
+    "appearance": "Appearance",
+    "saveChanges": "Save Changes",
+    "theme": "Theme",
+    "density": "Display Density",
+    "emailNotifications": "Email Notifications",
+    "slackNotifications": "Slack Notifications",
+    "inAppNotifications": "In-App Notifications"
+  },
   "login": {
     "title": "Internal Developer Platform",
     "subtitle": "Sign in to access your platform",

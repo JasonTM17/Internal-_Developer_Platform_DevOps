@@ -56,9 +56,16 @@ const DEFAULT_DELIVERY_OPTIONS: Required<DeliveryOptions> = {
 };
 
 export class WebhookDeliveryService {
+  private static readonly MAX_LOG_SIZE = 1000;
+  private static readonly MAX_DLQ_SIZE = 200;
+
   private endpoints: Map<string, WebhookEndpoint> = new Map();
   private deliveryLog: DeliveryAttempt[] = [];
-  private deadLetterQueue: Array<{ payload: WebhookPayload; endpoint: WebhookEndpoint; error: string }> = [];
+  private deadLetterQueue: Array<{
+    payload: WebhookPayload;
+    endpoint: WebhookEndpoint;
+    error: string;
+  }> = [];
   private readonly options: Required<DeliveryOptions>;
 
   constructor(options?: DeliveryOptions) {
@@ -68,7 +75,11 @@ export class WebhookDeliveryService {
   /**
    * Register a new webhook endpoint.
    */
-  registerEndpoint(url: string, events: string[], metadata?: Record<string, string>): WebhookEndpoint {
+  registerEndpoint(
+    url: string,
+    events: string[],
+    metadata?: Record<string, string>,
+  ): WebhookEndpoint {
     const endpoint: WebhookEndpoint = {
       id: this.generateId(),
       url,
@@ -111,16 +122,16 @@ export class WebhookDeliveryService {
     };
 
     const matchingEndpoints = Array.from(this.endpoints.values()).filter(
-      ep => ep.active && ep.events.includes(event),
+      (ep) => ep.active && ep.events.includes(event),
     );
 
     const results = await Promise.allSettled(
-      matchingEndpoints.map(ep => this.deliverToEndpoint(payload, ep)),
+      matchingEndpoints.map((ep) => this.deliverToEndpoint(payload, ep)),
     );
 
     return results
       .filter((r): r is PromiseFulfilledResult<DeliveryAttempt> => r.status === 'fulfilled')
-      .map(r => r.value);
+      .map((r) => r.value);
   }
 
   /**
@@ -152,7 +163,7 @@ export class WebhookDeliveryService {
   getDeliveryLog(webhookId?: string, limit = 50): DeliveryAttempt[] {
     let log = this.deliveryLog;
     if (webhookId) {
-      log = log.filter(d => d.webhookId === webhookId);
+      log = log.filter((d) => d.webhookId === webhookId);
     }
     return log.slice(-limit);
   }
@@ -185,7 +196,10 @@ export class WebhookDeliveryService {
     return Array.from(this.endpoints.values());
   }
 
-  private async deliverToEndpoint(payload: WebhookPayload, endpoint: WebhookEndpoint): Promise<DeliveryAttempt> {
+  private async deliverToEndpoint(
+    payload: WebhookPayload,
+    endpoint: WebhookEndpoint,
+  ): Promise<DeliveryAttempt> {
     const deliveryId = this.generateId();
     const body = JSON.stringify(payload);
     const signature = this.signPayload(body, endpoint.secret);
@@ -227,6 +241,7 @@ export class WebhookDeliveryService {
         };
 
         this.deliveryLog.push(lastAttempt);
+        this.trimLog();
 
         if (lastAttempt.success) {
           return lastAttempt;
@@ -245,12 +260,14 @@ export class WebhookDeliveryService {
           timestamp: new Date(),
         };
         this.deliveryLog.push(lastAttempt);
+        this.trimLog();
       }
 
       // Wait before retry with exponential backoff
       if (attempt < this.options.maxRetries) {
-        const delay = this.options.retryDelayMs * Math.pow(this.options.backoffMultiplier, attempt - 1);
-        await new Promise(resolve => setTimeout(resolve, delay));
+        const delay =
+          this.options.retryDelayMs * Math.pow(this.options.backoffMultiplier, attempt - 1);
+        await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }
 
@@ -261,9 +278,22 @@ export class WebhookDeliveryService {
         endpoint,
         error: lastAttempt.error ?? `HTTP ${lastAttempt.statusCode}`,
       });
+      this.trimDlq();
     }
 
     return lastAttempt!;
+  }
+
+  private trimLog(): void {
+    if (this.deliveryLog.length > WebhookDeliveryService.MAX_LOG_SIZE) {
+      this.deliveryLog = this.deliveryLog.slice(-WebhookDeliveryService.MAX_LOG_SIZE);
+    }
+  }
+
+  private trimDlq(): void {
+    if (this.deadLetterQueue.length > WebhookDeliveryService.MAX_DLQ_SIZE) {
+      this.deadLetterQueue = this.deadLetterQueue.slice(-WebhookDeliveryService.MAX_DLQ_SIZE);
+    }
   }
 
   private generateId(): string {

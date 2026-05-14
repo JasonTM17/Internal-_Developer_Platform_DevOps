@@ -1,4 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
+import LightbulbIcon from '@mui/icons-material/Lightbulb';
+import SavingsIcon from '@mui/icons-material/Savings';
+import ShowChartIcon from '@mui/icons-material/ShowChart';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import {
   Box,
   Typography,
@@ -10,15 +15,9 @@ import {
   Stack,
   Divider,
 } from '@mui/material';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import TrendingDownIcon from '@mui/icons-material/TrendingDown';
-import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
-import SavingsIcon from '@mui/icons-material/Savings';
-import ShowChartIcon from '@mui/icons-material/ShowChart';
-import LightbulbIcon from '@mui/icons-material/Lightbulb';
-import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
-// Mock data
 const mockCostByService = [
   { name: 'API Gateway', cost: 2450, percentage: 28 },
   { name: 'Database Cluster', cost: 1890, percentage: 22 },
@@ -31,29 +30,64 @@ const mockCostByService = [
 ];
 
 const mockCostByEnvironment = [
-  { name: 'Production', cost: 5200, percentage: 60, color: '#f85149' },
-  { name: 'Staging', cost: 1800, percentage: 21, color: '#d29922' },
-  { name: 'Development', cost: 1200, percentage: 14, color: '#3fb950' },
-  { name: 'Preview', cost: 600, percentage: 5, color: '#6C63FF' },
+  { name: 'Production', cost: 5200, percentage: 60, color: '#FA746F' },
+  { name: 'Staging', cost: 1800, percentage: 21, color: '#F59E0B' },
+  { name: 'Development', cost: 1200, percentage: 14, color: '#58E7AB' },
+  { name: 'Preview', cost: 600, percentage: 5, color: '#699CFF' },
 ];
 
 const mockRecommendations = [
-  { title: 'Right-size over-provisioned instances', savings: 320, impact: 'high' as const, description: '4 instances running at <15% CPU utilization' },
-  { title: 'Enable auto-scaling for staging', savings: 180, impact: 'medium' as const, description: 'Staging runs 24/7 but only used during business hours' },
-  { title: 'Clean up unused EBS volumes', savings: 95, impact: 'low' as const, description: '12 detached volumes consuming storage' },
-  { title: 'Switch to reserved instances', savings: 450, impact: 'high' as const, description: 'Production workloads stable enough for 1-year commitment' },
-  { title: 'Implement S3 lifecycle policies', savings: 65, impact: 'low' as const, description: 'Move infrequently accessed data to Glacier' },
+  {
+    title: 'Right-size over-provisioned instances',
+    savings: 320,
+    impact: 'high' as const,
+    description: '4 instances running at <15% CPU utilization',
+  },
+  {
+    title: 'Enable auto-scaling for staging',
+    savings: 180,
+    impact: 'medium' as const,
+    description: 'Staging runs 24/7 but only used during business hours',
+  },
+  {
+    title: 'Clean up unused EBS volumes',
+    savings: 95,
+    impact: 'low' as const,
+    description: '12 detached volumes consuming storage',
+  },
+  {
+    title: 'Switch to reserved instances',
+    savings: 450,
+    impact: 'high' as const,
+    description: 'Production workloads stable enough for 1-year commitment',
+  },
+  {
+    title: 'Implement S3 lifecycle policies',
+    savings: 65,
+    impact: 'low' as const,
+    description: 'Move infrequently accessed data to Glacier',
+  },
 ];
 
-const serviceBarColors = ['#6C63FF', '#03DAC6', '#3fb950', '#d29922', '#f85149', '#8b83ff', '#64b5f6', '#8b949e'];
+const serviceBarColors = [
+  '#699CFF',
+  '#4CD7F6',
+  '#58E7AB',
+  '#F59E0B',
+  '#FA746F',
+  '#ADC6FF',
+  '#4CD7F6',
+  '#6475A1',
+];
 
 const impactColors: Record<string, { bg: string; color: string }> = {
-  high: { bg: 'rgba(248, 81, 73, 0.12)', color: '#f85149' },
-  medium: { bg: 'rgba(210, 153, 34, 0.12)', color: '#d29922' },
-  low: { bg: 'rgba(139, 148, 158, 0.12)', color: '#8b949e' },
+  high: { bg: 'rgba(250, 116, 111, 0.12)', color: '#FA746F' },
+  medium: { bg: 'rgba(245, 158, 11, 0.12)', color: '#F59E0B' },
+  low: { bg: 'rgba(100, 117, 161, 0.12)', color: '#6475A1' },
 };
 
 export const CostDashboard: React.FC = () => {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -72,41 +106,66 @@ export const CostDashboard: React.FC = () => {
   if (loading) {
     return (
       <Box sx={{ p: 3 }}>
-        <LinearProgress sx={{ borderRadius: 2 }} />
+        <LinearProgress
+          sx={{
+            borderRadius: 2,
+            bgcolor: 'rgba(100, 117, 161, 0.1)',
+            '& .MuiLinearProgress-bar': { bgcolor: '#699CFF' },
+          }}
+        />
       </Box>
     );
   }
 
   return (
-    <Box sx={{ maxWidth: 1400, mx: 'auto', animation: 'fadeIn 0.5s ease-out both' }}>
-      {/* Header */}
+    <Box sx={{ maxWidth: 1440, mx: 'auto', animation: 'fadeIn 0.5s ease-out both' }}>
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700, color: '#ffffff', mb: 0.5 }}>
-          Cost Analysis
+        <Typography
+          variant="h4"
+          sx={{ fontWeight: 700, color: '#DEE5FF', mb: 0.5, fontSize: '1.5rem' }}
+        >
+          {t('cost.title')}
         </Typography>
-        <Typography variant="body2" sx={{ color: '#8b949e' }}>
-          Infrastructure spending breakdown and optimization insights
+        <Typography variant="body2" sx={{ color: '#6475A1' }}>
+          {t('cost.subtitle')}
         </Typography>
       </Box>
 
-      {/* Monthly Spend Overview */}
       <Grid container spacing={2} sx={{ mb: 4 }}>
         <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ bgcolor: '#161b22', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px' }}>
+          <Card
+            sx={{
+              bgcolor: '#0F1E3F',
+              border: '1px solid rgba(100, 117, 161, 0.2)',
+              borderLeft: '3px solid #699CFF',
+            }}
+          >
             <CardContent sx={{ py: 2.5 }}>
               <Stack direction="row" alignItems="center" spacing={1.5}>
-                <Box sx={{ width: 40, height: 40, borderRadius: '10px', bgcolor: 'rgba(108, 99, 255, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <AttachMoneyIcon sx={{ color: '#6C63FF' }} />
+                <Box
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: '10px',
+                    bgcolor: 'rgba(105, 156, 255, 0.12)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <AttachMoneyIcon sx={{ color: '#699CFF' }} />
                 </Box>
                 <Box>
-                  <Typography variant="caption" sx={{ color: '#8b949e' }}>Monthly Spend</Typography>
+                  <Typography variant="caption" sx={{ color: '#6475A1' }}>
+                    {t('cost.monthlySpend')}
+                  </Typography>
                   <Stack direction="row" alignItems="center" spacing={1}>
-                    <Typography variant="h5" sx={{ fontWeight: 700, color: '#ffffff' }}>
+                    <Typography variant="h5" sx={{ fontWeight: 700, color: '#DEE5FF' }}>
                       ${totalMonthly.toLocaleString()}
                     </Typography>
                     <Stack direction="row" alignItems="center" spacing={0.3}>
-                      <TrendingUpIcon sx={{ fontSize: 14, color: '#f85149' }} />
-                      <Typography variant="caption" sx={{ color: '#f85149', fontWeight: 600 }}>
+                      <TrendingUpIcon sx={{ fontSize: 14, color: '#FA746F' }} />
+                      <Typography variant="caption" sx={{ color: '#FA746F', fontWeight: 600 }}>
                         +{trendPercent.toFixed(1)}%
                       </Typography>
                     </Stack>
@@ -117,15 +176,33 @@ export const CostDashboard: React.FC = () => {
           </Card>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ bgcolor: '#161b22', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px' }}>
+          <Card
+            sx={{
+              bgcolor: '#0F1E3F',
+              border: '1px solid rgba(100, 117, 161, 0.2)',
+              borderLeft: '3px solid #F59E0B',
+            }}
+          >
             <CardContent sx={{ py: 2.5 }}>
               <Stack direction="row" alignItems="center" spacing={1.5}>
-                <Box sx={{ width: 40, height: 40, borderRadius: '10px', bgcolor: 'rgba(210, 153, 34, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <ShowChartIcon sx={{ color: '#d29922' }} />
+                <Box
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: '10px',
+                    bgcolor: 'rgba(245, 158, 11, 0.12)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <ShowChartIcon sx={{ color: '#F59E0B' }} />
                 </Box>
                 <Box>
-                  <Typography variant="caption" sx={{ color: '#8b949e' }}>Forecast</Typography>
-                  <Typography variant="h5" sx={{ fontWeight: 700, color: '#ffffff' }}>
+                  <Typography variant="caption" sx={{ color: '#6475A1' }}>
+                    {t('cost.forecast')}
+                  </Typography>
+                  <Typography variant="h5" sx={{ fontWeight: 700, color: '#DEE5FF' }}>
                     ${forecast.toLocaleString()}
                   </Typography>
                 </Box>
@@ -134,15 +211,33 @@ export const CostDashboard: React.FC = () => {
           </Card>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ bgcolor: '#161b22', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px' }}>
+          <Card
+            sx={{
+              bgcolor: '#0F1E3F',
+              border: '1px solid rgba(100, 117, 161, 0.2)',
+              borderLeft: '3px solid #58E7AB',
+            }}
+          >
             <CardContent sx={{ py: 2.5 }}>
               <Stack direction="row" alignItems="center" spacing={1.5}>
-                <Box sx={{ width: 40, height: 40, borderRadius: '10px', bgcolor: 'rgba(63, 185, 80, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <SavingsIcon sx={{ color: '#3fb950' }} />
+                <Box
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: '10px',
+                    bgcolor: 'rgba(88, 231, 171, 0.12)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <SavingsIcon sx={{ color: '#58E7AB' }} />
                 </Box>
                 <Box>
-                  <Typography variant="caption" sx={{ color: '#8b949e' }}>Potential Savings</Typography>
-                  <Typography variant="h5" sx={{ fontWeight: 700, color: '#3fb950' }}>
+                  <Typography variant="caption" sx={{ color: '#6475A1' }}>
+                    {t('cost.potentialSavings')}
+                  </Typography>
+                  <Typography variant="h5" sx={{ fontWeight: 700, color: '#58E7AB' }}>
                     ${totalSavings.toLocaleString()}/mo
                   </Typography>
                 </Box>
@@ -151,12 +246,25 @@ export const CostDashboard: React.FC = () => {
           </Card>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ bgcolor: '#161b22', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px' }}>
+          <Card
+            sx={{
+              bgcolor: '#0F1E3F',
+              border: '1px solid rgba(100, 117, 161, 0.2)',
+              borderLeft: '3px solid #ADC6FF',
+            }}
+          >
             <CardContent sx={{ py: 2.5 }}>
-              <Typography variant="caption" sx={{ color: '#8b949e', display: 'block', mb: 0.5 }}>
-                Budget Utilization
+              <Typography variant="caption" sx={{ color: '#6475A1', display: 'block', mb: 0.5 }}>
+                {t('cost.budgetUtilization')}
               </Typography>
-              <Typography variant="h5" sx={{ fontWeight: 700, color: budgetUsed > 90 ? '#f85149' : '#ffffff', mb: 1 }}>
+              <Typography
+                variant="h5"
+                sx={{
+                  fontWeight: 700,
+                  color: budgetUsed > 90 ? '#FA746F' : '#DEE5FF',
+                  mb: 1,
+                }}
+              >
                 {budgetUsed.toFixed(0)}%
               </Typography>
               <LinearProgress
@@ -165,14 +273,14 @@ export const CostDashboard: React.FC = () => {
                 sx={{
                   height: 6,
                   borderRadius: 3,
-                  bgcolor: 'rgba(255,255,255,0.06)',
+                  bgcolor: 'rgba(100, 117, 161, 0.12)',
                   '& .MuiLinearProgress-bar': {
                     borderRadius: 3,
-                    bgcolor: budgetUsed > 90 ? '#f85149' : budgetUsed > 75 ? '#d29922' : '#6C63FF',
+                    bgcolor: budgetUsed > 90 ? '#FA746F' : budgetUsed > 75 ? '#F59E0B' : '#699CFF',
                   },
                 }}
               />
-              <Typography variant="caption" sx={{ color: '#8b949e', mt: 0.5, display: 'block' }}>
+              <Typography variant="caption" sx={{ color: '#6475A1', mt: 0.5, display: 'block' }}>
                 ${totalMonthly.toLocaleString()} of ${budget.toLocaleString()} budget
               </Typography>
             </CardContent>
@@ -180,28 +288,43 @@ export const CostDashboard: React.FC = () => {
         </Grid>
       </Grid>
 
-      {/* Cost Breakdown Charts */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        {/* Cost by Service - Horizontal Bar Chart */}
         <Grid item xs={12} md={7}>
-          <Card sx={{ bgcolor: '#161b22', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', height: '100%' }}>
+          <Card
+            sx={{
+              bgcolor: '#0F1E3F',
+              border: '1px solid rgba(100, 117, 161, 0.2)',
+              height: '100%',
+            }}
+          >
             <CardContent sx={{ py: 3 }}>
-              <Typography variant="h6" sx={{ fontWeight: 600, color: '#ffffff', mb: 3 }}>
-                Cost by Service
+              <Typography
+                variant="h6"
+                sx={{ fontWeight: 600, color: '#DEE5FF', mb: 3, fontSize: '0.9rem' }}
+              >
+                {t('cost.byService')}
               </Typography>
               <Stack spacing={2}>
                 {mockCostByService.map((service, index) => (
                   <Box key={service.name}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                      <Typography variant="body2" sx={{ color: '#c9d1d9', fontWeight: 500 }}>
+                      <Typography variant="body2" sx={{ color: '#99AAD9', fontWeight: 500 }}>
                         {service.name}
                       </Typography>
-                      <Typography variant="body2" sx={{ color: '#ffffff', fontWeight: 600 }}>
+                      <Typography variant="body2" sx={{ color: '#DEE5FF', fontWeight: 600 }}>
                         ${service.cost.toLocaleString()}
                       </Typography>
                     </Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Box sx={{ flex: 1, height: 8, borderRadius: 4, bgcolor: 'rgba(255,255,255,0.04)', overflow: 'hidden' }}>
+                      <Box
+                        sx={{
+                          flex: 1,
+                          height: 8,
+                          borderRadius: 4,
+                          bgcolor: 'rgba(100, 117, 161, 0.08)',
+                          overflow: 'hidden',
+                        }}
+                      >
                         <Box
                           sx={{
                             width: `${service.percentage}%`,
@@ -212,7 +335,10 @@ export const CostDashboard: React.FC = () => {
                           }}
                         />
                       </Box>
-                      <Typography variant="caption" sx={{ color: '#8b949e', minWidth: 32, textAlign: 'right' }}>
+                      <Typography
+                        variant="caption"
+                        sx={{ color: '#6475A1', minWidth: 32, textAlign: 'right' }}
+                      >
                         {service.percentage}%
                       </Typography>
                     </Box>
@@ -223,15 +349,22 @@ export const CostDashboard: React.FC = () => {
           </Card>
         </Grid>
 
-        {/* Cost by Environment - Visual Pie */}
         <Grid item xs={12} md={5}>
-          <Card sx={{ bgcolor: '#161b22', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', height: '100%' }}>
+          <Card
+            sx={{
+              bgcolor: '#0F1E3F',
+              border: '1px solid rgba(100, 117, 161, 0.2)',
+              height: '100%',
+            }}
+          >
             <CardContent sx={{ py: 3 }}>
-              <Typography variant="h6" sx={{ fontWeight: 600, color: '#ffffff', mb: 3 }}>
-                Cost by Environment
+              <Typography
+                variant="h6"
+                sx={{ fontWeight: 600, color: '#DEE5FF', mb: 3, fontSize: '0.9rem' }}
+              >
+                {t('cost.byEnvironment')}
               </Typography>
 
-              {/* Visual pie chart using SVG */}
               <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
                 <svg width="160" height="160" viewBox="0 0 160 160">
                   {(() => {
@@ -254,31 +387,39 @@ export const CostDashboard: React.FC = () => {
                           d={`M 80 80 L ${x1} ${y1} A 60 60 0 ${largeArc} 1 ${x2} ${y2} Z`}
                           fill={env.color}
                           opacity={0.85}
-                          stroke="#161b22"
+                          stroke="#0F1E3F"
                           strokeWidth="2"
                         />
                       );
                     });
                   })()}
-                  <circle cx="80" cy="80" r="30" fill="#161b22" />
+                  <circle cx="80" cy="80" r="30" fill="#0F1E3F" />
                 </svg>
               </Box>
 
-              {/* Legend */}
               <Stack spacing={1.5}>
                 {mockCostByEnvironment.map((env) => (
-                  <Box key={env.name} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Box
+                    key={env.name}
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                    }}
+                  >
                     <Stack direction="row" alignItems="center" spacing={1}>
-                      <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: env.color }} />
-                      <Typography variant="body2" sx={{ color: '#c9d1d9' }}>
+                      <Box
+                        sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: env.color }}
+                      />
+                      <Typography variant="body2" sx={{ color: '#99AAD9' }}>
                         {env.name}
                       </Typography>
                     </Stack>
                     <Stack direction="row" alignItems="center" spacing={1}>
-                      <Typography variant="body2" sx={{ color: '#ffffff', fontWeight: 600 }}>
+                      <Typography variant="body2" sx={{ color: '#DEE5FF', fontWeight: 600 }}>
                         ${env.cost.toLocaleString()}
                       </Typography>
-                      <Typography variant="caption" sx={{ color: '#8b949e' }}>
+                      <Typography variant="caption" sx={{ color: '#6475A1' }}>
                         ({env.percentage}%)
                       </Typography>
                     </Stack>
@@ -290,22 +431,31 @@ export const CostDashboard: React.FC = () => {
         </Grid>
       </Grid>
 
-      {/* Cost Optimization Recommendations */}
-      <Card sx={{ bgcolor: '#161b22', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', mb: 4 }}>
+      <Card sx={{ bgcolor: '#0F1E3F', border: '1px solid rgba(100, 117, 161, 0.2)', mb: 4 }}>
         <CardContent sx={{ py: 3 }}>
           <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2.5 }}>
-            <LightbulbIcon sx={{ color: '#d29922', fontSize: 20 }} />
-            <Typography variant="h6" sx={{ fontWeight: 600, color: '#ffffff' }}>
-              Optimization Recommendations
+            <LightbulbIcon sx={{ color: '#F59E0B', fontSize: 20 }} />
+            <Typography variant="h6" sx={{ fontWeight: 600, color: '#DEE5FF', fontSize: '0.9rem' }}>
+              {t('cost.recommendations')}
             </Typography>
             <Chip
               label={`$${totalSavings}/mo potential`}
               size="small"
-              sx={{ bgcolor: 'rgba(63, 185, 80, 0.12)', color: '#3fb950', fontWeight: 600, fontSize: '0.7rem', height: 22 }}
+              sx={{
+                bgcolor: 'rgba(88, 231, 171, 0.12)',
+                color: '#58E7AB',
+                fontWeight: 600,
+                fontSize: '0.7rem',
+                height: 22,
+                border: '1px solid rgba(88, 231, 171, 0.2)',
+              }}
             />
           </Stack>
 
-          <Stack spacing={0} divider={<Divider sx={{ borderColor: 'rgba(255,255,255,0.04)' }} />}>
+          <Stack
+            spacing={0}
+            divider={<Divider sx={{ borderColor: 'rgba(100, 117, 161, 0.12)' }} />}
+          >
             {mockRecommendations.map((rec, index) => (
               <Box
                 key={index}
@@ -316,14 +466,14 @@ export const CostDashboard: React.FC = () => {
                   py: 2,
                   px: 1,
                   borderRadius: '8px',
-                  '&:hover': { bgcolor: 'rgba(255,255,255,0.02)' },
+                  '&:hover': { bgcolor: 'rgba(100, 117, 161, 0.04)' },
                 }}
               >
                 <Box sx={{ flex: 1 }}>
-                  <Typography variant="body2" sx={{ color: '#c9d1d9', fontWeight: 500 }}>
+                  <Typography variant="body2" sx={{ color: '#99AAD9', fontWeight: 500 }}>
                     {rec.title}
                   </Typography>
-                  <Typography variant="caption" sx={{ color: '#8b949e' }}>
+                  <Typography variant="caption" sx={{ color: '#6475A1' }}>
                     {rec.description}
                   </Typography>
                 </Box>
@@ -338,9 +488,13 @@ export const CostDashboard: React.FC = () => {
                       fontSize: '0.6rem',
                       height: 20,
                       textTransform: 'capitalize',
+                      border: `1px solid ${impactColors[rec.impact].color}33`,
                     }}
                   />
-                  <Typography variant="body2" sx={{ color: '#3fb950', fontWeight: 700, minWidth: 60, textAlign: 'right' }}>
+                  <Typography
+                    variant="body2"
+                    sx={{ color: '#58E7AB', fontWeight: 700, minWidth: 60, textAlign: 'right' }}
+                  >
                     -${rec.savings}/mo
                   </Typography>
                 </Stack>
@@ -350,46 +504,102 @@ export const CostDashboard: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Forecast Section */}
-      <Card sx={{ bgcolor: '#161b22', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px' }}>
+      <Card sx={{ bgcolor: '#0F1E3F', border: '1px solid rgba(100, 117, 161, 0.2)' }}>
         <CardContent sx={{ py: 3 }}>
-          <Typography variant="h6" sx={{ fontWeight: 600, color: '#ffffff', mb: 2 }}>
-            Spending Forecast
+          <Typography
+            variant="h6"
+            sx={{ fontWeight: 600, color: '#DEE5FF', mb: 2, fontSize: '0.9rem' }}
+          >
+            {t('cost.spendingForecast')}
           </Typography>
           <Grid container spacing={3}>
             <Grid item xs={12} sm={4}>
-              <Box sx={{ textAlign: 'center', p: 2, borderRadius: '8px', bgcolor: 'rgba(255,255,255,0.02)' }}>
-                <Typography variant="caption" sx={{ color: '#8b949e' }}>This Month (Projected)</Typography>
-                <Typography variant="h5" sx={{ fontWeight: 700, color: '#ffffff', mt: 0.5 }}>
+              <Box
+                sx={{
+                  textAlign: 'center',
+                  p: 2,
+                  borderRadius: '8px',
+                  bgcolor: 'rgba(100, 117, 161, 0.04)',
+                  border: '1px solid rgba(100, 117, 161, 0.12)',
+                }}
+              >
+                <Typography variant="caption" sx={{ color: '#6475A1' }}>
+                  {t('cost.thisMonth')}
+                </Typography>
+                <Typography variant="h5" sx={{ fontWeight: 700, color: '#DEE5FF', mt: 0.5 }}>
                   ${forecast.toLocaleString()}
                 </Typography>
-                <Stack direction="row" alignItems="center" justifyContent="center" spacing={0.5} sx={{ mt: 0.5 }}>
-                  <TrendingUpIcon sx={{ fontSize: 14, color: '#f85149' }} />
-                  <Typography variant="caption" sx={{ color: '#f85149' }}>+7.3% vs last month</Typography>
+                <Stack
+                  direction="row"
+                  alignItems="center"
+                  justifyContent="center"
+                  spacing={0.5}
+                  sx={{ mt: 0.5 }}
+                >
+                  <TrendingUpIcon sx={{ fontSize: 14, color: '#FA746F' }} />
+                  <Typography variant="caption" sx={{ color: '#FA746F' }}>
+                    +7.3% vs last month
+                  </Typography>
                 </Stack>
               </Box>
             </Grid>
             <Grid item xs={12} sm={4}>
-              <Box sx={{ textAlign: 'center', p: 2, borderRadius: '8px', bgcolor: 'rgba(255,255,255,0.02)' }}>
-                <Typography variant="caption" sx={{ color: '#8b949e' }}>Next Month (Estimated)</Typography>
-                <Typography variant="h5" sx={{ fontWeight: 700, color: '#ffffff', mt: 0.5 }}>
+              <Box
+                sx={{
+                  textAlign: 'center',
+                  p: 2,
+                  borderRadius: '8px',
+                  bgcolor: 'rgba(100, 117, 161, 0.04)',
+                  border: '1px solid rgba(100, 117, 161, 0.12)',
+                }}
+              >
+                <Typography variant="caption" sx={{ color: '#6475A1' }}>
+                  {t('cost.nextMonth')}
+                </Typography>
+                <Typography variant="h5" sx={{ fontWeight: 700, color: '#DEE5FF', mt: 0.5 }}>
                   $9,800
                 </Typography>
-                <Stack direction="row" alignItems="center" justifyContent="center" spacing={0.5} sx={{ mt: 0.5 }}>
-                  <TrendingUpIcon sx={{ fontSize: 14, color: '#d29922' }} />
-                  <Typography variant="caption" sx={{ color: '#d29922' }}>+4.3% projected</Typography>
+                <Stack
+                  direction="row"
+                  alignItems="center"
+                  justifyContent="center"
+                  spacing={0.5}
+                  sx={{ mt: 0.5 }}
+                >
+                  <TrendingUpIcon sx={{ fontSize: 14, color: '#F59E0B' }} />
+                  <Typography variant="caption" sx={{ color: '#F59E0B' }}>
+                    +4.3% projected
+                  </Typography>
                 </Stack>
               </Box>
             </Grid>
             <Grid item xs={12} sm={4}>
-              <Box sx={{ textAlign: 'center', p: 2, borderRadius: '8px', bgcolor: 'rgba(255,255,255,0.02)' }}>
-                <Typography variant="caption" sx={{ color: '#8b949e' }}>Quarterly Estimate</Typography>
-                <Typography variant="h5" sx={{ fontWeight: 700, color: '#ffffff', mt: 0.5 }}>
+              <Box
+                sx={{
+                  textAlign: 'center',
+                  p: 2,
+                  borderRadius: '8px',
+                  bgcolor: 'rgba(100, 117, 161, 0.04)',
+                  border: '1px solid rgba(100, 117, 161, 0.12)',
+                }}
+              >
+                <Typography variant="caption" sx={{ color: '#6475A1' }}>
+                  {t('cost.quarterly')}
+                </Typography>
+                <Typography variant="h5" sx={{ fontWeight: 700, color: '#DEE5FF', mt: 0.5 }}>
                   $28,200
                 </Typography>
-                <Stack direction="row" alignItems="center" justifyContent="center" spacing={0.5} sx={{ mt: 0.5 }}>
-                  <WarningAmberIcon sx={{ fontSize: 14, color: '#d29922' }} />
-                  <Typography variant="caption" sx={{ color: '#d29922' }}>Near budget limit</Typography>
+                <Stack
+                  direction="row"
+                  alignItems="center"
+                  justifyContent="center"
+                  spacing={0.5}
+                  sx={{ mt: 0.5 }}
+                >
+                  <WarningAmberIcon sx={{ fontSize: 14, color: '#F59E0B' }} />
+                  <Typography variant="caption" sx={{ color: '#F59E0B' }}>
+                    Near budget limit
+                  </Typography>
                 </Stack>
               </Box>
             </Grid>

@@ -115,6 +115,35 @@
       "resolved": "đã giải quyết"
     }
   },
+  "cost": {
+    "title": "Phân tích chi phí",
+    "subtitle": "Phân tích chi tiêu hạ tầng và đề xuất tối ưu hóa",
+    "monthlySpend": "Chi tiêu tháng",
+    "forecast": "Dự báo",
+    "potentialSavings": "Tiết kiệm tiềm năng",
+    "budgetUtilization": "Sử dụng ngân sách",
+    "byService": "Chi phí theo dịch vụ",
+    "byEnvironment": "Chi phí theo môi trường",
+    "recommendations": "Đề xuất tối ưu hóa",
+    "spendingForecast": "Dự báo chi tiêu",
+    "thisMonth": "Tháng này (Dự kiến)",
+    "nextMonth": "Tháng sau (Ước tính)",
+    "quarterly": "Ước tính quý"
+  },
+  "settings": {
+    "title": "Cài đặt",
+    "subtitle": "Quản lý tùy chọn tài khoản và cấu hình",
+    "profile": "Hồ sơ",
+    "notifications": "Thông báo",
+    "apiKeys": "Khóa API",
+    "appearance": "Giao diện",
+    "saveChanges": "Lưu thay đổi",
+    "theme": "Chủ đề",
+    "density": "Mật độ hiển thị",
+    "emailNotifications": "Thông báo Email",
+    "slackNotifications": "Thông báo Slack",
+    "inAppNotifications": "Thông báo trong ứng dụng"
+  },
   "login": {
     "title": "Nền tảng phát triển nội bộ",
     "subtitle": "Đăng nhập để truy cập nền tảng",

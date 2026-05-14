@@ -82,12 +82,15 @@ export function registerDeploymentRoutes(router: Router, engine: DeploymentEngin
   router.get(
     '/api/v1/deployments',
     asyncHandler(async (req: Request, res: Response) => {
+      const rawLimit = req.query.limit ? parseInt(req.query.limit as string, 10) : 50;
+      const rawOffset = req.query.offset ? parseInt(req.query.offset as string, 10) : 0;
+
       const filters = {
         serviceId: req.query.serviceId as string | undefined,
         environment: req.query.environment as string | undefined,
         state: req.query.state as DeploymentState | undefined,
-        limit: req.query.limit ? parseInt(req.query.limit as string, 10) : 50,
-        offset: req.query.offset ? parseInt(req.query.offset as string, 10) : 0,
+        limit: Math.min(Math.max(isNaN(rawLimit) ? 50 : rawLimit, 1), 100),
+        offset: Math.max(isNaN(rawOffset) ? 0 : rawOffset, 0),
       };
 
       const { deployments, total } = await engine.list(filters);

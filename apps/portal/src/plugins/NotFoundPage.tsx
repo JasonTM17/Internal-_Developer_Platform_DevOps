@@ -1,12 +1,9 @@
-import React from 'react';
-import { Box, Typography, Button, Stack } from '@mui/material';
 import HomeIcon from '@mui/icons-material/Home';
 import SearchIcon from '@mui/icons-material/Search';
+import { Box, Typography, Button, Stack } from '@mui/material';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
-/**
- * Professional 404 page with animated illustration and navigation options.
- */
 export const NotFoundPage: React.FC = () => {
   const navigate = useNavigate();
 
@@ -23,7 +20,6 @@ export const NotFoundPage: React.FC = () => {
         animation: 'fadeIn 0.5s ease-out both',
       }}
     >
-      {/* Animated 404 Text */}
       <Typography
         variant="h1"
         sx={{
@@ -31,7 +27,7 @@ export const NotFoundPage: React.FC = () => {
           fontWeight: 800,
           lineHeight: 1,
           mb: 2,
-          background: 'linear-gradient(135deg, #6C63FF 0%, #03DAC6 100%)',
+          background: 'linear-gradient(135deg, #699CFF 0%, #4CD7F6 100%)',
           backgroundClip: 'text',
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
@@ -46,6 +42,7 @@ export const NotFoundPage: React.FC = () => {
         variant="h5"
         sx={{
           fontWeight: 600,
+          color: '#DEE5FF',
           mb: 1,
           animation: 'fadeInUp 0.6s ease-out 0.1s both',
         }}
@@ -55,29 +52,26 @@ export const NotFoundPage: React.FC = () => {
 
       <Typography
         variant="body1"
-        color="text.secondary"
         sx={{
+          color: '#6475A1',
           maxWidth: 420,
           mb: 4,
           animation: 'fadeInUp 0.6s ease-out 0.2s both',
         }}
       >
-        The page you're looking for doesn't exist or has been moved.
-        Check the URL or navigate back to the dashboard.
+        The page you're looking for doesn't exist or has been moved. Check the URL or navigate back
+        to the dashboard.
       </Typography>
 
-      <Stack
-        direction="row"
-        spacing={2}
-        sx={{ animation: 'fadeInUp 0.6s ease-out 0.3s both' }}
-      >
+      <Stack direction="row" spacing={2} sx={{ animation: 'fadeInUp 0.6s ease-out 0.3s both' }}>
         <Button
           variant="contained"
           startIcon={<HomeIcon />}
           onClick={() => navigate('/')}
           sx={{
-            background: 'linear-gradient(135deg, #6C63FF, #8B83FF)',
-            '&:hover': { background: 'linear-gradient(135deg, #4B44B2, #6C63FF)' },
+            background: 'linear-gradient(135deg, #699CFF, #3B82F6)',
+            boxShadow: '0 4px 12px rgba(105, 156, 255, 0.3)',
+            '&:hover': { background: 'linear-gradient(135deg, #ADC6FF, #699CFF)' },
           }}
         >
           Go to Dashboard
@@ -86,7 +80,11 @@ export const NotFoundPage: React.FC = () => {
           variant="outlined"
           startIcon={<SearchIcon />}
           onClick={() => navigate('/catalog')}
-          sx={{ borderColor: 'rgba(108, 99, 255, 0.5)', color: '#8B83FF' }}
+          sx={{
+            borderColor: 'rgba(105, 156, 255, 0.5)',
+            color: '#ADC6FF',
+            '&:hover': { borderColor: '#699CFF', bgcolor: 'rgba(105, 156, 255, 0.06)' },
+          }}
         >
           Browse Catalog
         </Button>
