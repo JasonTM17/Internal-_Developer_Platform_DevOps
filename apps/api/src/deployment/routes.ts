@@ -12,9 +12,12 @@
  */
 
 import type { Request, Response, Router } from 'express';
+
+import { asyncHandler } from '../middleware/error-handler';
+
 import type { DeploymentEngine, DeploymentRequest } from './deployment-engine';
 import type { DeploymentState } from './state-machine';
-import { asyncHandler, BadRequestError } from '../middleware/error-handler';
+import { createDeploymentSchema, cancelDeploymentSchema } from './validation';
 
 /** Request with authenticated user context. */
 interface AuthenticatedRequest extends Request {
@@ -35,18 +38,19 @@ export function registerDeploymentRoutes(router: Router, engine: DeploymentEngin
       const authReq = req as AuthenticatedRequest;
       const actor = authReq.userId || 'anonymous';
 
-      const request: DeploymentRequest = {
-        serviceId: req.body.serviceId,
-        environment: req.body.environment,
-        version: req.body.version,
-        strategy: req.body.strategy || 'rolling',
-        configOverrides: req.body.configOverrides,
-        requiresApproval: req.body.requiresApproval,
-        canaryPercentage: req.body.canaryPercentage,
-        timeoutSeconds: req.body.timeoutSeconds,
-        autoRollback: req.body.autoRollback,
-        description: req.body.description,
-      };
+      const parsed = createDeploymentSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid request body',
+            details: parsed.error.issues,
+          },
+        });
+        return;
+      }
+
+      const request: DeploymentRequest = parsed.data;
 
       const result = await engine.deploy(request, actor);
 
@@ -164,11 +168,19 @@ export function registerDeploymentRoutes(router: Router, engine: DeploymentEngin
       const { id } = req.params;
       const authReq = req as AuthenticatedRequest;
       const actor = authReq.userId || 'anonymous';
-      const reason = req.body.reason || 'No reason provided';
 
-      if (!reason || typeof reason !== 'string') {
-        throw new BadRequestError('A cancellation reason is required');
+      const parsed = cancelDeploymentSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid request body',
+            details: parsed.error.issues,
+          },
+        });
+        return;
       }
+      const { reason } = parsed.data;
 
       const result = await engine.cancel(id, actor, reason);
 

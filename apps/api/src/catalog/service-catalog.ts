@@ -26,6 +26,7 @@
  */
 
 import { randomUUID } from 'crypto';
+
 import type {
   CatalogEntity,
   CatalogEntityInput,
@@ -34,9 +35,10 @@ import type {
   DependencyEdge,
 } from '@idp/shared';
 import { ERROR_CODES } from '@idp/shared';
-import { validateCatalogEntityInput } from './validation';
+
 import type { CatalogStore } from './catalog-store';
 import { DuplicateEntityError } from './catalog-store';
+import { validateCatalogEntityInput } from './validation';
 
 /** Maximum number of search results returned. */
 const SEARCH_RESULTS_LIMIT = 50;
@@ -207,6 +209,22 @@ export class ServiceCatalog {
     // Invalidate search cache on successful registration
     this.invalidateCache();
 
+    return { success: true, entity };
+  }
+
+  /**
+   * Get a catalog entity by its unique ID.
+   */
+  async getById(id: string): Promise<RegisterResult> {
+    const entity = await this.store.getById(id);
+    if (!entity) {
+      const notFoundError: APIErrorResponse = {
+        error: `Entity with ID '${id}' not found`,
+        code: ERROR_CODES.ENTITY_NOT_FOUND,
+        details: [{ field: 'id', message: `Entity with ID '${id}' does not exist in the catalog` }],
+      };
+      return { success: false, error: notFoundError };
+    }
     return { success: true, entity };
   }
 

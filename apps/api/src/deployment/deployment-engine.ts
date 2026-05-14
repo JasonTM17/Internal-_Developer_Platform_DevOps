@@ -11,6 +11,7 @@
  */
 
 import { randomUUID } from 'crypto';
+
 import type { DeploymentStore, Deployment, DeploymentEvent } from './deployment-store';
 import type { DeploymentState, DeploymentTransition } from './state-machine';
 import { DeploymentStateMachine } from './state-machine';
@@ -102,7 +103,7 @@ export class DeploymentEngine {
     }
 
     // Check deployment policies
-    const policyCheck = await this.checkPolicies(request);
+    const policyCheck = this.checkPolicies(request);
     if (!policyCheck.allowed) {
       return {
         success: false,
@@ -175,7 +176,10 @@ export class DeploymentEngine {
     }
 
     if (deployment.state !== 'pending_approval') {
-      return { success: false, error: `Deployment is not pending approval (current state: ${deployment.state})` };
+      return {
+        success: false,
+        error: `Deployment is not pending approval (current state: ${deployment.state})`,
+      };
     }
 
     const stateMachine = this.activeDeployments.get(deploymentId);
@@ -183,7 +187,11 @@ export class DeploymentEngine {
       return { success: false, error: 'Deployment state machine not found' };
     }
 
-    const transition: DeploymentTransition = { from: 'pending_approval', to: 'queued', trigger: 'approve' };
+    const transition: DeploymentTransition = {
+      from: 'pending_approval',
+      to: 'queued',
+      trigger: 'approve',
+    };
     if (!stateMachine.canTransition(transition)) {
       return { success: false, error: 'Invalid state transition' };
     }
@@ -330,6 +338,49 @@ export class DeploymentEngine {
       actor,
       timestamp: new Date(),
     });
+
+    this.scheduleVerification(deploymentId, actor);
+  }
+
+  /**
+   * Schedule deployment verification after execution phase.
+   * NOTE: Uses setTimeout to simulate async deployment lifecycle for dev/demo.
+   * In production, replace with orchestration callbacks (ArgoCD, K8s events, job queue).
+   */
+  private scheduleVerification(deploymentId: string, actor: string): void {
+    setTimeout(() => {
+      void (async () => {
+        const deployment = await this.store.getById(deploymentId);
+        if (!deployment || deployment.state !== 'in_progress') return;
+
+        await this.store.updateState(deploymentId, 'verifying');
+        await this.emitEvent({
+          deploymentId,
+          type: 'deployment_progress',
+          state: 'verifying',
+          message: 'Running health checks and verification',
+          actor,
+          timestamp: new Date(),
+        });
+
+        setTimeout(() => {
+          void (async () => {
+            const current = await this.store.getById(deploymentId);
+            if (!current || current.state !== 'verifying') return;
+
+            await this.store.updateState(deploymentId, 'completed');
+            await this.emitEvent({
+              deploymentId,
+              type: 'deployment_completed',
+              state: 'completed',
+              message: 'Deployment completed successfully',
+              actor,
+              timestamp: new Date(),
+            });
+          })();
+        }, 5000);
+      })();
+    }, 3000);
   }
 
   /**
@@ -345,7 +396,9 @@ export class DeploymentEngine {
 
     const validStrategies: DeploymentStrategy[] = ['rolling', 'blue-green', 'canary', 'recreate'];
     if (request.strategy && !validStrategies.includes(request.strategy)) {
-      violations.push(`Invalid strategy '${request.strategy}'. Must be one of: ${validStrategies.join(', ')}`);
+      violations.push(
+        `Invalid strategy '${request.strategy}'. Must be one of: ${validStrategies.join(', ')}`,
+      );
     }
 
     if (request.canaryPercentage !== undefined) {
@@ -367,7 +420,7 @@ export class DeploymentEngine {
   /**
    * Check deployment policies (freeze windows, approval requirements).
    */
-  private async checkPolicies(request: DeploymentRequest): Promise<PolicyCheckResult> {
+  private checkPolicies(request: DeploymentRequest): PolicyCheckResult {
     const violations: string[] = [];
     const now = new Date();
 

@@ -13,8 +13,10 @@
  */
 
 import type { Request, Response, Router } from 'express';
-import type { ServiceCatalog, Actor } from './service-catalog';
+
 import { asyncHandler, NotFoundError, BadRequestError } from '../middleware/error-handler';
+
+import type { ServiceCatalog, Actor } from './service-catalog';
 
 /** Request with authenticated user context. */
 interface AuthenticatedRequest extends Request {
@@ -97,26 +99,13 @@ export function registerCatalogRoutes(router: Router, catalog: ServiceCatalog): 
     '/api/v1/catalog/:id',
     asyncHandler(async (req: Request, res: Response) => {
       const { id } = req.params;
-      const result = await catalog.getVersionHistory(id, 1);
+      const result = await catalog.getById(id);
 
-      // Use the store directly via a workaround - check if entity exists
-      // by attempting to get version history (which checks existence)
       if (!result.success) {
         throw new NotFoundError('Service', id);
       }
 
-      // For a proper get-by-id, we'd need to expose it on ServiceCatalog
-      // For now, return the entity data from the latest version or search
-      const searchResult = await catalog.search(id);
-      if (searchResult.success) {
-        const entity = searchResult.entities.find((e) => e.id === id);
-        if (entity) {
-          res.status(200).json({ data: entity });
-          return;
-        }
-      }
-
-      throw new NotFoundError('Service', id);
+      res.status(200).json({ data: result.entity });
     }),
   );
 
@@ -129,6 +118,7 @@ export function registerCatalogRoutes(router: Router, catalog: ServiceCatalog): 
     asyncHandler(async (req: Request, res: Response) => {
       const { id } = req.params;
       const actor = getActor(req as AuthenticatedRequest);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       const result = await catalog.update(id, req.body, actor);
 
       if (!result.success) {
@@ -184,12 +174,14 @@ export function registerCatalogRoutes(router: Router, catalog: ServiceCatalog): 
     '/api/v1/catalog/:id/dependencies',
     asyncHandler(async (req: Request, res: Response) => {
       const { id } = req.params;
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const { targetEntityId, dependencyType } = req.body;
 
       if (!targetEntityId || !dependencyType) {
         throw new BadRequestError('Both "targetEntityId" and "dependencyType" are required');
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       const result = await catalog.addDependency(id, targetEntityId, dependencyType);
 
       if (!result.success) {

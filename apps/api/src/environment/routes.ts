@@ -14,8 +14,16 @@
  */
 
 import type { Request, Response, Router } from 'express';
+
+import { asyncHandler } from '../middleware/error-handler';
+
 import type { EnvironmentManager, EnvironmentTier } from './environment-manager';
-import { asyncHandler, BadRequestError } from '../middleware/error-handler';
+import {
+  createEnvironmentSchema,
+  updateEnvironmentSchema,
+  setVariableSchema,
+  promoteEnvironmentSchema,
+} from './validation';
 
 /** Request with authenticated user context. */
 interface AuthenticatedRequest extends Request {
@@ -36,7 +44,20 @@ export function registerEnvironmentRoutes(router: Router, manager: EnvironmentMa
       const authReq = req as AuthenticatedRequest;
       const actor = authReq.userId || 'anonymous';
 
-      const result = await manager.create(req.body, actor);
+      const parsed = createEnvironmentSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid request body',
+            details: parsed.error.issues,
+          },
+        });
+        return;
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
+      const result = await manager.create(parsed.data as any, actor);
 
       if (!result.success) {
         res.status(422).json({
@@ -106,7 +127,20 @@ export function registerEnvironmentRoutes(router: Router, manager: EnvironmentMa
       const authReq = req as AuthenticatedRequest;
       const actor = authReq.userId || 'anonymous';
 
-      const result = await manager.update(id, req.body, actor);
+      const parsed = updateEnvironmentSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid request body',
+            details: parsed.error.issues,
+          },
+        });
+        return;
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
+      const result = await manager.update(id, parsed.data as any, actor);
 
       if (!result.success) {
         res.status(422).json({
@@ -152,13 +186,21 @@ export function registerEnvironmentRoutes(router: Router, manager: EnvironmentMa
     '/api/v1/environments/:id/promote',
     asyncHandler(async (req: Request, res: Response) => {
       const { id } = req.params;
-      const { targetTier } = req.body;
       const authReq = req as AuthenticatedRequest;
       const actor = authReq.userId || 'anonymous';
 
-      if (!targetTier) {
-        throw new BadRequestError('targetTier is required');
+      const parsed = promoteEnvironmentSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid request body',
+            details: parsed.error.issues,
+          },
+        });
+        return;
       }
+      const { targetTier } = parsed.data;
 
       const result = await manager.promote(id, targetTier, actor);
 
@@ -201,13 +243,21 @@ export function registerEnvironmentRoutes(router: Router, manager: EnvironmentMa
     '/api/v1/environments/:id/variables/:key',
     asyncHandler(async (req: Request, res: Response) => {
       const { id, key } = req.params;
-      const { value, isSecret } = req.body;
       const authReq = req as AuthenticatedRequest;
       const actor = authReq.userId || 'anonymous';
 
-      if (value === undefined || value === null) {
-        throw new BadRequestError('value is required');
+      const parsed = setVariableSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid request body',
+            details: parsed.error.issues,
+          },
+        });
+        return;
       }
+      const { value, isSecret } = parsed.data;
 
       const result = await manager.setVariable(id, key, String(value), isSecret === true, actor);
 
