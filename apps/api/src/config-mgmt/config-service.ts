@@ -10,7 +10,8 @@
  * - Configuration inheritance and override resolution
  */
 
-import { randomUUID } from 'crypto';
+import { randomUUID, randomBytes, createCipheriv, createDecipheriv } from 'crypto';
+
 import type { ConfigStore, ConfigEntry, ConfigVersion } from './config-store';
 
 /** Configuration scope levels (ordered by precedence, highest last). */
@@ -200,7 +201,12 @@ export class ConfigService {
   /**
    * Delete a configuration entry.
    */
-  async delete(key: string, scope: ConfigScope, scopeId: string | undefined, actor: string): Promise<ConfigResult> {
+  async delete(
+    key: string,
+    scope: ConfigScope,
+    scopeId: string | undefined,
+    actor: string,
+  ): Promise<ConfigResult> {
     const existing = await this.store.get(key, scope, scopeId);
     if (!existing) {
       return { success: false, error: `Configuration '${key}' not found in scope '${scope}'` };
@@ -231,7 +237,13 @@ export class ConfigService {
   /**
    * Rollback a configuration entry to a previous version.
    */
-  async rollback(key: string, scope: ConfigScope, scopeId: string | undefined, targetVersion: number, actor: string): Promise<ConfigResult> {
+  async rollback(
+    key: string,
+    scope: ConfigScope,
+    scopeId: string | undefined,
+    targetVersion: number,
+    actor: string,
+  ): Promise<ConfigResult> {
     const entry = await this.store.get(key, scope, scopeId);
     if (!entry) {
       return { success: false, error: `Configuration '${key}' not found` };
@@ -293,7 +305,11 @@ export class ConfigService {
     }
 
     if (!/^[a-zA-Z][a-zA-Z0-9._-]*$/.test(input.key)) {
-      return { success: false, error: 'Configuration key must start with a letter and contain only alphanumeric, dots, hyphens, and underscores' };
+      return {
+        success: false,
+        error:
+          'Configuration key must start with a letter and contain only alphanumeric, dots, hyphens, and underscores',
+      };
     }
 
     if (input.key.length > 256) {
@@ -344,23 +360,32 @@ export class ConfigService {
    */
   private encrypt(value: string): string {
     if (!this.encryptionKey) {
-      // Development fallback: base64 encode
       return Buffer.from(value).toString('base64');
     }
-    // In production, use proper AES-256-GCM encryption
-    // This is a simplified representation
-    const encoded = Buffer.from(value).toString('base64');
-    return `enc:v1:${encoded}`;
+    const key = Buffer.from(this.encryptionKey, 'hex');
+    const iv = randomBytes(12);
+    const cipher = createCipheriv('aes-256-gcm', key, iv);
+    const encrypted = Buffer.concat([cipher.update(value, 'utf8'), cipher.final()]);
+    const authTag = cipher.getAuthTag();
+    return `enc:v2:${iv.toString('base64')}:${authTag.toString('base64')}:${encrypted.toString('base64')}`;
   }
 
-  /**
-   * Decrypt a sensitive value.
-   */
   private decrypt(value: string): string {
+    if (value.startsWith('enc:v2:')) {
+      const parts = value.slice(7).split(':');
+      if (parts.length !== 3) throw new Error('Invalid encrypted value format');
+      const [ivB64, tagB64, dataB64] = parts;
+      const key = Buffer.from(this.encryptionKey!, 'hex');
+      const iv = Buffer.from(ivB64, 'base64');
+      const authTag = Buffer.from(tagB64, 'base64');
+      const encrypted = Buffer.from(dataB64, 'base64');
+      const decipher = createDecipheriv('aes-256-gcm', key, iv);
+      decipher.setAuthTag(authTag);
+      return Buffer.concat([decipher.update(encrypted), decipher.final()]).toString('utf8');
+    }
     if (value.startsWith('enc:v1:')) {
       return Buffer.from(value.slice(7), 'base64').toString('utf-8');
     }
-    // Legacy base64 format
     return Buffer.from(value, 'base64').toString('utf-8');
   }
 

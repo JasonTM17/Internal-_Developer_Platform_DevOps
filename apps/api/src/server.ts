@@ -12,13 +12,20 @@
 
 import express from 'express';
 import type { Express } from 'express';
+import helmet from 'helmet';
+
+import { createAuthMiddleware } from './auth/middleware';
 import { getConfig } from './config/index';
-import { createRequestLogger } from './middleware/request-logger';
 import { createCorsMiddleware, buildCorsOptions } from './middleware/cors';
-import { createRateLimiter, RATE_LIMIT_PRESETS } from './middleware/rate-limiter';
 import { createErrorHandler, notFoundHandler } from './middleware/error-handler';
-import { createMetricsMiddleware, createMetricsEndpoint, getMetricsCollector } from './middleware/metrics';
 import { HealthCheckRegistry, registerHealthEndpoints } from './middleware/health';
+import {
+  createMetricsMiddleware,
+  createMetricsEndpoint,
+  getMetricsCollector,
+} from './middleware/metrics';
+import { createRateLimiter, RATE_LIMIT_PRESETS } from './middleware/rate-limiter';
+import { createRequestLogger } from './middleware/request-logger';
 import { registerApiRoutes } from './routes/index';
 
 /** Server instance with shutdown capability. */
@@ -47,11 +54,21 @@ export function createApp(): Express {
   app.use(express.json({ limit: config.maxBodySize }));
   app.use(express.urlencoded({ extended: true, limit: config.maxBodySize }));
 
+  // Security headers
+  app.use(
+    helmet({
+      contentSecurityPolicy: false,
+      crossOriginEmbedderPolicy: false,
+    }),
+  );
+
   // Request ID and structured logging
-  app.use(createRequestLogger({
-    logBody: config.logRequestBody,
-    excludePaths: ['/health', '/ready', '/metrics'],
-  }));
+  app.use(
+    createRequestLogger({
+      logBody: config.logRequestBody,
+      excludePaths: ['/health', '/ready', '/metrics'],
+    }),
+  );
 
   // CORS
   const corsOptions = buildCorsOptions({
@@ -65,11 +82,13 @@ export function createApp(): Express {
   app.use(createMetricsMiddleware(metricsCollector));
 
   // Rate limiting (global)
-  app.use(createRateLimiter(null, {
-    ...RATE_LIMIT_PRESETS.standard,
-    maxRequests: config.rateLimitMax,
-    windowMs: config.rateLimitWindowMs,
-  }));
+  app.use(
+    createRateLimiter(null, {
+      ...RATE_LIMIT_PRESETS.standard,
+      maxRequests: config.rateLimitMax,
+      windowMs: config.rateLimitWindowMs,
+    }),
+  );
 
   // Health check endpoints
   const healthRegistry = new HealthCheckRegistry(config.serviceName, config.version);
@@ -80,6 +99,21 @@ export function createApp(): Express {
   // Metrics endpoint
   app.get('/metrics', createMetricsEndpoint(metricsCollector));
 
+  // Auth middleware for API routes (skip in dev if AUTH_DISABLED=true)
+  const authDisabled =
+    process.env.AUTH_DISABLED === 'true' ||
+    (config.env !== 'production' && process.env.AUTH_DISABLED !== 'false');
+  if (!authDisabled) {
+    const authMw = createAuthMiddleware({
+      jwksUri: process.env.OIDC_JWKS_URI || 'https://auth.example.com/.well-known/jwks.json',
+      issuer: config.jwtIssuer,
+      audience: config.jwtAudience,
+      sessionTimeoutMinutes: 60,
+    });
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
+    app.use('/api', authMw);
+  }
+
   // API routes
   const apiRouter = express.Router();
   registerApiRoutes(apiRouter);
@@ -89,10 +123,12 @@ export function createApp(): Express {
   app.use(notFoundHandler);
 
   // Global error handler (must be last)
-  app.use(createErrorHandler({
-    includeStackTrace: config.env !== 'production',
-    includeDetails: config.env !== 'production',
-  }));
+  app.use(
+    createErrorHandler({
+      includeStackTrace: config.env !== 'production',
+      includeDetails: config.env !== 'production',
+    }),
+  );
 
   return app;
 }
@@ -112,13 +148,15 @@ export function createServer(): ServerInstance {
     async start(): Promise<void> {
       return new Promise((resolve, reject) => {
         httpServer = app.listen(config.port, config.host, () => {
-          console.log(JSON.stringify({
-            level: 'info',
-            message: `Server started on ${config.host}:${config.port}`,
-            environment: config.env,
-            version: config.version,
-            timestamp: new Date().toISOString(),
-          }));
+          console.log(
+            JSON.stringify({
+              level: 'info',
+              message: `Server started on ${config.host}:${config.port}`,
+              environment: config.env,
+              version: config.version,
+              timestamp: new Date().toISOString(),
+            }),
+          );
           resolve();
         });
 
@@ -142,31 +180,37 @@ export function createServer(): ServerInstance {
       if (isShuttingDown) return;
       isShuttingDown = true;
 
-      console.log(JSON.stringify({
-        level: 'info',
-        message: 'Graceful shutdown initiated',
-        timestamp: new Date().toISOString(),
-      }));
+      console.log(
+        JSON.stringify({
+          level: 'info',
+          message: 'Graceful shutdown initiated',
+          timestamp: new Date().toISOString(),
+        }),
+      );
 
       // Stop accepting new connections
       if (httpServer) {
         await new Promise<void>((resolve) => {
           const timeout = setTimeout(() => {
-            console.log(JSON.stringify({
-              level: 'warn',
-              message: 'Shutdown timeout reached, forcing close',
-              timestamp: new Date().toISOString(),
-            }));
+            console.log(
+              JSON.stringify({
+                level: 'warn',
+                message: 'Shutdown timeout reached, forcing close',
+                timestamp: new Date().toISOString(),
+              }),
+            );
             resolve();
           }, config.shutdownTimeoutMs);
 
           httpServer!.close(() => {
             clearTimeout(timeout);
-            console.log(JSON.stringify({
-              level: 'info',
-              message: 'Server closed gracefully',
-              timestamp: new Date().toISOString(),
-            }));
+            console.log(
+              JSON.stringify({
+                level: 'info',
+                message: 'Server closed gracefully',
+                timestamp: new Date().toISOString(),
+              }),
+            );
             resolve();
           });
         });
@@ -184,39 +228,49 @@ export async function bootstrap(): Promise<void> {
 
   // Graceful shutdown on SIGTERM/SIGINT
   const shutdown = async (signal: string) => {
-    console.log(JSON.stringify({
-      level: 'info',
-      message: `Received ${signal}, starting graceful shutdown`,
-      timestamp: new Date().toISOString(),
-    }));
+    console.log(
+      JSON.stringify({
+        level: 'info',
+        message: `Received ${signal}, starting graceful shutdown`,
+        timestamp: new Date().toISOString(),
+      }),
+    );
     await server.stop();
     process.exit(0);
   };
 
-  process.on('SIGTERM', () => shutdown('SIGTERM'));
-  process.on('SIGINT', () => shutdown('SIGINT'));
+  process.on('SIGTERM', () => {
+    void shutdown('SIGTERM');
+  });
+  process.on('SIGINT', () => {
+    void shutdown('SIGINT');
+  });
 
   // Uncaught exception handler
   process.on('uncaughtException', (error: Error) => {
-    console.error(JSON.stringify({
-      level: 'error',
-      message: 'Uncaught exception',
-      error: error.message,
-      stack: error.stack,
-      timestamp: new Date().toISOString(),
-    }));
+    console.error(
+      JSON.stringify({
+        level: 'error',
+        message: 'Uncaught exception',
+        error: error.message,
+        stack: error.stack,
+        timestamp: new Date().toISOString(),
+      }),
+    );
     process.exit(1);
   });
 
   // Unhandled rejection handler
   process.on('unhandledRejection', (reason: unknown) => {
-    console.error(JSON.stringify({
-      level: 'error',
-      message: 'Unhandled promise rejection',
-      reason: reason instanceof Error ? reason.message : String(reason),
-      stack: reason instanceof Error ? reason.stack : undefined,
-      timestamp: new Date().toISOString(),
-    }));
+    console.error(
+      JSON.stringify({
+        level: 'error',
+        message: 'Unhandled promise rejection',
+        reason: reason instanceof Error ? reason.message : String(reason),
+        stack: reason instanceof Error ? reason.stack : undefined,
+        timestamp: new Date().toISOString(),
+      }),
+    );
     process.exit(1);
   });
 

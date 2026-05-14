@@ -6,4 +6,9 @@ module.exports = {
     project: './tsconfig.json',
     tsconfigRootDir: __dirname,
   },
+  settings: {
+    'import/resolver': {
+      node: true,
+    },
+  },
 };

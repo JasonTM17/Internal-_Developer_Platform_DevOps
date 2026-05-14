@@ -9,20 +9,20 @@
  * - OpenAPI documentation metadata
  */
 
-import { Router } from 'express';
 import type { Router as RouterType } from 'express';
-import { registerCatalogRoutes } from '../catalog/routes';
-import { registerDeploymentRoutes } from '../deployment/routes';
-import { registerEnvironmentRoutes } from '../environment/routes';
-import { registerConfigRoutes } from '../config-mgmt/routes';
-import { ServiceCatalog } from '../catalog/service-catalog';
+
 import { InMemoryCatalogStore } from '../catalog/in-memory-catalog-store';
-import { DeploymentEngine } from '../deployment/deployment-engine';
-import { InMemoryDeploymentStore } from '../deployment/deployment-store';
-import { EnvironmentManager } from '../environment/environment-manager';
-import { InMemoryEnvironmentStore } from '../environment/environment-store';
+import { registerCatalogRoutes } from '../catalog/routes';
+import { ServiceCatalog } from '../catalog/service-catalog';
 import { ConfigService } from '../config-mgmt/config-service';
 import { InMemoryConfigStore } from '../config-mgmt/config-store';
+import { registerConfigRoutes } from '../config-mgmt/routes';
+import { DeploymentEngine } from '../deployment/deployment-engine';
+import { InMemoryDeploymentStore } from '../deployment/deployment-store';
+import { registerDeploymentRoutes } from '../deployment/routes';
+import { EnvironmentManager } from '../environment/environment-manager';
+import { InMemoryEnvironmentStore } from '../environment/environment-store';
+import { registerEnvironmentRoutes } from '../environment/routes';
 
 /**
  * API module metadata for documentation and discovery.
@@ -105,10 +105,9 @@ function createServices() {
  */
 export function registerApiRoutes(router: RouterType): void {
   const services = createServices();
-  const v1 = Router();
 
   // Health and meta (unversioned)
-  router.get('/version', (req, res) => {
+  router.get('/version', (_req, res) => {
     res.json({ version: process.env.VERSION || '1.0.0', api: 'v1' });
   });
 
@@ -132,24 +131,6 @@ export function registerApiRoutes(router: RouterType): void {
       modules: API_MODULES.filter((m) => m.version === 'v1'),
     });
   });
-
-  // Versioned API routes
-  v1.get('/catalog', (req, res) => res.json({ services: [], total: 0 }));
-  v1.get('/catalog/:id', (req, res) => res.json({ id: req.params.id, name: 'example-service' }));
-  v1.post('/catalog', (req, res) => res.status(201).json({ id: 'new-id', ...req.body }));
-
-  v1.get('/deployments', (req, res) => res.json({ deployments: [], total: 0 }));
-  v1.post('/deployments', (req, res) => res.status(202).json({ id: 'deploy-id', status: 'pending' }));
-  v1.get('/deployments/:id/status', (req, res) => res.json({ id: req.params.id, status: 'success', phase: 'completed' }));
-
-  v1.get('/environments', (req, res) => res.json({ environments: [], total: 0 }));
-  v1.post('/environments', (req, res) => res.status(201).json({ id: 'env-id', status: 'provisioning' }));
-
-  v1.get('/health/services', (req, res) => res.json({ services: [], healthy: 0, degraded: 0 }));
-
-  v1.get('/audit', (req, res) => res.json({ entries: [], total: 0, hasMore: false }));
-
-  router.use('/api/v1', v1);
 
   // Register domain routes (these register their own sub-paths)
   registerCatalogRoutes(router, services.catalog);

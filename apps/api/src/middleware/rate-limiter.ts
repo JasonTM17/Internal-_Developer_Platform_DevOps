@@ -184,6 +184,16 @@ export class RateLimiter {
   }
 
   /**
+   * Public fallback for use when Redis errors occur in middleware.
+   */
+  consumeFallback(req: Request): RateLimitState {
+    const key = this.getKey(req);
+    const now = Date.now();
+    const resetAt = Math.ceil((now + this.config.windowMs) / 1000);
+    return this.consumeInMemory(key, now, resetAt);
+  }
+
+  /**
    * Generate the rate limit key for a request.
    */
   private getKey(req: Request): string {
@@ -232,10 +242,7 @@ export class RateLimiter {
  * - X-RateLimit-Reset: Unix timestamp when the window resets
  * - Retry-After: Seconds until the client can retry (when limited)
  */
-export function createRateLimiter(
-  redis: RateLimitRedisClient | null,
-  config: RateLimitConfig,
-) {
+export function createRateLimiter(redis: RateLimitRedisClient | null, config: RateLimitConfig) {
   const limiter = new RateLimiter(redis, config);
   const includeHeaders = config.includeHeaders !== false;
   const message = config.message || 'Too many requests, please try again later';
@@ -280,8 +287,21 @@ export function createRateLimiter(
         next();
       })
       .catch((error) => {
-        // On error, allow the request through (fail open)
-        console.error('Rate limiter error:', error);
+        console.error('Rate limiter error, using in-memory fallback:', error);
+        const state = limiter.consumeFallback(req);
+        if (includeHeaders) {
+          res.setHeader('X-RateLimit-Limit', state.limit);
+          res.setHeader('X-RateLimit-Remaining', state.remaining);
+          res.setHeader('X-RateLimit-Reset', state.resetAt);
+        }
+        if (state.isLimited) {
+          const retryAfter = Math.max(1, state.resetAt - Math.ceil(Date.now() / 1000));
+          res.setHeader('Retry-After', retryAfter);
+          res.status(429).json({
+            error: { code: 'RATE_LIMIT_EXCEEDED', message, retryAfter },
+          });
+          return;
+        }
         next();
       });
   };
