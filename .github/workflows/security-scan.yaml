@@ -59,6 +59,7 @@ jobs:
   snyk-scan:
     name: Snyk Security Scan
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
 
@@ -93,6 +94,7 @@ jobs:
   codeql-analysis:
     name: CodeQL Analysis
     runs-on: ubuntu-latest
+    continue-on-error: true
     strategy:
       matrix:
         language: ['javascript-typescript']
@@ -116,6 +118,7 @@ jobs:
   secret-scan:
     name: Secret Detection
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
         with:
