@@ -21,6 +21,15 @@ The IDP follows a monorepo architecture powered by Turborepo, featuring a React-
 
 ---
 
+## Portal Preview
+
+> The developer portal provides a self-service UI for managing services, deployments, and environments.
+> Run `docker compose up -d` and visit [http://localhost:5173](http://localhost:5173) to explore.
+
+<!-- Add screenshots here: ![Screen Name](docs/assets/screenshots/screen-name.png) -->
+
+---
+
 ## Architecture
 
 ```
@@ -56,18 +65,18 @@ The IDP follows a monorepo architecture powered by Turborepo, featuring a React-
 
 ## Features
 
-| Category | Features |
-|----------|----------|
-| **Self-Service Portal** | Service catalog, one-click deployments, environment provisioning |
-| **Security and Compliance** | RBAC, audit logging, secret management, vulnerability scanning |
-| **Infrastructure as Code** | Terraform modules, Kubernetes manifests, GitOps with ArgoCD |
-| **CI/CD Pipelines** | Multi-stage builds, automated testing, canary deployments |
-| **Observability** | Prometheus metrics, Grafana dashboards, distributed tracing |
-| **Notifications** | Real-time WebSocket updates, Slack integration, email alerts |
-| **Multi-Environment** | Dev, staging, production with automated promotion workflows |
-| **Service Catalog** | Backstage-inspired catalog with templates and scaffolding |
-| **Performance** | Turborepo caching, Docker layer optimization, CDN integration |
-| **Testing** | Unit, integration, E2E tests with parallel execution |
+| Category                    | Features                                                         |
+| --------------------------- | ---------------------------------------------------------------- |
+| **Self-Service Portal**     | Service catalog, one-click deployments, environment provisioning |
+| **Security and Compliance** | RBAC, audit logging, secret management, vulnerability scanning   |
+| **Infrastructure as Code**  | Terraform modules, Kubernetes manifests, GitOps with ArgoCD      |
+| **CI/CD Pipelines**         | Multi-stage builds, automated testing, canary deployments        |
+| **Observability**           | Prometheus metrics, Grafana dashboards, distributed tracing      |
+| **Notifications**           | Real-time WebSocket updates, Slack integration, email alerts     |
+| **Multi-Environment**       | Dev, staging, production with automated promotion workflows      |
+| **Service Catalog**         | Backstage-inspired catalog with templates and scaffolding        |
+| **Performance**             | Turborepo caching, Docker layer optimization, CDN integration    |
+| **Testing**                 | Unit, integration, E2E tests with parallel execution             |
 
 ---
 
@@ -118,23 +127,23 @@ pnpm build
 
 ## Tech Stack
 
-| Layer | Technology | Purpose |
-|-------|-----------|---------|
-| **Frontend** | React, TypeScript, Vite | Developer portal UI |
-| **Backend** | Node.js, Express, TypeScript | API server |
-| **Database** | PostgreSQL 16 | Primary data store |
-| **Cache** | Redis 7 | Session management, job queues |
-| **Container Orchestration** | Kubernetes (EKS) | Production workloads |
-| **Infrastructure as Code** | Terraform | Cloud resource provisioning |
-| **GitOps** | ArgoCD | Continuous deployment |
-| **CI/CD** | GitHub Actions | Build, test, deploy pipelines |
-| **Monitoring** | Prometheus, Grafana | Metrics and dashboards |
-| **Logging** | Loki, Promtail | Centralized log aggregation |
-| **Tracing** | Jaeger | Distributed tracing |
-| **Security** | Trivy, Snyk, CodeQL | Vulnerability scanning |
-| **Monorepo** | Turborepo, pnpm | Build orchestration |
-| **Testing** | Vitest, Playwright | Unit, integration, E2E |
-| **Code Quality** | ESLint, Prettier, Husky | Linting and formatting |
+| Layer                       | Technology                   | Purpose                        |
+| --------------------------- | ---------------------------- | ------------------------------ |
+| **Frontend**                | React, TypeScript, Vite      | Developer portal UI            |
+| **Backend**                 | Node.js, Express, TypeScript | API server                     |
+| **Database**                | PostgreSQL 16                | Primary data store             |
+| **Cache**                   | Redis 7                      | Session management, job queues |
+| **Container Orchestration** | Kubernetes (EKS)             | Production workloads           |
+| **Infrastructure as Code**  | Terraform                    | Cloud resource provisioning    |
+| **GitOps**                  | ArgoCD                       | Continuous deployment          |
+| **CI/CD**                   | GitHub Actions               | Build, test, deploy pipelines  |
+| **Monitoring**              | Prometheus, Grafana          | Metrics and dashboards         |
+| **Logging**                 | Loki, Promtail               | Centralized log aggregation    |
+| **Tracing**                 | Jaeger                       | Distributed tracing            |
+| **Security**                | Trivy, Snyk, CodeQL          | Vulnerability scanning         |
+| **Monorepo**                | Turborepo, pnpm              | Build orchestration            |
+| **Testing**                 | Vitest, Playwright           | Unit, integration, E2E         |
+| **Code Quality**            | ESLint, Prettier, Husky      | Linting and formatting         |
 
 ---
 
@@ -173,19 +182,19 @@ pnpm build
 
 ## Documentation
 
-| Document | Description |
-|----------|-------------|
-| [Architecture Overview](docs/architecture/) | System design and component diagrams |
-| [API Documentation](docs/api/) | REST API reference and examples |
-| [ADR Records](docs/adr/) | Architecture Decision Records |
-| [Operations Runbooks](docs/runbooks/) | Incident response procedures |
-| [Onboarding Guide](docs/onboarding/) | New developer setup guide |
-| [SLO Definitions](docs/slo/) | Service Level Objectives |
-| [Security Policy](SECURITY.md) | Vulnerability reporting process |
-| [Contributing Guide](CONTRIBUTING.md) | How to contribute |
-| [Changelog](CHANGELOG.md) | Release history |
-| [Release Process](docs/RELEASE_PROCESS.md) | Versioning and release workflow |
-| [Branching Strategy](docs/BRANCHING_STRATEGY.md) | Git workflow documentation |
+| Document                                         | Description                          |
+| ------------------------------------------------ | ------------------------------------ |
+| [Architecture Overview](docs/architecture/)      | System design and component diagrams |
+| [API Documentation](docs/api/)                   | REST API reference and examples      |
+| [ADR Records](docs/adr/)                         | Architecture Decision Records        |
+| [Operations Runbooks](docs/runbooks/)            | Incident response procedures         |
+| [Onboarding Guide](docs/onboarding/)             | New developer setup guide            |
+| [SLO Definitions](docs/slo/)                     | Service Level Objectives             |
+| [Security Policy](SECURITY.md)                   | Vulnerability reporting process      |
+| [Contributing Guide](CONTRIBUTING.md)            | How to contribute                    |
+| [Changelog](CHANGELOG.md)                        | Release history                      |
+| [Release Process](docs/RELEASE_PROCESS.md)       | Versioning and release workflow      |
+| [Branching Strategy](docs/BRANCHING_STRATEGY.md) | Git workflow documentation           |
 
 ---
 
@@ -221,11 +230,11 @@ make k8s-deploy             # Deploy to Kubernetes
 
 ### Environments
 
-| Environment | Branch | URL | Auto-Deploy |
-|-------------|--------|-----|-------------|
-| Development | `develop` | `dev.idp.internal` | On push |
-| Staging | `release/*` | `staging.idp.internal` | On push |
-| Production | `main` | `idp.internal` | Manual approval |
+| Environment | Branch      | URL                    | Auto-Deploy     |
+| ----------- | ----------- | ---------------------- | --------------- |
+| Development | `develop`   | `dev.idp.internal`     | On push         |
+| Staging     | `release/*` | `staging.idp.internal` | On push         |
+| Production  | `main`      | `idp.internal`         | Manual approval |
 
 ### Deployment Pipeline
 
@@ -290,11 +299,11 @@ pnpm test:integration
 
 ### Test Coverage Targets
 
-| Package | Target |
-|---------|--------|
-| API | 80% |
-| Portal | 75% |
-| Packages | 90% |
+| Package  | Target |
+| -------- | ------ |
+| API      | 80%    |
+| Portal   | 75%    |
+| Packages | 90%    |
 
 ---
 
