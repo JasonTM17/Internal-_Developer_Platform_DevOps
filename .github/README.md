@@ -4,37 +4,43 @@ CI/CD pipeline configuration for the Internal Developer Platform.
 
 ## Workflow Overview
 
-| Workflow | Trigger | Description |
-|----------|---------|-------------|
-| `ci.yaml` | Push, PR | Lint, typecheck, unit tests, build |
-| `integration-tests.yaml` | PR to main | Integration and contract tests |
-| `docker-build.yaml` | Push to main | Build and push container images |
-| `security-scan.yaml` | Push, schedule | Trivy vulnerability scanning |
-| `terraform-plan.yaml` | PR (infra changes) | Terraform plan with cost estimate |
-| `terraform-apply.yaml` | Push to main (infra) | Apply Terraform changes |
-| `cd-dev.yaml` | Push to main | Deploy to development environment |
-| `cd-staging.yaml` | Manual, after dev | Deploy to staging environment |
-| `cd-production.yaml` | Manual, approval | Deploy to production environment |
-| `preview-env.yaml` | PR | Spin up preview environment |
-| `release.yaml` | Tag push | Create GitHub release |
-| `release-drafter.yml` | Push to main | Draft release notes |
-| `dependency-update.yaml` | Schedule (weekly) | Update dependencies via PR |
-| `compliance-audit.yaml` | Schedule (daily) | Security and compliance checks |
+| Workflow          | File                     | Trigger                               | Description                                 |
+| ----------------- | ------------------------ | ------------------------------------- | ------------------------------------------- |
+| CI                | `ci.yaml`                | Push, PR                              | Lint, typecheck, test, build, security scan |
+| Docker Build      | `docker-build.yaml`      | Tags `v*`, Dockerfile changes, manual | Multi-service container builds to GHCR      |
+| Security Scan     | `security-scan.yaml`     | Weekly + manual                       | Trivy, Snyk, CodeQL, TruffleHog, Gitleaks   |
+| Release           | `release.yaml`           | Tags `v*`                             | Semantic release with changelog             |
+| Release Drafter   | `release-drafter.yaml`   | Push to main                          | Auto-draft release notes from PR labels     |
+| CD Development    | `cd-dev.yaml`            | Push to `develop`                     | Auto-deploy to dev environment              |
+| CD Staging        | `cd-staging.yaml`        | Push to `release/*`                   | Deploy to staging with integration tests    |
+| CD Production     | `cd-production.yaml`     | Manual approval                       | Blue-green deploy with canary analysis      |
+| Terraform Plan    | `terraform-plan.yaml`    | PR with infra changes                 | Preview infrastructure changes              |
+| Terraform Apply   | `terraform-apply.yaml`   | Merge to main                         | Apply approved infrastructure changes       |
+| Compliance Audit  | `compliance-audit.yaml`  | Weekly                                | License check, SBOM generation              |
+| Dependency Review | `dependency-review.yaml` | PR                                    | Check for vulnerable dependencies           |
+| Stale Issues      | `stale.yaml`             | Daily                                 | Auto-close stale issues/PRs                 |
+| Label Sync        | `label-sync.yaml`        | Push to main                          | Sync GitHub labels from config              |
 
 ## Required Secrets
 
-| Secret | Description | Used By |
-|--------|-------------|---------|
-| `AWS_ACCESS_KEY_ID` | AWS IAM access key | Terraform, CD workflows |
-| `AWS_SECRET_ACCESS_KEY` | AWS IAM secret key | Terraform, CD workflows |
-| `AWS_REGION` | AWS deployment region | All AWS workflows |
-| `ECR_REGISTRY` | ECR registry URL | Docker build, CD |
-| `KUBE_CONFIG` | Base64-encoded kubeconfig | CD workflows |
-| `SLACK_WEBHOOK_URL` | Slack notification webhook | All workflows |
-| `SONAR_TOKEN` | SonarCloud analysis token | CI workflow |
-| `SNYK_TOKEN` | Snyk vulnerability scanning | Security scan |
-| `TERRAFORM_CLOUD_TOKEN` | Terraform Cloud API token | Terraform workflows |
-| `CODECOV_TOKEN` | Code coverage upload token | CI workflow |
+| Secret                | Description                             | Used By       |
+| --------------------- | --------------------------------------- | ------------- |
+| `GITHUB_TOKEN`        | Auto-provided by GitHub                 | All workflows |
+| `AWS_DEPLOY_ROLE_ARN` | IAM role for AWS deployments            | CD, Terraform |
+| `AWS_ACCOUNT_ID`      | AWS account ID for ECR                  | Docker Build  |
+| `SNYK_TOKEN`          | Snyk vulnerability scanning             | Security Scan |
+| `SLACK_WEBHOOK_URL`   | Slack notification webhook              | Notifications |
+| `NPM_TOKEN`           | npm publish token                       | Release       |
+| `BOT_PAT`             | PAT for triggering workflows (optional) | Release       |
+| `CODECOV_TOKEN`       | Code coverage upload                    | CI            |
+
+## CI Pipeline Architecture
+
+```
+Push/PR → Detect Changes → Lint & Format ─┐
+                         → Test (with DB) ─┼→ Build → Upload Artifacts
+                         → Security Scan  ─┘
+```
 
 ## Adding New Workflows
 
@@ -42,28 +48,29 @@ CI/CD pipeline configuration for the Internal Developer Platform.
 2. Define trigger events (`on:`)
 3. Use reusable actions from the marketplace where possible
 4. Add required secrets to repository settings
-5. Test with `act` locally before pushing:
+5. Test locally before pushing:
 
 ```bash
-# Install act (https://github.com/nektos/act)
-act -W .github/workflows/ci.yaml --secret-file .env.ci
+# Run lint and tests locally
+pnpm lint && pnpm test && pnpm build
 ```
 
 ## Troubleshooting Common Failures
 
-| Issue | Cause | Fix |
-|-------|-------|-----|
-| `npm ci` fails | Lock file mismatch | Run `npm install` locally and commit `package-lock.json` |
-| Docker build timeout | Large image layers | Check `.dockerignore`, use multi-stage builds |
-| Terraform plan fails | State lock | Check for stuck locks in DynamoDB |
-| E2E tests flaky | Timing issues | Add proper waits, increase timeout |
-| Permission denied | Missing secrets | Verify secrets are set in repo settings |
-| Preview env stuck | Orphaned resources | Run `cleanup-envs.sh` manually |
+| Issue                | Cause                                | Fix                                                    |
+| -------------------- | ------------------------------------ | ------------------------------------------------------ |
+| `pnpm install` fails | Lock file mismatch                   | Run `pnpm install` locally and commit `pnpm-lock.yaml` |
+| Docker build timeout | Large image layers                   | Check `.dockerignore`, use multi-stage builds          |
+| Terraform plan fails | State lock                           | Check for stuck locks in DynamoDB                      |
+| SARIF upload fails   | GitHub Advanced Security not enabled | `continue-on-error: true` handles this                 |
+| TypeScript errors    | Type mismatch                        | Run `pnpm typecheck` locally                           |
+| OCI ref parse error  | Uppercase in image name              | Use `${GITHUB_REPOSITORY,,}` for lowercase             |
 
 ## Branch Protection
 
 The `main` branch requires:
-- Passing CI checks
+
+- Passing CI checks (lint, test, build, security)
 - At least 1 approving review
 - Up-to-date with base branch
 - No force pushes
