@@ -38,8 +38,8 @@ We are committed to providing a welcoming and inclusive experience for everyone.
 
 ```bash
 # Clone the repository
-git clone https://github.com/JasonTM17/Internal-_Developer_Platform_DevOps.git
-cd Internal-_Developer_Platform_DevOps
+git clone https://github.com/JasonTM17/Internal_Developer_Platform_DevOps.git
+cd Internal_Developer_Platform_DevOps
 
 # Install dependencies
 pnpm install
@@ -135,14 +135,14 @@ pnpm lint:fix
 
 ### Naming Conventions
 
-| Element | Convention | Example |
-|---------|-----------|---------|
-| Files | kebab-case | `service-catalog.ts` |
-| Classes | PascalCase | `ServiceCatalog` |
-| Interfaces | PascalCase (no I prefix) | `CatalogStore` |
-| Functions | camelCase | `createService()` |
-| Constants | UPPER_SNAKE_CASE | `MAX_RETRY_COUNT` |
-| Environment vars | UPPER_SNAKE_CASE | `DATABASE_URL` |
+| Element          | Convention               | Example              |
+| ---------------- | ------------------------ | -------------------- |
+| Files            | kebab-case               | `service-catalog.ts` |
+| Classes          | PascalCase               | `ServiceCatalog`     |
+| Interfaces       | PascalCase (no I prefix) | `CatalogStore`       |
+| Functions        | camelCase                | `createService()`    |
+| Constants        | UPPER_SNAKE_CASE         | `MAX_RETRY_COUNT`    |
+| Environment vars | UPPER_SNAKE_CASE         | `DATABASE_URL`       |
 
 ### Code Organization
 
@@ -178,28 +178,28 @@ We use [Conventional Commits](https://www.conventionalcommits.org/):
 
 ### Types
 
-| Type | Description |
-|------|-------------|
-| `feat` | New feature |
-| `fix` | Bug fix |
-| `docs` | Documentation only |
-| `style` | Formatting, no code change |
+| Type       | Description                             |
+| ---------- | --------------------------------------- |
+| `feat`     | New feature                             |
+| `fix`      | Bug fix                                 |
+| `docs`     | Documentation only                      |
+| `style`    | Formatting, no code change              |
 | `refactor` | Code change that neither fixes nor adds |
-| `perf` | Performance improvement |
-| `test` | Adding or updating tests |
-| `chore` | Build process, tooling, dependencies |
-| `ci` | CI/CD configuration |
+| `perf`     | Performance improvement                 |
+| `test`     | Adding or updating tests                |
+| `chore`    | Build process, tooling, dependencies    |
+| `ci`       | CI/CD configuration                     |
 
 ### Scopes
 
-| Scope | Description |
-|-------|-------------|
-| `api` | Platform API |
-| `portal` | Developer Portal |
-| `terraform` | Infrastructure code |
-| `monitoring` | Observability stack |
-| `argocd` | GitOps configuration |
-| `deps` | Dependency updates |
+| Scope        | Description          |
+| ------------ | -------------------- |
+| `api`        | Platform API         |
+| `portal`     | Developer Portal     |
+| `terraform`  | Infrastructure code  |
+| `monitoring` | Observability stack  |
+| `argocd`     | GitOps configuration |
+| `deps`       | Dependency updates   |
 
 ### Examples
 
@@ -270,12 +270,12 @@ For significant architectural changes, create an RFC:
 
 ### Coverage Expectations
 
-| Type | Minimum Coverage | Scope |
-|------|-----------------|-------|
-| Unit tests | 80% line coverage | All business logic |
-| Integration tests | Key paths | API endpoints, DB queries |
-| E2E tests | Critical flows | Deployment, provisioning |
-| Contract tests | All API consumers | Pact-based |
+| Type              | Minimum Coverage  | Scope                     |
+| ----------------- | ----------------- | ------------------------- |
+| Unit tests        | 80% line coverage | All business logic        |
+| Integration tests | Key paths         | API endpoints, DB queries |
+| E2E tests         | Critical flows    | Deployment, provisioning  |
+| Contract tests    | All API consumers | Pact-based                |
 
 ### Test Structure
 
@@ -321,13 +321,13 @@ pnpm test:coverage
 
 ### Documentation Location
 
-| Content | Location |
-|---------|----------|
-| API reference | `docs/api/` |
-| Architecture | `docs/architecture/` |
-| Operations | `docs/operations/` |
-| Runbooks | Wiki (linked from docs) |
-| Code docs | JSDoc in source files |
+| Content       | Location                |
+| ------------- | ----------------------- |
+| API reference | `docs/api/`             |
+| Architecture  | `docs/architecture/`    |
+| Operations    | `docs/operations/`      |
+| Runbooks      | Wiki (linked from docs) |
+| Code docs     | JSDoc in source files   |
 
 ---
 

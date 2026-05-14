@@ -32,11 +32,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/JasonTM17/Internal-_Developer_Platform_DevOps.git"
+    "url": "https://github.com/JasonTM17/Internal_Developer_Platform_DevOps.git"
   },
-  "homepage": "https://github.com/JasonTM17/Internal-_Developer_Platform_DevOps#readme",
+  "homepage": "https://github.com/JasonTM17/Internal_Developer_Platform_DevOps#readme",
   "bugs": {
-    "url": "https://github.com/JasonTM17/Internal-_Developer_Platform_DevOps/issues"
+    "url": "https://github.com/JasonTM17/Internal_Developer_Platform_DevOps/issues"
   },
   "author": "JasonTM17",
   "license": "MIT",

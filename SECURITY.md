@@ -14,7 +14,7 @@ We take security seriously. If you discover a security vulnerability, please rep
 ### How to Report
 
 1. **DO NOT** create a public GitHub issue for security vulnerabilities
-2. Report via GitHub Security Advisories: https://github.com/JasonTM17/Internal-_Developer_Platform_DevOps/security/advisories/new
+2. Report via GitHub Security Advisories: https://github.com/JasonTM17/Internal_Developer_Platform_DevOps/security/advisories/new
 3. Include:
    - Description of the vulnerability
    - Steps to reproduce
@@ -108,5 +108,5 @@ This platform is designed to support:
 
 ## Security Contacts
 
-- **Security Team**: Report via [GitHub Security Advisories](https://github.com/JasonTM17/Internal-_Developer_Platform_DevOps/security/advisories/new)
+- **Security Team**: Report via [GitHub Security Advisories](https://github.com/JasonTM17/Internal_Developer_Platform_DevOps/security/advisories/new)
 - **On-call Engineer**: PagerDuty escalation

@@ -28,4 +28,4 @@ template: |
 
   $CHANGES
 
-  **Full Changelog**: https://github.com/JasonTM17/Internal-_Developer_Platform_DevOps/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION
+  **Full Changelog**: https://github.com/JasonTM17/Internal_Developer_Platform_DevOps/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION

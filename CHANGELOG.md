@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-05-14
+
+### Added
+
+- Bilingual documentation (Vietnamese/English) for onboarding, architecture, and API guides
+- Portal screenshots in documentation (login, dashboard, catalog, deployments, health, environments)
+- Docker Build and Release badges to README
+
+### Fixed
+
+- Removed deprecated QueueScheduler from BullMQ v5 (API Docker build)
+- Fixed portal Docker build by restoring Vite build script and workspace dependency resolution
+- Fixed lowercase OCI image refs in Docker Build SBOM job
+- Fixed Release workflow token fallback when BOT_PAT is not configured
+- Fixed SARIF upload steps to gracefully handle missing GitHub Advanced Security
+- Fixed npm references to pnpm across all documentation
+
+### Changed
+
+- Rewrote README for portfolio-grade presentation with architecture diagram and feature matrix
+- Simplified Docker Build to amd64-only (removed unnecessary arm64/QEMU)
+- Added continue-on-error for external security services (Snyk, CodeQL, Gitleaks)
+
+## [1.1.0] - 2026-05-13
+
 ### Added
 
 - Toast notification system with stacking and auto-dismiss
@@ -88,6 +113,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Helm chart skeleton for platform deployment
 - ArgoCD application definitions
 
-[Unreleased]: https://github.com/JasonTM17/Internal-_Developer_Platform_DevOps/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/JasonTM17/Internal-_Developer_Platform_DevOps/compare/v0.1.0...v1.0.0
-[0.1.0]: https://github.com/JasonTM17/Internal-_Developer_Platform_DevOps/releases/tag/v0.1.0
+[Unreleased]: https://github.com/JasonTM17/Internal_Developer_Platform_DevOps/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/JasonTM17/Internal_Developer_Platform_DevOps/compare/v1.1.0...v1.2.0
+[1.1.0]: https://github.com/JasonTM17/Internal_Developer_Platform_DevOps/compare/v1.0.0...v1.1.0
+[1.0.0]: https://github.com/JasonTM17/Internal_Developer_Platform_DevOps/compare/v0.1.0...v1.0.0
+[0.1.0]: https://github.com/JasonTM17/Internal_Developer_Platform_DevOps/releases/tag/v0.1.0
