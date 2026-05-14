@@ -6,7 +6,7 @@ Accepted
 
 ## Date
 
-2024-01-22
+2026-01-22
 
 ## Context
 
@@ -72,10 +72,10 @@ We will use **Amazon EKS** (Elastic Kubernetes Service) as our container orchest
 
 ## Cost Comparison (estimated monthly)
 
-| Component | EKS | ECS | Fargate |
-|-----------|-----|-----|---------|
-| Control plane | $73 | $0 | $0 |
-| Compute (6 nodes) | $780 | $780 | $1,200 |
-| Total | $853 | $780 | $1,200 |
+| Component         | EKS  | ECS  | Fargate |
+| ----------------- | ---- | ---- | ------- |
+| Control plane     | $73  | $0   | $0      |
+| Compute (6 nodes) | $780 | $780 | $1,200  |
+| Total             | $853 | $780 | $1,200  |
 
 EKS is slightly more expensive than ECS but the ecosystem benefits justify the cost.

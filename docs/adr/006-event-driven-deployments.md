@@ -6,7 +6,7 @@ Accepted
 
 ## Date
 
-2024-02-01
+2026-02-01
 
 ## Context
 
@@ -32,14 +32,14 @@ Git Push → CI Build → Image Push Event → Security Scan
 
 ## Event Types
 
-| Event | Trigger | Consumers |
-|-------|---------|-----------|
-| `build.completed` | CI build success | Security scanner, artifact store |
-| `image.pushed` | Docker push to ECR | Vulnerability scanner, deploy-dev |
-| `scan.passed` | Security scan clean | Deployment gate |
-| `deploy.completed` | Helm release success | Smoke tests, notifications |
-| `tests.passed` | All tests green | Environment promotion |
-| `approval.granted` | Manual approval | Production deploy |
+| Event              | Trigger              | Consumers                         |
+| ------------------ | -------------------- | --------------------------------- |
+| `build.completed`  | CI build success     | Security scanner, artifact store  |
+| `image.pushed`     | Docker push to ECR   | Vulnerability scanner, deploy-dev |
+| `scan.passed`      | Security scan clean  | Deployment gate                   |
+| `deploy.completed` | Helm release success | Smoke tests, notifications        |
+| `tests.passed`     | All tests green      | Environment promotion             |
+| `approval.granted` | Manual approval      | Production deploy                 |
 
 ## Implementation
 

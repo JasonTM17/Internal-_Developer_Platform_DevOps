@@ -31,13 +31,13 @@ main (production)
 
 ### Branch Purposes
 
-| Branch | Purpose | Deploys To |
-|--------|---------|------------|
-| `main` | Production-ready code | Production |
-| `develop` | Integration branch | Development |
-| `release/*` | Release stabilization | Staging |
-| `hotfix/*` | Emergency production fixes | Production |
-| `feature/*` | New feature development | Preview |
+| Branch      | Purpose                    | Deploys To  |
+| ----------- | -------------------------- | ----------- |
+| `main`      | Production-ready code      | Production  |
+| `develop`   | Integration branch         | Development |
+| `release/*` | Release stabilization      | Staging     |
+| `hotfix/*`  | Emergency production fixes | Production  |
+| `feature/*` | New feature development    | Preview     |
 
 ---
 
@@ -59,6 +59,7 @@ main (production)
 ### Release Execution
 
 1. **Create release branch** from `develop`:
+
    ```bash
    git checkout develop
    git pull origin develop
@@ -66,6 +67,7 @@ main (production)
    ```
 
 2. **Bump version** across all packages:
+
    ```bash
    pnpm version:bump 1.2.0
    ```
@@ -73,6 +75,7 @@ main (production)
 3. **Update CHANGELOG.md** with release notes
 
 4. **Push release branch** and create PR to `main`:
+
    ```bash
    git push -u origin release/v1.2.0
    gh pr create --base main --title "Release v1.2.0"
@@ -83,11 +86,13 @@ main (production)
 6. **Run final validation** in staging environment
 
 7. **Merge to main** after approval:
+
    ```bash
    gh pr merge --squash
    ```
 
 8. **Tag the release**:
+
    ```bash
    git checkout main
    git pull origin main
@@ -120,6 +125,7 @@ main (production)
 For critical production issues that cannot wait for the next release:
 
 1. **Create hotfix branch** from `main`:
+
    ```bash
    git checkout main
    git pull origin main
@@ -148,6 +154,7 @@ For critical production issues that cannot wait for the next release:
 ### Automatic Rollback
 
 The platform automatically rolls back deployments when:
+
 - Health checks fail after deployment
 - Error rate exceeds threshold (>5% 5xx responses)
 - Latency exceeds SLO targets (p99 > 2s)
@@ -193,6 +200,7 @@ terraform apply
 ### Rollback Verification
 
 After any rollback:
+
 1. Verify health checks pass
 2. Check error rates return to normal
 3. Confirm no data corruption
@@ -208,20 +216,24 @@ After any rollback:
 We follow [Keep a Changelog](https://keepachangelog.com/) format:
 
 ```markdown
-## [1.2.0] - 2024-03-15
+## [1.2.0] - 2026-03-15
 
 ### Added
+
 - New service catalog template system
 - Real-time deployment notifications
 
 ### Changed
+
 - Improved deployment pipeline performance
 
 ### Fixed
+
 - Environment variable injection in preview environments
 
 ### Security
-- Updated dependencies to patch CVE-2024-XXXX
+
+- Updated dependencies to patch CVE-2026-XXXX
 ```
 
 ### Automation
@@ -234,9 +246,9 @@ We follow [Keep a Changelog](https://keepachangelog.com/) format:
 
 ## Release Schedule
 
-| Type | Frequency | Day |
-|------|-----------|-----|
-| Major | Quarterly | First Monday of quarter |
-| Minor | Bi-weekly | Tuesday |
-| Patch | As needed | Any day |
-| Hotfix | Immediate | Any day |
+| Type   | Frequency | Day                     |
+| ------ | --------- | ----------------------- |
+| Major  | Quarterly | First Monday of quarter |
+| Minor  | Bi-weekly | Tuesday                 |
+| Patch  | As needed | Any day                 |
+| Hotfix | Immediate | Any day                 |

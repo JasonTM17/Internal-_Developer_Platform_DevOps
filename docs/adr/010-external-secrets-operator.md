@@ -6,7 +6,7 @@ Accepted
 
 ## Date
 
-2024-02-12
+2026-02-12
 
 ## Context
 
@@ -18,6 +18,7 @@ Kubernetes applications need access to secrets (database credentials, API keys, 
 - Works with ArgoCD GitOps workflow
 
 Options:
+
 1. **Sealed Secrets** - Encrypt secrets in Git, decrypt in cluster
 2. **External Secrets Operator (ESO)** - Sync from external stores
 3. **Vault Agent Injector** - Sidecar-based secret injection

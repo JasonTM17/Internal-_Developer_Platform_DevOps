@@ -6,7 +6,7 @@ Accepted
 
 ## Date
 
-2024-01-25
+2026-01-25
 
 ## Context
 
@@ -47,14 +47,14 @@ We will use **PostgreSQL 16** on **Amazon RDS** as the primary database.
 
 ## Configuration
 
-| Setting | Dev | Staging | Production |
-|---------|-----|---------|------------|
-| Instance | db.t3.medium | db.r6g.large | db.r6g.xlarge |
-| Storage | 20 GB gp3 | 100 GB gp3 | 500 GB io2 |
-| Multi-AZ | No | Yes | Yes |
-| Read Replicas | 0 | 1 | 2 |
-| Backup Retention | 1 day | 7 days | 35 days |
-| Encryption | Yes (KMS) | Yes (KMS) | Yes (CMK) |
+| Setting          | Dev          | Staging      | Production    |
+| ---------------- | ------------ | ------------ | ------------- |
+| Instance         | db.t3.medium | db.r6g.large | db.r6g.xlarge |
+| Storage          | 20 GB gp3    | 100 GB gp3   | 500 GB io2    |
+| Multi-AZ         | No           | Yes          | Yes           |
+| Read Replicas    | 0            | 1            | 2             |
+| Backup Retention | 1 day        | 7 days       | 35 days       |
+| Encryption       | Yes (KMS)    | Yes (KMS)    | Yes (CMK)     |
 
 ## Consequences
 

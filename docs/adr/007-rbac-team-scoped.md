@@ -6,7 +6,7 @@ Accepted
 
 ## Date
 
-2024-02-05
+2026-02-05
 
 ## Context
 
@@ -37,13 +37,13 @@ Permissions are evaluated as:
 
 ## Role Hierarchy
 
-| Role | Catalog | Deploy | Infrastructure | Team Mgmt | Audit |
-|------|---------|--------|---------------|-----------|-------|
-| org-admin | CRUD | All envs | All | All | Full |
-| team-admin | CRUD (own) | All envs (own) | Request | Own team | Own team |
-| deployer | Read | Dev+Staging (own) | None | None | Own team |
-| developer | Read | Dev (own) | None | None | Own |
-| viewer | Read | None | None | None | None |
+| Role       | Catalog    | Deploy            | Infrastructure | Team Mgmt | Audit    |
+| ---------- | ---------- | ----------------- | -------------- | --------- | -------- |
+| org-admin  | CRUD       | All envs          | All            | All       | Full     |
+| team-admin | CRUD (own) | All envs (own)    | Request        | Own team  | Own team |
+| deployer   | Read       | Dev+Staging (own) | None           | None      | Own team |
+| developer  | Read       | Dev (own)         | None           | None      | Own      |
+| viewer     | Read       | None              | None           | None      | None     |
 
 ## Implementation
 

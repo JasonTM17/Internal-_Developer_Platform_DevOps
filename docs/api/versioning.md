@@ -19,11 +19,11 @@ The major version is embedded in the URL path. Only major versions that introduc
 
 ### Current Versions
 
-| Version | Status | End of Life |
-|---------|--------|-------------|
-| v1 | Deprecated | 2024-06-30 |
-| v2 | Current (Stable) | — |
-| v3 | Beta (Preview) | — |
+| Version | Status           | End of Life |
+| ------- | ---------------- | ----------- |
+| v1      | Deprecated       | 2026-06-30  |
+| v2      | Current (Stable) | —           |
+| v3      | Beta (Preview)   | —           |
 
 ---
 
@@ -36,13 +36,13 @@ The major version is embedded in the URL path. Only major versions that introduc
 └──────────┘    └──────────┘    └──────────┘    └──────────┘    └──────────┘
 ```
 
-| Phase | Description | SLA |
-|-------|-------------|-----|
-| Alpha | Internal testing only | None |
-| Beta | Available with `X-API-Preview: true` header | Best effort |
-| Stable | Production-ready, fully supported | 99.9% uptime |
-| Deprecated | Still functional, migration recommended | 99.9% uptime |
-| Sunset | Removed, returns 410 Gone | N/A |
+| Phase      | Description                                 | SLA          |
+| ---------- | ------------------------------------------- | ------------ |
+| Alpha      | Internal testing only                       | None         |
+| Beta       | Available with `X-API-Preview: true` header | Best effort  |
+| Stable     | Production-ready, fully supported           | 99.9% uptime |
+| Deprecated | Still functional, migration recommended     | 99.9% uptime |
+| Sunset     | Removed, returns 410 Gone                   | N/A          |
 
 ---
 
@@ -95,9 +95,9 @@ When using a deprecated version, responses include:
 ```http
 HTTP/1.1 200 OK
 Deprecation: true
-Sunset: Sat, 30 Jun 2024 00:00:00 GMT
+Sunset: Sat, 30 Jun 2026 00:00:00 GMT
 Link: <https://api.platform.internal/v2/services>; rel="successor-version"
-X-Deprecation-Notice: API v1 is deprecated. Migrate to v2 by 2024-06-30.
+X-Deprecation-Notice: API v1 is deprecated. Migrate to v2 by 2026-06-30.
 ```
 
 ### Sunset Response
@@ -128,14 +128,14 @@ Content-Type: application/json
 
 ### Key Changes
 
-| Area | v1 | v2 |
-|------|----|----|
-| Pagination | `offset`/`limit` | `page`/`pageSize` with envelope |
-| Errors | Flat `{ error: string }` | Structured `{ error: { code, message, details } }` |
-| Timestamps | Unix epoch | ISO 8601 |
-| IDs | Integer | UUID v4 |
-| Auth | Basic Auth | OAuth2 / API Key |
-| Naming | camelCase mixed | Consistent camelCase |
+| Area       | v1                       | v2                                                 |
+| ---------- | ------------------------ | -------------------------------------------------- |
+| Pagination | `offset`/`limit`         | `page`/`pageSize` with envelope                    |
+| Errors     | Flat `{ error: string }` | Structured `{ error: { code, message, details } }` |
+| Timestamps | Unix epoch               | ISO 8601                                           |
+| IDs        | Integer                  | UUID v4                                            |
+| Auth       | Basic Auth               | OAuth2 / API Key                                   |
+| Naming     | camelCase mixed          | Consistent camelCase                               |
 
 ### Endpoint Mapping
 
@@ -191,11 +191,11 @@ curl https://api.platform.internal/v2/services \
 
 ## SDK Version Compatibility
 
-| SDK Version | API v1 | API v2 | API v3 (Beta) |
-|-------------|--------|--------|----------------|
-| @idp/sdk@1.x | ✅ | ❌ | ❌ |
-| @idp/sdk@2.x | ⚠️ compat | ✅ | ❌ |
-| @idp/sdk@3.x | ❌ | ✅ | ✅ (opt-in) |
+| SDK Version  | API v1    | API v2 | API v3 (Beta) |
+| ------------ | --------- | ------ | ------------- |
+| @idp/sdk@1.x | ✅        | ❌     | ❌            |
+| @idp/sdk@2.x | ⚠️ compat | ✅     | ❌            |
+| @idp/sdk@3.x | ❌        | ✅     | ✅ (opt-in)   |
 
 ---
 

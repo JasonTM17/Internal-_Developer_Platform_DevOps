@@ -72,7 +72,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - API documentation with OpenAPI spec, SDK guide, and webhook reference
 - Compliance documentation (SOC2 controls, data classification, encryption standards)
 
-## [0.1.0] - 2024-01-15
+## [0.1.0] - 2026-01-15
 
 ### Added
 

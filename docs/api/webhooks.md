@@ -30,7 +30,7 @@ curl -X POST https://api.platform.internal/v2/webhooks \
   "events": ["deployment.succeeded", "deployment.failed", "environment.created"],
   "active": true,
   "description": "Production deployment notifications",
-  "createdAt": "2024-01-15T10:30:00Z",
+  "createdAt": "2026-01-15T10:30:00Z",
   "lastDelivery": null
 }
 ```
@@ -41,51 +41,51 @@ curl -X POST https://api.platform.internal/v2/webhooks \
 
 ### Deployment Events
 
-| Event | Description |
-|-------|-------------|
-| `deployment.created` | New deployment initiated |
-| `deployment.started` | Deployment execution began |
-| `deployment.succeeded` | Deployment completed successfully |
-| `deployment.failed` | Deployment failed |
-| `deployment.rolled_back` | Deployment was rolled back |
-| `deployment.approved` | Manual approval granted |
-| `deployment.rejected` | Manual approval rejected |
+| Event                    | Description                       |
+| ------------------------ | --------------------------------- |
+| `deployment.created`     | New deployment initiated          |
+| `deployment.started`     | Deployment execution began        |
+| `deployment.succeeded`   | Deployment completed successfully |
+| `deployment.failed`      | Deployment failed                 |
+| `deployment.rolled_back` | Deployment was rolled back        |
+| `deployment.approved`    | Manual approval granted           |
+| `deployment.rejected`    | Manual approval rejected          |
 
 ### Environment Events
 
-| Event | Description |
-|-------|-------------|
-| `environment.created` | Environment provisioning started |
-| `environment.ready` | Environment is active and ready |
-| `environment.updated` | Environment configuration changed |
-| `environment.destroying` | Environment teardown initiated |
-| `environment.destroyed` | Environment fully removed |
-| `environment.failed` | Environment provisioning failed |
+| Event                    | Description                       |
+| ------------------------ | --------------------------------- |
+| `environment.created`    | Environment provisioning started  |
+| `environment.ready`      | Environment is active and ready   |
+| `environment.updated`    | Environment configuration changed |
+| `environment.destroying` | Environment teardown initiated    |
+| `environment.destroyed`  | Environment fully removed         |
+| `environment.failed`     | Environment provisioning failed   |
 
 ### Service Events
 
-| Event | Description |
-|-------|-------------|
-| `service.created` | New service registered |
-| `service.updated` | Service metadata updated |
-| `service.deleted` | Service deregistered |
+| Event                    | Description                   |
+| ------------------------ | ----------------------------- |
+| `service.created`        | New service registered        |
+| `service.updated`        | Service metadata updated      |
+| `service.deleted`        | Service deregistered          |
 | `service.health_changed` | Service health status changed |
 
 ### Pipeline Events
 
-| Event | Description |
-|-------|-------------|
-| `pipeline.started` | Pipeline run started |
+| Event                | Description            |
+| -------------------- | ---------------------- |
+| `pipeline.started`   | Pipeline run started   |
 | `pipeline.succeeded` | Pipeline run completed |
-| `pipeline.failed` | Pipeline run failed |
+| `pipeline.failed`    | Pipeline run failed    |
 
 ### Security Events
 
-| Event | Description |
-|-------|-------------|
-| `secret.rotated` | Secret was automatically rotated |
-| `secret.expiring` | Secret approaching expiration (7 days) |
-| `vulnerability.detected` | New vulnerability found in a service |
+| Event                    | Description                            |
+| ------------------------ | -------------------------------------- |
+| `secret.rotated`         | Secret was automatically rotated       |
+| `secret.expiring`        | Secret approaching expiration (7 days) |
+| `vulnerability.detected` | New vulnerability found in a service   |
 
 ---
 
@@ -97,7 +97,7 @@ All webhook payloads follow a consistent structure:
 {
   "id": "evt_f8a9b2c3d4e5",
   "type": "deployment.succeeded",
-  "timestamp": "2024-01-15T14:30:00Z",
+  "timestamp": "2026-01-15T14:30:00Z",
   "version": "1",
   "data": {
     "deployment": {
@@ -146,7 +146,7 @@ function verifyWebhookSignature(
   payload: string,
   signature: string,
   timestamp: string,
-  secret: string
+  secret: string,
 ): boolean {
   // Reject if timestamp is older than 5 minutes (replay protection)
   const age = Math.abs(Date.now() / 1000 - parseInt(timestamp));
@@ -156,18 +156,12 @@ function verifyWebhookSignature(
 
   // Compute expected signature
   const signedContent = `${timestamp}.${payload}`;
-  const expectedSignature = crypto
-    .createHmac('sha256', secret)
-    .update(signedContent)
-    .digest('hex');
+  const expectedSignature = crypto.createHmac('sha256', secret).update(signedContent).digest('hex');
 
   const expected = `v1=${expectedSignature}`;
 
   // Constant-time comparison to prevent timing attacks
-  return crypto.timingSafeEqual(
-    Buffer.from(signature),
-    Buffer.from(expected)
-  );
+  return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
 }
 ```
 
@@ -213,26 +207,28 @@ app.post('/webhooks/idp', express.raw({ type: 'application/json' }), (req, res) 
 
 Failed deliveries are retried with exponential backoff:
 
-| Attempt | Delay | Total Elapsed |
-|---------|-------|---------------|
-| 1 | Immediate | 0s |
-| 2 | 30 seconds | 30s |
-| 3 | 2 minutes | 2.5 min |
-| 4 | 10 minutes | 12.5 min |
-| 5 | 30 minutes | 42.5 min |
-| 6 | 1 hour | 1h 42min |
-| 7 | 4 hours | 5h 42min |
-| 8 (final) | 8 hours | 13h 42min |
+| Attempt   | Delay      | Total Elapsed |
+| --------- | ---------- | ------------- |
+| 1         | Immediate  | 0s            |
+| 2         | 30 seconds | 30s           |
+| 3         | 2 minutes  | 2.5 min       |
+| 4         | 10 minutes | 12.5 min      |
+| 5         | 30 minutes | 42.5 min      |
+| 6         | 1 hour     | 1h 42min      |
+| 7         | 4 hours    | 5h 42min      |
+| 8 (final) | 8 hours    | 13h 42min     |
 
 ### Success Criteria
 
 A delivery is considered successful when:
+
 - Your endpoint responds with HTTP 2xx within 30 seconds
 - Any non-2xx response triggers a retry
 
 ### Automatic Disabling
 
 Webhooks are automatically disabled after:
+
 - 8 consecutive failed delivery attempts for a single event
 - 95% failure rate over a 24-hour period (minimum 10 deliveries)
 

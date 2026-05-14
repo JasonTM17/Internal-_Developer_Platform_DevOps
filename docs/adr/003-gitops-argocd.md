@@ -6,11 +6,12 @@ Accepted
 
 ## Date
 
-2024-01-20
+2026-01-20
 
 ## Context
 
 We need a deployment strategy that provides:
+
 - Declarative infrastructure and application state
 - Full audit trail of all changes
 - Easy rollback capabilities
@@ -18,6 +19,7 @@ We need a deployment strategy that provides:
 - Self-healing capabilities
 
 Options considered:
+
 1. **Push-based CI/CD** (GitHub Actions deploys directly to clusters)
 2. **Pull-based GitOps with ArgoCD**
 3. **Pull-based GitOps with Flux**

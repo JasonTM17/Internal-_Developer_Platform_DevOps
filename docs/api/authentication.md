@@ -65,16 +65,16 @@ curl -X POST https://auth.platform.internal/oauth2/token \
 
 The platform validates the following JWT claims:
 
-| Claim | Description | Required |
-|-------|-------------|----------|
-| `sub` | User identifier | Yes |
-| `iss` | Token issuer (must match configured IdP) | Yes |
-| `aud` | Audience (must include `platform-api`) | Yes |
-| `exp` | Expiration time | Yes |
-| `iat` | Issued at time | Yes |
-| `teams` | Team memberships | No |
-| `roles` | Platform roles | No |
-| `scope` | Granted scopes | Yes |
+| Claim   | Description                              | Required |
+| ------- | ---------------------------------------- | -------- |
+| `sub`   | User identifier                          | Yes      |
+| `iss`   | Token issuer (must match configured IdP) | Yes      |
+| `aud`   | Audience (must include `platform-api`)   | Yes      |
+| `exp`   | Expiration time                          | Yes      |
+| `iat`   | Issued at time                           | Yes      |
+| `teams` | Team memberships                         | No       |
+| `roles` | Platform roles                           | No       |
+| `scope` | Granted scopes                           | Yes      |
 
 ---
 
@@ -103,8 +103,8 @@ curl -X POST https://api.platform.internal/v2/api-keys \
   "name": "ci-pipeline-key",
   "key": "idp_live_k1a2b3c4d5e6f7g8h9i0...",
   "scopes": ["services:read", "deployments:write"],
-  "createdAt": "2024-01-15T10:30:00Z",
-  "expiresAt": "2024-04-15T10:30:00Z"
+  "createdAt": "2026-01-15T10:30:00Z",
+  "expiresAt": "2026-04-15T10:30:00Z"
 }
 ```
 
@@ -141,28 +141,28 @@ curl -X DELETE https://api.platform.internal/v2/api-keys/key_2a4f8b3c \
 
 ### Available Scopes
 
-| Scope | Description |
-|-------|-------------|
-| `platform:read` | Read access to all platform resources |
-| `platform:write` | Write access to all platform resources |
-| `services:read` | Read service catalog |
-| `services:write` | Create/update services |
-| `deployments:read` | View deployments |
-| `deployments:write` | Trigger deployments |
-| `environments:read` | View environments |
-| `environments:write` | Provision/destroy environments |
-| `secrets:read` | List secret metadata |
-| `secrets:write` | Create/update secrets |
-| `admin` | Full administrative access |
+| Scope                | Description                            |
+| -------------------- | -------------------------------------- |
+| `platform:read`      | Read access to all platform resources  |
+| `platform:write`     | Write access to all platform resources |
+| `services:read`      | Read service catalog                   |
+| `services:write`     | Create/update services                 |
+| `deployments:read`   | View deployments                       |
+| `deployments:write`  | Trigger deployments                    |
+| `environments:read`  | View environments                      |
+| `environments:write` | Provision/destroy environments         |
+| `secrets:read`       | List secret metadata                   |
+| `secrets:write`      | Create/update secrets                  |
+| `admin`              | Full administrative access             |
 
 ### Role-Based Access
 
-| Role | Default Scopes |
-|------|---------------|
-| `viewer` | `platform:read` |
-| `developer` | `services:read`, `services:write`, `deployments:read`, `deployments:write`, `environments:read` |
-| `platform-engineer` | All scopes except `admin` |
-| `admin` | All scopes |
+| Role                | Default Scopes                                                                                  |
+| ------------------- | ----------------------------------------------------------------------------------------------- |
+| `viewer`            | `platform:read`                                                                                 |
+| `developer`         | `services:read`, `services:write`, `deployments:read`, `deployments:write`, `environments:read` |
+| `platform-engineer` | All scopes except `admin`                                                                       |
+| `admin`             | All scopes                                                                                      |
 
 ---
 

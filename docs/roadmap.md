@@ -6,7 +6,7 @@ Build the most developer-friendly internal platform that eliminates infrastructu
 
 ---
 
-## Current Quarter (Q1 2024)
+## Current Quarter (Q1 2026)
 
 ### Completed
 
@@ -32,82 +32,82 @@ Build the most developer-friendly internal platform that eliminates infrastructu
 
 ---
 
-## Next Quarter (Q2 2024)
+## Next Quarter (Q2 2026)
 
 ### Platform Core
 
-| Feature | Priority | Description |
-|---------|----------|-------------|
-| Service mesh (Istio) | P1 | mTLS, traffic management, observability |
-| Multi-cluster | P1 | Deploy across regions for HA |
-| Feature flags | P2 | LaunchDarkly integration |
-| A/B testing framework | P2 | Traffic splitting with metrics |
+| Feature               | Priority | Description                             |
+| --------------------- | -------- | --------------------------------------- |
+| Service mesh (Istio)  | P1       | mTLS, traffic management, observability |
+| Multi-cluster         | P1       | Deploy across regions for HA            |
+| Feature flags         | P2       | LaunchDarkly integration                |
+| A/B testing framework | P2       | Traffic splitting with metrics          |
 
 ### Developer Experience
 
-| Feature | Priority | Description |
-|---------|----------|-------------|
-| CLI v2 | P1 | Improved developer CLI with plugins |
-| IDE extensions | P2 | VS Code extension for platform operations |
-| Service scaffolding v2 | P2 | More templates, customizable |
-| Local development mode | P2 | Tilt/Skaffold integration |
+| Feature                | Priority | Description                               |
+| ---------------------- | -------- | ----------------------------------------- |
+| CLI v2                 | P1       | Improved developer CLI with plugins       |
+| IDE extensions         | P2       | VS Code extension for platform operations |
+| Service scaffolding v2 | P2       | More templates, customizable              |
+| Local development mode | P2       | Tilt/Skaffold integration                 |
 
 ### Observability
 
-| Feature | Priority | Description |
-|---------|----------|-------------|
-| Distributed tracing (Tempo) | P1 | Full request tracing |
-| Log correlation | P1 | Trace ID in all logs |
-| Custom metrics SDK | P2 | Easy business metrics |
-| Anomaly detection | P3 | ML-based alerting |
+| Feature                     | Priority | Description           |
+| --------------------------- | -------- | --------------------- |
+| Distributed tracing (Tempo) | P1       | Full request tracing  |
+| Log correlation             | P1       | Trace ID in all logs  |
+| Custom metrics SDK          | P2       | Easy business metrics |
+| Anomaly detection           | P3       | ML-based alerting     |
 
 ---
 
-## Q3 2024
+## Q3 2026
 
 ### Platform Maturity
 
-| Feature | Priority | Description |
-|---------|----------|-------------|
-| Disaster recovery automation | P1 | Automated failover and recovery |
-| Chaos engineering | P2 | Litmus/Chaos Mesh integration |
-| Policy as Code (OPA) | P2 | Automated compliance checks |
-| Database as a Service | P2 | Self-service database provisioning |
+| Feature                      | Priority | Description                        |
+| ---------------------------- | -------- | ---------------------------------- |
+| Disaster recovery automation | P1       | Automated failover and recovery    |
+| Chaos engineering            | P2       | Litmus/Chaos Mesh integration      |
+| Policy as Code (OPA)         | P2       | Automated compliance checks        |
+| Database as a Service        | P2       | Self-service database provisioning |
 
 ### Scale & Performance
 
-| Feature | Priority | Description |
-|---------|----------|-------------|
-| Edge computing | P2 | CloudFront Functions / Lambda@Edge |
-| Event-driven architecture | P2 | NATS/EventBridge integration |
-| Caching layer | P3 | Managed Redis with auto-scaling |
-| CDN optimization | P3 | Intelligent cache invalidation |
+| Feature                   | Priority | Description                        |
+| ------------------------- | -------- | ---------------------------------- |
+| Edge computing            | P2       | CloudFront Functions / Lambda@Edge |
+| Event-driven architecture | P2       | NATS/EventBridge integration       |
+| Caching layer             | P3       | Managed Redis with auto-scaling    |
+| CDN optimization          | P3       | Intelligent cache invalidation     |
 
 ---
 
-## Q4 2024
+## Q4 2026
 
 ### Advanced Capabilities
 
-| Feature | Priority | Description |
-|---------|----------|-------------|
-| AI/ML platform | P2 | Model serving infrastructure |
-| Data platform integration | P2 | Unified data pipeline management |
-| Compliance automation | P2 | SOC 2 continuous compliance |
-| Cost optimization engine | P3 | Automated right-sizing recommendations |
+| Feature                   | Priority | Description                            |
+| ------------------------- | -------- | -------------------------------------- |
+| AI/ML platform            | P2       | Model serving infrastructure           |
+| Data platform integration | P2       | Unified data pipeline management       |
+| Compliance automation     | P2       | SOC 2 continuous compliance            |
+| Cost optimization engine  | P3       | Automated right-sizing recommendations |
 
 ### Ecosystem
 
-| Feature | Priority | Description |
-|---------|----------|-------------|
-| Partner integrations | P2 | Datadog, PagerDuty, Jira deep integration |
-| Open source plugins | P3 | Community plugin ecosystem |
-| Platform API v3 | P3 | GraphQL support, streaming |
-| Mobile app | P3 | On-call and monitoring on mobile |
+| Feature              | Priority | Description                               |
+| -------------------- | -------- | ----------------------------------------- |
+| Partner integrations | P2       | Datadog, PagerDuty, Jira deep integration |
+| Open source plugins  | P3       | Community plugin ecosystem                |
+| Platform API v3      | P3       | GraphQL support, streaming                |
+| Mobile app           | P3       | On-call and monitoring on mobile          |
 
 ---
 
-## Long-term Vision (2025+)
+## Long-term Vision (2026+)
 
 ### Platform as a Product
 
@@ -130,12 +130,12 @@ Build the most developer-friendly internal platform that eliminates infrastructu
 
 ### Prioritization Framework
 
-| Factor | Weight | Description |
-|--------|--------|-------------|
-| Developer impact | 40% | How many developers benefit? |
-| Reliability impact | 25% | Does it improve SLOs? |
-| Strategic alignment | 20% | Aligns with company goals? |
-| Effort | 15% | Implementation complexity |
+| Factor              | Weight | Description                  |
+| ------------------- | ------ | ---------------------------- |
+| Developer impact    | 40%    | How many developers benefit? |
+| Reliability impact  | 25%    | Does it improve SLOs?        |
+| Strategic alignment | 20%    | Aligns with company goals?   |
+| Effort              | 15%    | Implementation complexity    |
 
 ### Requesting Features
 
@@ -148,8 +148,8 @@ Build the most developer-friendly internal platform that eliminates infrastructu
 
 ## Changelog
 
-| Date | Change |
-|------|--------|
-| 2024-01-15 | Added Q1 completion status |
-| 2024-01-01 | Initial roadmap published |
-| 2023-12-15 | Roadmap planning session |
+| Date       | Change                     |
+| ---------- | -------------------------- |
+| 2026-01-15 | Added Q1 completion status |
+| 2026-01-01 | Initial roadmap published  |
+| 2023-12-15 | Roadmap planning session   |

@@ -6,7 +6,7 @@ Accepted
 
 ## Date
 
-2024-02-08
+2026-02-08
 
 ## Context
 
@@ -19,6 +19,7 @@ We will implement a **hash chain** (blockchain-inspired) for audit log integrity
 ## Design
 
 Each audit entry includes a hash computed from:
+
 ```
 hash[n] = SHA-256(hash[n-1] + timestamp + actor + action + resource + metadata)
 ```
@@ -41,7 +42,7 @@ CREATE TABLE audit_log (
   metadata      JSONB,
   previous_hash VARCHAR(64) NOT NULL,
   entry_hash    VARCHAR(64) NOT NULL,
-  
+
   CONSTRAINT valid_hash CHECK (length(entry_hash) = 64)
 );
 ```

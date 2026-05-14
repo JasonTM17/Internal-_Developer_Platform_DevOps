@@ -8,11 +8,11 @@ All list endpoints in the IDP Platform API return paginated results. The API use
 
 ## Request Parameters
 
-| Parameter | Type | Default | Range | Description |
-|-----------|------|---------|-------|-------------|
-| `page` | integer | 1 | 1–10,000 | Page number (1-indexed) |
-| `pageSize` | integer | 20 | 1–100 | Items per page |
-| `sort` | string | `-updatedAt` | varies | Sort field with direction prefix |
+| Parameter  | Type    | Default      | Range    | Description                      |
+| ---------- | ------- | ------------ | -------- | -------------------------------- |
+| `page`     | integer | 1            | 1–10,000 | Page number (1-indexed)          |
+| `pageSize` | integer | 20           | 1–100    | Items per page                   |
+| `sort`     | string  | `-updatedAt` | varies   | Sort field with direction prefix |
 
 ### Example Request
 
@@ -30,8 +30,8 @@ All paginated responses follow a consistent envelope:
 ```json
 {
   "data": [
-    { "id": "svc_001", "name": "payment-service", "..." : "..." },
-    { "id": "svc_002", "name": "auth-service", "..." : "..." }
+    { "id": "svc_001", "name": "payment-service", "...": "..." },
+    { "id": "svc_002", "name": "auth-service", "...": "..." }
   ],
   "pagination": {
     "page": 2,
@@ -46,14 +46,14 @@ All paginated responses follow a consistent envelope:
 
 ### Pagination Object
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `page` | integer | Current page number |
-| `pageSize` | integer | Items per page |
-| `total` | integer | Total number of items matching the query |
-| `totalPages` | integer | Total number of pages |
-| `hasNext` | boolean | Whether a next page exists |
-| `hasPrevious` | boolean | Whether a previous page exists |
+| Field         | Type    | Description                              |
+| ------------- | ------- | ---------------------------------------- |
+| `page`        | integer | Current page number                      |
+| `pageSize`    | integer | Items per page                           |
+| `total`       | integer | Total number of items matching the query |
+| `totalPages`  | integer | Total number of pages                    |
+| `hasNext`     | boolean | Whether a next page exists               |
+| `hasPrevious` | boolean | Whether a previous page exists           |
 
 ### Response Headers
 
@@ -73,14 +73,14 @@ Link: <https://api.platform.internal/v2/services?page=3&pageSize=10>; rel="next"
 
 Sort results using the `sort` parameter. Prefix with `-` for descending order:
 
-| Value | Description |
-|-------|-------------|
-| `name` | Sort by name ascending |
-| `-name` | Sort by name descending |
-| `createdAt` | Sort by creation date ascending |
+| Value        | Description                                     |
+| ------------ | ----------------------------------------------- |
+| `name`       | Sort by name ascending                          |
+| `-name`      | Sort by name descending                         |
+| `createdAt`  | Sort by creation date ascending                 |
 | `-createdAt` | Sort by creation date descending (newest first) |
-| `-updatedAt` | Sort by last update descending (default) |
-| `tier` | Sort by service tier |
+| `-updatedAt` | Sort by last update descending (default)        |
+| `tier`       | Sort by service tier                            |
 
 ### Multi-field Sorting
 
@@ -111,7 +111,7 @@ For advanced filtering, some endpoints support operators:
 
 ```bash
 # Services created after a specific date
-GET /v2/services?createdAt[gte]=2024-01-01T00:00:00Z
+GET /v2/services?createdAt[gte]=2026-01-01T00:00:00Z
 
 # Deployments with status in a set
 GET /v2/deployments?status[in]=failed,rolled_back
@@ -144,6 +144,7 @@ GET /v2/deployments?cursor=eyJpZCI6ImRlcF8wNDIiLCJ0cyI6MTcwNTMxMjgwMH0&limit=50
 ```
 
 > Cursor-based pagination is recommended for:
+>
 > - Deployment event streams
 > - Audit log queries
 > - Any dataset that changes frequently
@@ -180,7 +181,7 @@ When you know the total count, fetch pages in parallel:
 ```typescript
 async function fetchAllPages<T>(
   fetcher: (page: number) => Promise<PaginatedResponse<T>>,
-  pageSize: number = 100
+  pageSize: number = 100,
 ): Promise<T[]> {
   // First request to get total
   const first = await fetcher(1);
@@ -189,12 +190,9 @@ async function fetchAllPages<T>(
   if (first.pagination.totalPages <= 1) return results;
 
   // Fetch remaining pages in parallel
-  const pages = Array.from(
-    { length: first.pagination.totalPages - 1 },
-    (_, i) => i + 2
-  );
+  const pages = Array.from({ length: first.pagination.totalPages - 1 }, (_, i) => i + 2);
 
-  const remaining = await Promise.all(pages.map(p => fetcher(p)));
+  const remaining = await Promise.all(pages.map((p) => fetcher(p)));
   for (const page of remaining) {
     results.push(...page.data);
   }
@@ -223,14 +221,14 @@ async function fetchAllPages<T>(
 
 ## Edge Cases
 
-| Scenario | Behavior |
-|----------|----------|
-| `page` exceeds `totalPages` | Returns empty `data` array with correct pagination metadata |
-| `pageSize` > 100 | Clamped to 100 |
-| `pageSize` < 1 | Returns 400 Bad Request |
-| Negative `page` | Returns 400 Bad Request |
+| Scenario                    | Behavior                                                          |
+| --------------------------- | ----------------------------------------------------------------- |
+| `page` exceeds `totalPages` | Returns empty `data` array with correct pagination metadata       |
+| `pageSize` > 100            | Clamped to 100                                                    |
+| `pageSize` < 1              | Returns 400 Bad Request                                           |
+| Negative `page`             | Returns 400 Bad Request                                           |
 | Items deleted between pages | Some items may be skipped (use cursor pagination for consistency) |
-| Concurrent writes | Total count is eventually consistent (±1 second) |
+| Concurrent writes           | Total count is eventually consistent (±1 second)                  |
 
 ---
 

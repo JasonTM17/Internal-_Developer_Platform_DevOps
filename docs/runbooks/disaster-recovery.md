@@ -2,26 +2,28 @@
 
 ## DR Strategy Overview
 
-| Component | Strategy | RPO | RTO |
-|-----------|----------|-----|-----|
-| EKS Cluster | Multi-AZ + DR region | 0 | 15 min |
-| RDS PostgreSQL | Multi-AZ + Cross-region replica | < 5 min | 30 min |
-| Redis | Multi-AZ cluster | 0 (cache rebuild) | 5 min |
-| S3 Data | Cross-region replication | < 15 min | 5 min |
-| Secrets (Vault) | Cross-region replication | < 1 min | 10 min |
-| DNS | Route 53 health checks | N/A | 60 sec |
+| Component       | Strategy                        | RPO               | RTO    |
+| --------------- | ------------------------------- | ----------------- | ------ |
+| EKS Cluster     | Multi-AZ + DR region            | 0                 | 15 min |
+| RDS PostgreSQL  | Multi-AZ + Cross-region replica | < 5 min           | 30 min |
+| Redis           | Multi-AZ cluster                | 0 (cache rebuild) | 5 min  |
+| S3 Data         | Cross-region replication        | < 15 min          | 5 min  |
+| Secrets (Vault) | Cross-region replication        | < 1 min           | 10 min |
+| DNS             | Route 53 health checks          | N/A               | 60 sec |
 
 ## Scenario 1: Single AZ Failure
 
 **Impact**: Partial capacity reduction, automatic recovery
 
 ### Automatic Response
+
 - EKS: Pods rescheduled to healthy AZs (< 2 min)
 - RDS: Automatic failover to standby (< 2 min)
 - Redis: Replica promotion (< 30 sec)
 - ALB: Health checks remove unhealthy targets (< 30 sec)
 
 ### Manual Verification
+
 ```bash
 # Check node distribution
 kubectl get nodes -o wide | awk '{print $7}' | sort | uniq -c
@@ -97,7 +99,7 @@ curl -sf https://api.idp.example.com/ready
 aws rds restore-db-instance-to-point-in-time \
   --source-db-instance-identifier idp-production \
   --target-db-instance-identifier idp-production-pitr \
-  --restore-time "2024-01-15T10:30:00Z" \
+  --restore-time "2026-01-15T10:30:00Z" \
   --db-instance-class db.r6g.xlarge
 
 # 3. Verify restored data
@@ -115,12 +117,12 @@ kubectl rollout restart deployment/idp-api -n idp-production
 
 ## DR Testing Schedule
 
-| Test Type | Frequency | Last Tested | Next Test |
-|-----------|-----------|-------------|-----------|
-| AZ failover simulation | Monthly | 2024-01-10 | 2024-02-10 |
-| Database failover | Monthly | 2024-01-15 | 2024-02-15 |
-| Full DR activation | Quarterly | 2024-01-01 | 2024-04-01 |
-| Backup restore verification | Weekly | Automated | Automated |
+| Test Type                   | Frequency | Last Tested | Next Test  |
+| --------------------------- | --------- | ----------- | ---------- |
+| AZ failover simulation      | Monthly   | 2026-01-10  | 2026-02-10 |
+| Database failover           | Monthly   | 2026-01-15  | 2026-02-15 |
+| Full DR activation          | Quarterly | 2026-01-01  | 2026-04-01 |
+| Backup restore verification | Weekly    | Automated   | Automated  |
 
 ## Communication During DR
 
