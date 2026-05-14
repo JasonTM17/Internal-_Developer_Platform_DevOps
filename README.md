@@ -43,6 +43,16 @@ A production-ready Internal Developer Platform that enables engineering teams to
 | :--------------------------------------------------------: | :----------------------------------------------: | :----------------------------------------------------------: |
 | ![Deployments](docs/assets/screenshots/04-deployments.png) | ![Health](docs/assets/screenshots/05-health.png) | ![Environments](docs/assets/screenshots/06-environments.png) |
 
+### Observability Stack
+
+|                      Grafana                       |                        Prometheus                        |                       API Docs                       |
+| :------------------------------------------------: | :------------------------------------------------------: | :--------------------------------------------------: |
+| ![Grafana](docs/assets/screenshots/07-grafana.png) | ![Prometheus](docs/assets/screenshots/08-prometheus.png) | ![API Docs](docs/assets/screenshots/13-api-docs.png) |
+
+|                       Grafana Dashboards                        |                      Prometheus Targets                       |
+| :-------------------------------------------------------------: | :-----------------------------------------------------------: |
+| ![Dashboards](docs/assets/screenshots/11-grafana-dashboard.png) | ![Targets](docs/assets/screenshots/12-prometheus-targets.png) |
+
 ---
 
 ## Architecture
