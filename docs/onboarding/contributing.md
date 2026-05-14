@@ -35,31 +35,31 @@ We use [Conventional Commits](https://www.conventionalcommits.org/):
 
 ### Types
 
-| Type | Description |
-|------|-------------|
-| `feat` | New feature |
-| `fix` | Bug fix |
-| `docs` | Documentation only |
-| `style` | Formatting, no code change |
+| Type       | Description                             |
+| ---------- | --------------------------------------- |
+| `feat`     | New feature                             |
+| `fix`      | Bug fix                                 |
+| `docs`     | Documentation only                      |
+| `style`    | Formatting, no code change              |
 | `refactor` | Code change that neither fixes nor adds |
-| `perf` | Performance improvement |
-| `test` | Adding or updating tests |
-| `chore` | Build process, tooling, dependencies |
-| `ci` | CI/CD changes |
+| `perf`     | Performance improvement                 |
+| `test`     | Adding or updating tests                |
+| `chore`    | Build process, tooling, dependencies    |
+| `ci`       | CI/CD changes                           |
 
 ### Scopes
 
-| Scope | Area |
-|-------|------|
-| `api` | Platform API |
-| `portal` | Developer Portal |
-| `infra` | Infrastructure |
-| `ci` | CI/CD pipelines |
-| `docker` | Docker configurations |
-| `helm` | Helm charts |
-| `monitoring` | Observability |
-| `security` | Security policies |
-| `deps` | Dependencies |
+| Scope        | Area                  |
+| ------------ | --------------------- |
+| `api`        | Platform API          |
+| `portal`     | Developer Portal      |
+| `infra`      | Infrastructure        |
+| `ci`         | CI/CD pipelines       |
+| `docker`     | Docker configurations |
+| `helm`       | Helm charts           |
+| `monitoring` | Observability         |
+| `security`   | Security policies     |
+| `deps`       | Dependencies          |
 
 ### Examples
 
@@ -76,9 +76,9 @@ ci(security): add container image signing with cosign
 ### Before Creating a PR
 
 1. Rebase on latest `develop`: `git rebase develop`
-2. Run full test suite: `npm test`
-3. Run linting: `npm run lint`
-4. Build successfully: `npx turbo build`
+2. Run full test suite: `pnpm test`
+3. Run linting: `pnpm lint`
+4. Build successfully: `pnpm turbo build`
 
 ### PR Requirements
 

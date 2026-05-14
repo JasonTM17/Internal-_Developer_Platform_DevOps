@@ -22,12 +22,14 @@
 ### 1. Install Tools
 
 **macOS (Homebrew):**
+
 ```bash
 brew install node@20 docker kubectl helm awscli jq yq
 brew install --cask docker
 ```
 
 **Ubuntu:**
+
 ```bash
 curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt-get install -y nodejs docker.io
@@ -103,11 +105,11 @@ docker compose up -d postgres redis
 
 # 2. Run API in development mode
 cd apps/api
-npm run dev
+pnpm dev
 
 # 3. Run Portal in development mode
 cd apps/portal
-npm run dev
+pnpm dev
 ```
 
 ## IDE Setup
@@ -160,10 +162,10 @@ docker compose exec postgres psql -U idp -d idp_dev
 
 ## Common Issues
 
-| Issue | Solution |
-|-------|----------|
-| Port 3000 in use | `lsof -i :3000` then kill the process |
-| Docker out of space | `docker system prune -a` |
-| Node modules issues | `rm -rf node_modules && npm ci` |
-| TypeScript errors after pull | `npx turbo build --filter=@idp/shared-types` |
-| Database connection refused | Wait for postgres healthcheck: `docker compose ps` |
+| Issue                        | Solution                                           |
+| ---------------------------- | -------------------------------------------------- |
+| Port 3000 in use             | `lsof -i :3000` then kill the process              |
+| Docker out of space          | `docker system prune -a`                           |
+| Node modules issues          | `rm -rf node_modules && pnpm install`              |
+| TypeScript errors after pull | `pnpm turbo build --filter=@idp/shared-types`      |
+| Database connection refused  | Wait for postgres healthcheck: `docker compose ps` |

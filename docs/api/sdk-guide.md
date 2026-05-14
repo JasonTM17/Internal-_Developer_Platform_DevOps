@@ -11,14 +11,11 @@ The IDP Platform provides official SDKs for TypeScript/JavaScript, Python, and G
 ### TypeScript / JavaScript
 
 ```bash
-# npm
-npm install @idp/sdk
+# pnpm
+pnpm add @idp/sdk
 
 # yarn
 yarn add @idp/sdk
-
-# pnpm
-pnpm add @idp/sdk
 ```
 
 ### Python
@@ -227,7 +224,7 @@ console.log(`Deployment ${deployment.id} status: ${deployment.status}`);
 ```typescript
 const deployment = await client.deployments.waitForCompletion('dep_xyz789', {
   pollInterval: 5000, // 5 seconds
-  timeout: 600000,    // 10 minutes
+  timeout: 600000, // 10 minutes
   onProgress: (status) => {
     console.log(`Status: ${status.status}, Phase: ${status.phase}`);
   },
@@ -332,9 +329,9 @@ try {
 const client = new PlatformClient({
   auth: { type: 'api-key', key: process.env.IDP_API_KEY! },
   // Custom configuration
-  timeout: 30000,           // 30 second timeout
-  retries: 3,              // Retry failed requests up to 3 times
-  retryDelay: 1000,        // Initial retry delay (exponential backoff)
+  timeout: 30000, // 30 second timeout
+  retries: 3, // Retry failed requests up to 3 times
+  retryDelay: 1000, // Initial retry delay (exponential backoff)
   userAgent: 'my-ci-tool/1.0',
   // Custom headers
   headers: {
@@ -381,7 +378,7 @@ The SDK powers the `idp` CLI tool:
 
 ```bash
 # Install CLI
-npm install -g @idp/cli
+pnpm install -g @idp/cli
 
 # Authenticate
 idp auth login

@@ -9,6 +9,7 @@ This guide will help you get up and running with the IDP in under 30 minutes.
 | Tool    | Version  | Purpose         |
 | ------- | -------- | --------------- |
 | Node.js | 20.x LTS | Runtime         |
+| pnpm    | 9.x+     | Package manager |
 | Docker  | 24.x+    | Local services  |
 | kubectl | 1.28+    | Kubernetes CLI  |
 | Helm    | 3.13+    | Package manager |
@@ -20,20 +21,20 @@ This guide will help you get up and running with the IDP in under 30 minutes.
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/JasonTM17/Internal-_Developer_Platform_DevOps.git
-cd Internal-_Developer_Platform_DevOps
+git clone https://github.com/JasonTM17/Internal_Developer_Platform_DevOps.git
+cd Internal_Developer_Platform_DevOps
 ```
 
 ### 2. Install Dependencies
 
 ```bash
-npm install
+pnpm install
 ```
 
 ### 3. Start Local Environment
 
 ```bash
-# Start all services (API, Portal, PostgreSQL, Redis)
+# Start all services (API, Portal, PostgreSQL, Redis, Prometheus, Grafana)
 docker compose up -d
 
 # Verify services are running
@@ -45,37 +46,41 @@ curl http://localhost:3000/health
 
 ```bash
 # Run all tests
-npm test
+pnpm test
 
 # Run specific service tests
-npx turbo test --filter=@idp/api
+pnpm --filter @idp/api test
 ```
 
 ### 5. Access the Platform
 
-| Service  | URL                        | Credentials             |
-| -------- | -------------------------- | ----------------------- |
-| Portal   | http://localhost:5173      | dev@idp.local / dev     |
-| API      | http://localhost:3000      | JWT token               |
-| API Docs | http://localhost:3000/docs | -                       |
-| pgAdmin  | http://localhost:5050      | admin@idp.local / admin |
-| Grafana  | http://localhost:3001      | admin / admin           |
+| Service    | URL                        | Credentials         |
+| ---------- | -------------------------- | ------------------- |
+| Portal     | http://localhost:5173      | dev@idp.local / dev |
+| API        | http://localhost:3000      | JWT token           |
+| API Docs   | http://localhost:3000/docs | -                   |
+| Grafana    | http://localhost:3001      | admin / admin       |
+| Prometheus | http://localhost:9090      | -                   |
 
 ## Project Structure
 
 ```
-idp-platform/
 ├── apps/
-│   ├── api/           # Platform API (Node.js + Express)
-│   └── portal/        # Developer Portal (React + Vite)
-├── packages/          # Shared libraries
+│   ├── api/           # Platform API (Node.js + Express + TypeScript)
+│   └── portal/        # Developer Portal (React + Vite + TypeScript)
+├── packages/
+│   ├── shared/        # Shared utilities and types
+│   ├── ui/            # Shared UI component library
+│   └── config/        # Shared ESLint, TypeScript, Prettier configs
 ├── infra/
-│   ├── terraform/     # Infrastructure as Code
-│   ├── helm/          # Kubernetes manifests
-│   ├── argocd/        # GitOps applications
-│   ├── monitoring/    # Observability configs
-│   └── security/      # Security policies
-├── docs/              # Documentation
+│   ├── terraform/     # Infrastructure as Code (10 modules)
+│   ├── kubernetes/    # K8s manifests and Helm charts
+│   ├── argocd/        # GitOps application definitions
+│   ├── istio/         # Service mesh configuration
+│   ├── flagger/       # Canary deployment automation
+│   ├── chaos/         # LitmusChaos experiments
+│   └── monitoring/    # Prometheus, Grafana, Loki, Jaeger
+├── docs/              # Documentation (ADRs, runbooks, API docs)
 ├── scripts/           # Automation scripts
 └── docker-compose.yaml
 ```
@@ -85,10 +90,10 @@ idp-platform/
 1. Create a feature branch: `git checkout -b feat/my-feature`
 2. Make changes and write tests
 3. Run locally: `docker compose up -d`
-4. Verify: `npm test && npm run lint`
+4. Verify: `pnpm test && pnpm lint`
 5. Commit: `git commit -m "feat(scope): description"`
 6. Push and create PR
-7. CI runs automatically
+7. CI runs automatically (lint, test, build, security scan)
 8. Get review and merge
 
 ## Getting Help

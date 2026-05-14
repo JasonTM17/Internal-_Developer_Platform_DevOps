@@ -77,10 +77,10 @@ If the deployment included a database migration:
 
 ```bash
 # 1. Check current migration version
-kubectl exec -n idp-production deploy/idp-api -- npm run db:version
+kubectl exec -n idp-production deploy/idp-api -- pnpm db:version
 
 # 2. Rollback migration (if reversible)
-kubectl exec -n idp-production deploy/idp-api -- npm run db:rollback
+kubectl exec -n idp-production deploy/idp-api -- pnpm db:rollback
 
 # 3. If migration is not reversible, apply compensating migration
 # Create a new migration that undoes the changes
