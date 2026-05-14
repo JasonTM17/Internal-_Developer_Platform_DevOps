@@ -2,9 +2,9 @@
 
 **Enterprise-grade platform engineering solution for modern DevOps teams**
 
-[![CI Pipeline](https://github.com/JasonTM17/Internal-_Developer_Platform_DevOps/actions/workflows/ci.yaml/badge.svg)](https://github.com/JasonTM17/Internal-_Developer_Platform_DevOps/actions/workflows/ci.yaml)
-[![Security Scan](https://github.com/JasonTM17/Internal-_Developer_Platform_DevOps/actions/workflows/security-scan.yaml/badge.svg)](https://github.com/JasonTM17/Internal-_Developer_Platform_DevOps/actions/workflows/security-scan.yaml)
-[![License](https://img.shields.io/github/license/JasonTM17/Internal-_Developer_Platform_DevOps)](https://github.com/JasonTM17/Internal-_Developer_Platform_DevOps/blob/main/LICENSE)
+[![CI Pipeline](https://github.com/JasonTM17/Internal_Developer_Platform_DevOps/actions/workflows/ci.yaml/badge.svg)](https://github.com/JasonTM17/Internal_Developer_Platform_DevOps/actions/workflows/ci.yaml)
+[![Security Scan](https://github.com/JasonTM17/Internal_Developer_Platform_DevOps/actions/workflows/security-scan.yaml/badge.svg)](https://github.com/JasonTM17/Internal_Developer_Platform_DevOps/actions/workflows/security-scan.yaml)
+[![License](https://img.shields.io/github/license/JasonTM17/Internal_Developer_Platform_DevOps)](https://github.com/JasonTM17/Internal_Developer_Platform_DevOps/blob/main/LICENSE)
 ![Node Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.4-blue?logo=typescript&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)
@@ -98,8 +98,8 @@ The IDP follows a monorepo architecture powered by Turborepo, featuring a React-
 
 ```bash
 # Clone the repository
-git clone https://github.com/JasonTM17/Internal-_Developer_Platform_DevOps.git
-cd Internal-_Developer_Platform_DevOps
+git clone https://github.com/JasonTM17/Internal_Developer_Platform_DevOps.git
+cd Internal_Developer_Platform_DevOps
 
 # Copy environment configuration
 cp .env.example .env
