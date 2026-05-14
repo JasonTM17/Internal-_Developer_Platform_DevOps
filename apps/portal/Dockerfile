@@ -38,7 +38,7 @@ COPY --from=deps /app/apps/portal/node_modules ./apps/portal/node_modules
 COPY --from=deps /app/packages ./packages
 COPY . .
 
-RUN pnpm --filter @idp/portal run build
+RUN pnpm --filter @idp/portal... run build
 
 # Stage 3: Production (Nginx)
 FROM nginx:1.25-alpine AS production
