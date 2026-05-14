@@ -3,8 +3,10 @@
 **Enterprise-grade platform engineering solution for modern DevOps teams**
 
 [![CI Pipeline](https://github.com/JasonTM17/Internal_Developer_Platform_DevOps/actions/workflows/ci.yaml/badge.svg)](https://github.com/JasonTM17/Internal_Developer_Platform_DevOps/actions/workflows/ci.yaml)
+[![Docker Build](https://github.com/JasonTM17/Internal_Developer_Platform_DevOps/actions/workflows/docker-build.yaml/badge.svg)](https://github.com/JasonTM17/Internal_Developer_Platform_DevOps/actions/workflows/docker-build.yaml)
 [![Security Scan](https://github.com/JasonTM17/Internal_Developer_Platform_DevOps/actions/workflows/security-scan.yaml/badge.svg)](https://github.com/JasonTM17/Internal_Developer_Platform_DevOps/actions/workflows/security-scan.yaml)
 [![License](https://img.shields.io/github/license/JasonTM17/Internal_Developer_Platform_DevOps)](https://github.com/JasonTM17/Internal_Developer_Platform_DevOps/blob/main/LICENSE)
+[![Release](https://img.shields.io/github/v/release/JasonTM17/Internal_Developer_Platform_DevOps?include_prereleases)](https://github.com/JasonTM17/Internal_Developer_Platform_DevOps/releases)
 ![Node Version](https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen?logo=node.js&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.4-blue?logo=typescript&logoColor=white)
 ![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)
