@@ -12,8 +12,6 @@ import {
   LinearProgress,
   Stack,
   Tooltip,
-  useTheme,
-  alpha,
 } from '@mui/material';
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -127,16 +125,10 @@ type ServiceStatus = 'healthy' | 'degraded' | 'down';
 
 // Circular gauge component for overall health score
 const HealthGauge: React.FC<{ score: number }> = ({ score }) => {
-  const theme = useTheme();
   const radius = 70;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (score / 100) * circumference;
-  const color =
-    score >= 95
-      ? theme.palette.success.main
-      : score >= 80
-        ? theme.palette.warning.main
-        : theme.palette.error.main;
+  const color = score >= 95 ? '#58E7AB' : score >= 80 ? '#F59E0B' : '#FA746F';
 
   return (
     <Box
@@ -153,7 +145,7 @@ const HealthGauge: React.FC<{ score: number }> = ({ score }) => {
           cy="90"
           r={radius}
           fill="none"
-          stroke={theme.palette.divider}
+          stroke="rgba(100, 117, 161, 0.15)"
           strokeWidth="10"
         />
         <circle
@@ -171,16 +163,10 @@ const HealthGauge: React.FC<{ score: number }> = ({ score }) => {
         />
       </svg>
       <Box sx={{ position: 'absolute', textAlign: 'center' }}>
-        <Typography
-          variant="h3"
-          sx={{ fontWeight: 700, color: theme.palette.text.primary, lineHeight: 1 }}
-        >
+        <Typography variant="h3" sx={{ fontWeight: 700, color: '#DEE5FF', lineHeight: 1 }}>
           {score}
         </Typography>
-        <Typography
-          variant="caption"
-          sx={{ color: theme.palette.text.secondary, fontSize: '0.7rem' }}
-        >
+        <Typography variant="caption" sx={{ color: '#6475A1', fontSize: '0.7rem' }}>
           Health Score
         </Typography>
       </Box>
@@ -189,7 +175,6 @@ const HealthGauge: React.FC<{ score: number }> = ({ score }) => {
 };
 
 export const HealthDashboard: React.FC = () => {
-  const theme = useTheme();
   const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
 
@@ -207,35 +192,41 @@ export const HealthDashboard: React.FC = () => {
     { color: string; bg: string; icon: React.ReactNode; label: string }
   > = {
     healthy: {
-      color: theme.palette.success.main,
-      bg: alpha(theme.palette.success.main, 0.12),
-      icon: <CheckCircleIcon sx={{ fontSize: 18, color: theme.palette.success.main }} />,
+      color: '#58E7AB',
+      bg: 'rgba(88, 231, 171, 0.1)',
+      icon: <CheckCircleIcon sx={{ fontSize: 18, color: '#58E7AB' }} />,
       label: t('health.status.healthy'),
     },
     degraded: {
-      color: theme.palette.warning.main,
-      bg: alpha(theme.palette.warning.main, 0.12),
-      icon: <WarningIcon sx={{ fontSize: 18, color: theme.palette.warning.main }} />,
+      color: '#F59E0B',
+      bg: 'rgba(245, 158, 11, 0.1)',
+      icon: <WarningIcon sx={{ fontSize: 18, color: '#F59E0B' }} />,
       label: t('health.status.degraded'),
     },
     down: {
-      color: theme.palette.error.main,
-      bg: alpha(theme.palette.error.main, 0.12),
-      icon: <ErrorIcon sx={{ fontSize: 18, color: theme.palette.error.main }} />,
+      color: '#FA746F',
+      bg: 'rgba(250, 116, 111, 0.1)',
+      icon: <ErrorIcon sx={{ fontSize: 18, color: '#FA746F' }} />,
       label: t('health.status.down'),
     },
   };
 
   const incidentColors: Record<string, string> = {
-    critical: theme.palette.error.main,
-    warning: theme.palette.warning.main,
-    info: theme.palette.primary.main,
+    critical: '#FA746F',
+    warning: '#F59E0B',
+    info: '#699CFF',
   };
 
   if (loading) {
     return (
       <Box sx={{ p: 3 }}>
-        <LinearProgress sx={{ borderRadius: 2 }} />
+        <LinearProgress
+          sx={{
+            borderRadius: 2,
+            bgcolor: 'rgba(100, 117, 161, 0.1)',
+            '& .MuiLinearProgress-bar': { bgcolor: '#699CFF' },
+          }}
+        />
       </Box>
     );
   }
@@ -245,18 +236,24 @@ export const HealthDashboard: React.FC = () => {
       <Box sx={{ mb: 4 }}>
         <Typography
           variant="h4"
-          sx={{ fontWeight: 700, color: theme.palette.text.primary, mb: 0.5 }}
+          sx={{ fontWeight: 700, color: '#DEE5FF', mb: 0.5, fontSize: '1.5rem' }}
         >
           {t('health.title')}
         </Typography>
-        <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+        <Typography variant="body2" sx={{ color: '#6475A1' }}>
           {t('health.subtitle')}
         </Typography>
       </Box>
 
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} md={4}>
-          <Card sx={{ height: '100%' }}>
+          <Card
+            sx={{
+              height: '100%',
+              bgcolor: '#0F1E3F',
+              border: '1px solid rgba(100, 117, 161, 0.2)',
+            }}
+          >
             <CardContent
               sx={{
                 display: 'flex',
@@ -267,7 +264,7 @@ export const HealthDashboard: React.FC = () => {
               }}
             >
               <HealthGauge score={healthScore} />
-              <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mt: 2 }}>
+              <Typography variant="body2" sx={{ color: '#6475A1', mt: 2 }}>
                 {t('health.servicesHealthy', { healthy: healthyCount, total: totalServices })}
               </Typography>
             </CardContent>
@@ -275,11 +272,17 @@ export const HealthDashboard: React.FC = () => {
         </Grid>
 
         <Grid item xs={12} md={8}>
-          <Card sx={{ height: '100%' }}>
+          <Card
+            sx={{
+              height: '100%',
+              bgcolor: '#0F1E3F',
+              border: '1px solid rgba(100, 117, 161, 0.2)',
+            }}
+          >
             <CardContent sx={{ py: 3 }}>
               <Typography
                 variant="h6"
-                sx={{ fontWeight: 600, color: theme.palette.text.primary, mb: 2.5 }}
+                sx={{ fontWeight: 600, color: '#DEE5FF', mb: 2.5, fontSize: '0.9rem' }}
               >
                 {t('health.incidentTimeline')}
               </Typography>
@@ -293,8 +296,8 @@ export const HealthDashboard: React.FC = () => {
                       gap: 2,
                       p: 1.5,
                       borderRadius: '8px',
-                      bgcolor: alpha(theme.palette.text.primary, 0.02),
-                      border: `1px solid ${theme.palette.divider}`,
+                      bgcolor: 'rgba(100, 117, 161, 0.04)',
+                      border: '1px solid rgba(100, 117, 161, 0.12)',
                     }}
                   >
                     <CircleIcon
@@ -303,12 +306,12 @@ export const HealthDashboard: React.FC = () => {
                     <Box sx={{ flex: 1 }}>
                       <Typography
                         variant="body2"
-                        sx={{ color: theme.palette.text.primary, fontWeight: 500 }}
+                        sx={{ color: '#DEE5FF', fontWeight: 500, fontSize: '0.8rem' }}
                       >
                         {incident.title}
                       </Typography>
                       <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5 }}>
-                        <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
+                        <Typography variant="caption" sx={{ color: '#6475A1' }}>
                           {incident.time}
                         </Typography>
                         <Chip
@@ -320,16 +323,23 @@ export const HealthDashboard: React.FC = () => {
                             fontWeight: 600,
                             bgcolor:
                               incident.status === 'resolved'
-                                ? alpha(theme.palette.success.main, 0.12)
+                                ? 'rgba(88, 231, 171, 0.1)'
                                 : incident.status === 'investigating'
-                                  ? alpha(theme.palette.error.main, 0.12)
-                                  : alpha(theme.palette.warning.main, 0.12),
+                                  ? 'rgba(250, 116, 111, 0.1)'
+                                  : 'rgba(245, 158, 11, 0.1)',
                             color:
                               incident.status === 'resolved'
-                                ? theme.palette.success.main
+                                ? '#58E7AB'
                                 : incident.status === 'investigating'
-                                  ? theme.palette.error.main
-                                  : theme.palette.warning.main,
+                                  ? '#FA746F'
+                                  : '#F59E0B',
+                            border: `1px solid ${
+                              incident.status === 'resolved'
+                                ? 'rgba(88, 231, 171, 0.2)'
+                                : incident.status === 'investigating'
+                                  ? 'rgba(250, 116, 111, 0.2)'
+                                  : 'rgba(245, 158, 11, 0.2)'
+                            }`,
                           }}
                         />
                       </Stack>
@@ -342,7 +352,10 @@ export const HealthDashboard: React.FC = () => {
         </Grid>
       </Grid>
 
-      <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary, mb: 2 }}>
+      <Typography
+        variant="h6"
+        sx={{ fontWeight: 600, color: '#DEE5FF', mb: 2, fontSize: '0.9rem' }}
+      >
         {t('health.serviceHealth')}
       </Typography>
       <Grid container spacing={2} sx={{ mb: 4 }}>
@@ -351,7 +364,9 @@ export const HealthDashboard: React.FC = () => {
             <Card
               sx={{
                 transition: 'all 0.2s ease',
-                '&:hover': { borderColor: alpha(theme.palette.primary.main, 0.2) },
+                bgcolor: '#0F1E3F',
+                border: '1px solid rgba(100, 117, 161, 0.2)',
+                '&:hover': { borderColor: 'rgba(105, 156, 255, 0.3)' },
               }}
             >
               <CardContent sx={{ py: 2.5 }}>
@@ -365,7 +380,7 @@ export const HealthDashboard: React.FC = () => {
                 >
                   <Typography
                     variant="subtitle2"
-                    sx={{ color: theme.palette.text.primary, fontWeight: 600 }}
+                    sx={{ color: '#DEE5FF', fontWeight: 600, fontSize: '0.8rem' }}
                   >
                     {service.name}
                   </Typography>
@@ -379,6 +394,7 @@ export const HealthDashboard: React.FC = () => {
                       fontWeight: 600,
                       fontSize: '0.65rem',
                       height: 24,
+                      border: `1px solid ${statusConfig[service.status].color}33`,
                       '& .MuiChip-icon': { ml: 0.5 },
                     }}
                   />
@@ -389,17 +405,14 @@ export const HealthDashboard: React.FC = () => {
                     <Typography
                       variant="caption"
                       sx={{
-                        color: theme.palette.text.secondary,
+                        color: '#6475A1',
                         display: 'block',
                         fontSize: '0.65rem',
                       }}
                     >
                       {t('health.uptime')}
                     </Typography>
-                    <Typography
-                      variant="body2"
-                      sx={{ color: theme.palette.text.primary, fontWeight: 600 }}
-                    >
+                    <Typography variant="body2" sx={{ color: '#DEE5FF', fontWeight: 600 }}>
                       {service.uptime}%
                     </Typography>
                   </Grid>
@@ -407,7 +420,7 @@ export const HealthDashboard: React.FC = () => {
                     <Typography
                       variant="caption"
                       sx={{
-                        color: theme.palette.text.secondary,
+                        color: '#6475A1',
                         display: 'block',
                         fontSize: '0.65rem',
                       }}
@@ -417,10 +430,7 @@ export const HealthDashboard: React.FC = () => {
                     <Typography
                       variant="body2"
                       sx={{
-                        color:
-                          service.responseTime > 150
-                            ? theme.palette.warning.main
-                            : theme.palette.text.primary,
+                        color: service.responseTime > 150 ? '#F59E0B' : '#DEE5FF',
                         fontWeight: 600,
                       }}
                     >
@@ -431,7 +441,7 @@ export const HealthDashboard: React.FC = () => {
                     <Typography
                       variant="caption"
                       sx={{
-                        color: theme.palette.text.secondary,
+                        color: '#6475A1',
                         display: 'block',
                         fontSize: '0.65rem',
                       }}
@@ -441,7 +451,7 @@ export const HealthDashboard: React.FC = () => {
                     <Typography
                       variant="body2"
                       sx={{
-                        color: theme.palette.text.primary,
+                        color: '#99AAD9',
                         fontWeight: 500,
                         fontSize: '0.75rem',
                       }}
@@ -456,7 +466,10 @@ export const HealthDashboard: React.FC = () => {
         ))}
       </Grid>
 
-      <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary, mb: 2 }}>
+      <Typography
+        variant="h6"
+        sx={{ fontWeight: 600, color: '#DEE5FF', mb: 2, fontSize: '0.9rem' }}
+      >
         {t('health.sloCompliance')}
       </Typography>
       <Grid container spacing={2}>
@@ -466,7 +479,7 @@ export const HealthDashboard: React.FC = () => {
 
           return (
             <Grid item xs={12} sm={6} key={slo.name}>
-              <Card>
+              <Card sx={{ bgcolor: '#0F1E3F', border: '1px solid rgba(100, 117, 161, 0.2)' }}>
                 <CardContent sx={{ py: 2.5 }}>
                   <Box
                     sx={{
@@ -478,7 +491,7 @@ export const HealthDashboard: React.FC = () => {
                   >
                     <Typography
                       variant="subtitle2"
-                      sx={{ color: theme.palette.text.primary, fontWeight: 600 }}
+                      sx={{ color: '#DEE5FF', fontWeight: 600, fontSize: '0.8rem' }}
                     >
                       {slo.name}
                     </Typography>
@@ -486,25 +499,24 @@ export const HealthDashboard: React.FC = () => {
                       label={isMet ? t('health.met') : t('health.atRisk')}
                       size="small"
                       sx={{
-                        bgcolor: isMet
-                          ? alpha(theme.palette.success.main, 0.12)
-                          : alpha(theme.palette.error.main, 0.12),
-                        color: isMet ? theme.palette.success.main : theme.palette.error.main,
+                        bgcolor: isMet ? 'rgba(88, 231, 171, 0.1)' : 'rgba(250, 116, 111, 0.1)',
+                        color: isMet ? '#58E7AB' : '#FA746F',
                         fontWeight: 600,
                         fontSize: '0.65rem',
                         height: 20,
+                        border: `1px solid ${isMet ? 'rgba(88, 231, 171, 0.2)' : 'rgba(250, 116, 111, 0.2)'}`,
                       }}
                     />
                   </Box>
 
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                    <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
+                    <Typography variant="caption" sx={{ color: '#6475A1' }}>
                       Current: {slo.current}% (Target: {slo.target}%)
                     </Typography>
                     <Typography
                       variant="caption"
                       sx={{
-                        color: isAtRisk ? theme.palette.warning.main : theme.palette.text.secondary,
+                        color: isAtRisk ? '#F59E0B' : '#6475A1',
                       }}
                     >
                       Error budget: {slo.budget}%
@@ -517,15 +529,11 @@ export const HealthDashboard: React.FC = () => {
                       sx={{
                         height: 6,
                         borderRadius: 3,
-                        bgcolor: theme.palette.divider,
+                        bgcolor: 'rgba(100, 117, 161, 0.12)',
                         '& .MuiLinearProgress-bar': {
                           borderRadius: 3,
                           bgcolor:
-                            slo.budget > 70
-                              ? theme.palette.success.main
-                              : slo.budget > 40
-                                ? theme.palette.warning.main
-                                : theme.palette.error.main,
+                            slo.budget > 70 ? '#58E7AB' : slo.budget > 40 ? '#F59E0B' : '#FA746F',
                         },
                       }}
                     />

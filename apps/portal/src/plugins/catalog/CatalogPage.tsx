@@ -16,8 +16,6 @@ import {
   CardActionArea,
   Stack,
   Pagination,
-  useTheme,
-  alpha,
 } from '@mui/material';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -32,7 +30,6 @@ import { RegisterForm } from './RegisterForm';
 type FilterType = 'all' | 'production' | 'development' | 'deprecated';
 
 export const CatalogPage: React.FC = () => {
-  const theme = useTheme();
   const { t } = useTranslation();
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
@@ -90,20 +87,20 @@ export const CatalogPage: React.FC = () => {
   };
 
   const getHealthColor = (status?: string) => {
-    if (status === 'healthy') return theme.palette.success.main;
-    if (status === 'degraded') return theme.palette.warning.main;
-    if (status === 'unhealthy') return theme.palette.error.main;
-    return theme.palette.text.secondary;
+    if (status === 'healthy') return '#58E7AB';
+    if (status === 'degraded') return '#F59E0B';
+    if (status === 'unhealthy') return '#FA746F';
+    return '#6475A1';
   };
 
   return (
     <Box sx={{ maxWidth: 1440, mx: 'auto', animation: 'fadeIn 0.5s ease-out both' }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Box>
-          <Typography variant="h4" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
+          <Typography variant="h4" sx={{ fontWeight: 700, color: '#DEE5FF', fontSize: '1.5rem' }}>
             {t('catalog.title')}
           </Typography>
-          <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mt: 0.5 }}>
+          <Typography variant="body2" sx={{ color: '#6475A1', mt: 0.5 }}>
             {t('catalog.subtitle', { count: totalCount })}
           </Typography>
         </Box>
@@ -113,11 +110,11 @@ export const CatalogPage: React.FC = () => {
           startIcon={<AddIcon />}
           onClick={() => setShowRegisterForm(true)}
           sx={{
-            borderColor: theme.palette.divider,
-            color: theme.palette.text.primary,
+            borderColor: 'rgba(100, 117, 161, 0.3)',
+            color: '#DEE5FF',
             '&:hover': {
-              borderColor: theme.palette.text.secondary,
-              bgcolor: alpha(theme.palette.text.primary, 0.04),
+              borderColor: '#699CFF',
+              bgcolor: 'rgba(105, 156, 255, 0.06)',
             },
           }}
         >
@@ -134,11 +131,20 @@ export const CatalogPage: React.FC = () => {
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
-                <SearchIcon sx={{ color: theme.palette.text.secondary }} />
+                <SearchIcon sx={{ color: '#6475A1' }} />
               </InputAdornment>
             ),
           }}
-          sx={{ mb: 2 }}
+          sx={{
+            mb: 2,
+            '& .MuiOutlinedInput-root': {
+              bgcolor: '#0F1E3F',
+              '& fieldset': { borderColor: 'rgba(100, 117, 161, 0.2)' },
+              '&:hover fieldset': { borderColor: 'rgba(105, 156, 255, 0.4)' },
+              '&.Mui-focused fieldset': { borderColor: '#699CFF' },
+            },
+            '& .MuiOutlinedInput-input': { color: '#DEE5FF' },
+          }}
         />
         <Stack direction="row" spacing={1}>
           {filters.map((f) => (
@@ -148,17 +154,10 @@ export const CatalogPage: React.FC = () => {
               onClick={() => setActiveFilter(f.value)}
               variant={activeFilter === f.value ? 'filled' : 'outlined'}
               sx={{
-                bgcolor:
-                  activeFilter === f.value
-                    ? alpha(theme.palette.primary.main, 0.12)
-                    : 'transparent',
-                color:
-                  activeFilter === f.value
-                    ? theme.palette.primary.main
-                    : theme.palette.text.secondary,
-                borderColor:
-                  activeFilter === f.value ? theme.palette.primary.main : theme.palette.divider,
-                '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.08) },
+                bgcolor: activeFilter === f.value ? 'rgba(105, 156, 255, 0.12)' : 'transparent',
+                color: activeFilter === f.value ? '#ADC6FF' : '#6475A1',
+                borderColor: activeFilter === f.value ? '#699CFF' : 'rgba(100, 117, 161, 0.2)',
+                '&:hover': { bgcolor: 'rgba(105, 156, 255, 0.08)' },
               }}
             />
           ))}
@@ -175,7 +174,11 @@ export const CatalogPage: React.FC = () => {
         {loading
           ? Array.from({ length: 6 }).map((_, i) => (
               <Grid item xs={12} sm={6} md={4} key={`skeleton-${i}`}>
-                <Skeleton variant="rectangular" height={200} sx={{ borderRadius: 2 }} />
+                <Skeleton
+                  variant="rectangular"
+                  height={200}
+                  sx={{ borderRadius: 2, bgcolor: 'rgba(100, 117, 161, 0.08)' }}
+                />
               </Grid>
             ))
           : services.map((service, index) => (
@@ -184,10 +187,12 @@ export const CatalogPage: React.FC = () => {
                   sx={{
                     animation: 'fadeInUp 0.4s ease-out both',
                     animationDelay: `${index * 60}ms`,
+                    bgcolor: '#0F1E3F',
+                    border: '1px solid rgba(100, 117, 161, 0.2)',
                     '&:hover': {
-                      borderColor: alpha(theme.palette.primary.main, 0.3),
+                      borderColor: 'rgba(105, 156, 255, 0.4)',
                       transform: 'translateY(-2px)',
-                      boxShadow: `0 4px 20px ${alpha(theme.palette.common.black, 0.2)}`,
+                      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
                     },
                     transition: 'all 0.25s ease',
                   }}
@@ -215,17 +220,14 @@ export const CatalogPage: React.FC = () => {
                           />
                           <Typography
                             variant="subtitle1"
-                            sx={{ fontWeight: 600, color: theme.palette.text.primary }}
+                            sx={{ fontWeight: 600, color: '#DEE5FF', fontSize: '0.9rem' }}
                           >
                             {service.name}
                           </Typography>
                         </Box>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                          <PersonIcon sx={{ fontSize: 14, color: theme.palette.text.secondary }} />
-                          <Typography
-                            variant="caption"
-                            sx={{ color: theme.palette.text.secondary }}
-                          >
+                          <PersonIcon sx={{ fontSize: 14, color: '#6475A1' }} />
+                          <Typography variant="caption" sx={{ color: '#6475A1' }}>
                             {service.owner || service.team || t('catalog.unassigned')}
                           </Typography>
                         </Box>
@@ -238,16 +240,23 @@ export const CatalogPage: React.FC = () => {
                           fontSize: '0.65rem',
                           bgcolor:
                             service.lifecycle === 'production'
-                              ? alpha(theme.palette.success.main, 0.1)
+                              ? 'rgba(88, 231, 171, 0.1)'
                               : service.lifecycle === 'deprecated'
-                                ? alpha(theme.palette.error.main, 0.1)
-                                : alpha(theme.palette.primary.main, 0.1),
+                                ? 'rgba(250, 116, 111, 0.1)'
+                                : 'rgba(105, 156, 255, 0.1)',
                           color:
                             service.lifecycle === 'production'
-                              ? theme.palette.success.main
+                              ? '#58E7AB'
                               : service.lifecycle === 'deprecated'
-                                ? theme.palette.error.main
-                                : theme.palette.primary.main,
+                                ? '#FA746F'
+                                : '#ADC6FF',
+                          border: `1px solid ${
+                            service.lifecycle === 'production'
+                              ? 'rgba(88, 231, 171, 0.2)'
+                              : service.lifecycle === 'deprecated'
+                                ? 'rgba(250, 116, 111, 0.2)'
+                                : 'rgba(105, 156, 255, 0.2)'
+                          }`,
                         }}
                       />
                     </Box>
@@ -255,21 +264,22 @@ export const CatalogPage: React.FC = () => {
                     <Typography
                       variant="body2"
                       sx={{
-                        color: theme.palette.text.secondary,
+                        color: '#99AAD9',
                         mb: 2,
                         minHeight: 40,
                         display: '-webkit-box',
                         WebkitLineClamp: 2,
                         WebkitBoxOrient: 'vertical',
                         overflow: 'hidden',
+                        fontSize: '0.8rem',
                       }}
                     >
                       {service.description || t('catalog.noDescription')}
                     </Typography>
 
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1.5 }}>
-                      <AccessTimeIcon sx={{ fontSize: 14, color: theme.palette.text.secondary }} />
-                      <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
+                      <AccessTimeIcon sx={{ fontSize: 14, color: '#6475A1' }} />
+                      <Typography variant="caption" sx={{ color: '#6475A1', fontSize: '0.7rem' }}>
                         Last deployed:{' '}
                         {timeAgo(
                           service.lastDeployedAt ||
@@ -288,8 +298,9 @@ export const CatalogPage: React.FC = () => {
                           sx={{
                             height: 20,
                             fontSize: '0.6rem',
-                            bgcolor: alpha(theme.palette.text.primary, 0.04),
-                            color: theme.palette.text.secondary,
+                            bgcolor: 'rgba(100, 117, 161, 0.08)',
+                            color: '#99AAD9',
+                            border: '1px solid rgba(100, 117, 161, 0.15)',
                           }}
                         />
                       ))}
@@ -300,8 +311,8 @@ export const CatalogPage: React.FC = () => {
                           sx={{
                             height: 20,
                             fontSize: '0.6rem',
-                            bgcolor: alpha(theme.palette.text.primary, 0.04),
-                            color: theme.palette.text.secondary,
+                            bgcolor: 'rgba(100, 117, 161, 0.08)',
+                            color: '#99AAD9',
                           }}
                         />
                       )}
@@ -314,10 +325,10 @@ export const CatalogPage: React.FC = () => {
 
       {!loading && services.length === 0 && (
         <Box sx={{ textAlign: 'center', py: 8 }}>
-          <Typography variant="h6" sx={{ color: theme.palette.text.secondary, mb: 1 }}>
+          <Typography variant="h6" sx={{ color: '#99AAD9', mb: 1 }}>
             {t('catalog.noServices')}
           </Typography>
-          <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 2 }}>
+          <Typography variant="body2" sx={{ color: '#6475A1', mb: 2 }}>
             {search || activeFilter !== 'all'
               ? t('catalog.adjustFilters')
               : t('catalog.registerFirst')}
@@ -326,7 +337,11 @@ export const CatalogPage: React.FC = () => {
             <Button
               variant="outlined"
               onClick={() => setShowRegisterForm(true)}
-              sx={{ borderColor: theme.palette.primary.main, color: theme.palette.primary.main }}
+              sx={{
+                borderColor: '#699CFF',
+                color: '#699CFF',
+                '&:hover': { bgcolor: 'rgba(105, 156, 255, 0.08)' },
+              }}
             >
               {t('catalog.registerButton')}
             </Button>

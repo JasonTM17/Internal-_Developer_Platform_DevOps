@@ -1,4 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import AddIcon from '@mui/icons-material/Add';
+import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
+import CircleIcon from '@mui/icons-material/Circle';
+import CloudIcon from '@mui/icons-material/Cloud';
+import DeleteIcon from '@mui/icons-material/Delete';
+import MoreTimeIcon from '@mui/icons-material/MoreTime';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import {
   Box,
   Typography,
@@ -16,14 +23,7 @@ import {
   Tab,
   Avatar,
 } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
-import DeleteIcon from '@mui/icons-material/Delete';
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import MoreTimeIcon from '@mui/icons-material/MoreTime';
-import CloudIcon from '@mui/icons-material/Cloud';
-import WarningAmberIcon from '@mui/icons-material/WarningAmber';
-import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
-import CircleIcon from '@mui/icons-material/Circle';
+import React, { useState, useEffect } from 'react';
 
 // Mock data for the professional environment management page
 const mockEnvironments = [
@@ -151,31 +151,34 @@ interface Environment {
 }
 
 const typeColors: Record<EnvType, { bg: string; color: string; label: string }> = {
-  production: { bg: 'rgba(248, 81, 73, 0.12)', color: '#f85149', label: 'Production' },
-  staging: { bg: 'rgba(210, 153, 34, 0.12)', color: '#d29922', label: 'Staging' },
-  development: { bg: 'rgba(63, 185, 80, 0.12)', color: '#3fb950', label: 'Development' },
+  production: { bg: 'rgba(250, 116, 111, 0.1)', color: '#FA746F', label: 'Production' },
+  staging: { bg: 'rgba(245, 158, 11, 0.1)', color: '#F59E0B', label: 'Staging' },
+  development: { bg: 'rgba(88, 231, 171, 0.1)', color: '#58E7AB', label: 'Development' },
 };
 
 const statusConfig: Record<EnvStatus, { color: string; label: string }> = {
-  running: { color: '#3fb950', label: 'Running' },
-  stopped: { color: '#8b949e', label: 'Stopped' },
-  provisioning: { color: '#6C63FF', label: 'Provisioning' },
+  running: { color: '#58E7AB', label: 'Running' },
+  stopped: { color: '#6475A1', label: 'Stopped' },
+  provisioning: { color: '#699CFF', label: 'Provisioning' },
 };
 
 const ResourceBar: React.FC<{ label: string; value: number }> = ({ label, value }) => {
   const getColor = (v: number) => {
-    if (v >= 90) return '#f85149';
-    if (v >= 70) return '#d29922';
-    return '#3fb950';
+    if (v >= 90) return '#FA746F';
+    if (v >= 70) return '#F59E0B';
+    return '#58E7AB';
   };
 
   return (
     <Box sx={{ mb: 1 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-        <Typography variant="caption" sx={{ color: '#8b949e', fontSize: '0.7rem' }}>
+        <Typography variant="caption" sx={{ color: '#6475A1', fontSize: '0.7rem' }}>
           {label}
         </Typography>
-        <Typography variant="caption" sx={{ color: '#c9d1d9', fontSize: '0.7rem', fontWeight: 600 }}>
+        <Typography
+          variant="caption"
+          sx={{ color: '#DEE5FF', fontSize: '0.7rem', fontWeight: 600 }}
+        >
           {value}%
         </Typography>
       </Box>
@@ -185,7 +188,7 @@ const ResourceBar: React.FC<{ label: string; value: number }> = ({ label, value 
         sx={{
           height: 4,
           borderRadius: 2,
-          bgcolor: 'rgba(255,255,255,0.06)',
+          bgcolor: 'rgba(100, 117, 161, 0.12)',
           '& .MuiLinearProgress-bar': {
             borderRadius: 2,
             bgcolor: getColor(value),
@@ -238,7 +241,13 @@ export const EnvironmentPage: React.FC = () => {
   if (loading) {
     return (
       <Box sx={{ p: 3 }}>
-        <LinearProgress sx={{ borderRadius: 2 }} />
+        <LinearProgress
+          sx={{
+            borderRadius: 2,
+            bgcolor: 'rgba(100, 117, 161, 0.1)',
+            '& .MuiLinearProgress-bar': { bgcolor: '#699CFF' },
+          }}
+        />
       </Box>
     );
   }
@@ -248,10 +257,13 @@ export const EnvironmentPage: React.FC = () => {
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
         <Box>
-          <Typography variant="h4" sx={{ fontWeight: 700, color: '#ffffff', mb: 0.5 }}>
+          <Typography
+            variant="h4"
+            sx={{ fontWeight: 700, color: '#DEE5FF', mb: 0.5, fontSize: '1.5rem' }}
+          >
             Environments
           </Typography>
-          <Typography variant="body2" sx={{ color: '#8b949e' }}>
+          <Typography variant="body2" sx={{ color: '#6475A1' }}>
             Provision and manage your deployment environments
           </Typography>
         </Box>
@@ -259,12 +271,13 @@ export const EnvironmentPage: React.FC = () => {
           variant="contained"
           startIcon={<AddIcon />}
           sx={{
-            bgcolor: '#6C63FF',
+            background: 'linear-gradient(135deg, #699CFF, #3B82F6)',
             borderRadius: '8px',
             px: 3,
             py: 1,
             fontWeight: 600,
-            '&:hover': { bgcolor: '#5a52e0', boxShadow: '0 4px 12px rgba(108, 99, 255, 0.3)' },
+            boxShadow: '0 4px 12px rgba(105, 156, 255, 0.3)',
+            '&:hover': { background: 'linear-gradient(135deg, #ADC6FF, #699CFF)' },
           }}
         >
           Provision New
@@ -274,16 +287,36 @@ export const EnvironmentPage: React.FC = () => {
       {/* Stats Row */}
       <Grid container spacing={2} sx={{ mb: 4 }}>
         <Grid item xs={12} sm={4}>
-          <Card sx={{ bgcolor: '#161b22', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px' }}>
+          <Card
+            sx={{
+              bgcolor: '#0F1E3F',
+              border: '1px solid rgba(100, 117, 161, 0.2)',
+              borderRadius: '12px',
+            }}
+          >
             <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2, py: 2.5 }}>
-              <Box sx={{ width: 44, height: 44, borderRadius: '10px', bgcolor: 'rgba(63, 185, 80, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <CloudIcon sx={{ color: '#3fb950' }} />
+              <Box
+                sx={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: '10px',
+                  bgcolor: 'rgba(88, 231, 171, 0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '1px solid rgba(88, 231, 171, 0.2)',
+                }}
+              >
+                <CloudIcon sx={{ color: '#58E7AB' }} />
               </Box>
               <Box>
-                <Typography variant="h4" sx={{ fontWeight: 700, color: '#ffffff', lineHeight: 1.2 }}>
+                <Typography
+                  variant="h4"
+                  sx={{ fontWeight: 700, color: '#DEE5FF', lineHeight: 1.2, fontSize: '1.5rem' }}
+                >
                   {activeCount}
                 </Typography>
-                <Typography variant="caption" sx={{ color: '#8b949e' }}>
+                <Typography variant="caption" sx={{ color: '#6475A1' }}>
                   Active Environments
                 </Typography>
               </Box>
@@ -291,16 +324,36 @@ export const EnvironmentPage: React.FC = () => {
           </Card>
         </Grid>
         <Grid item xs={12} sm={4}>
-          <Card sx={{ bgcolor: '#161b22', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px' }}>
+          <Card
+            sx={{
+              bgcolor: '#0F1E3F',
+              border: '1px solid rgba(100, 117, 161, 0.2)',
+              borderRadius: '12px',
+            }}
+          >
             <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2, py: 2.5 }}>
-              <Box sx={{ width: 44, height: 44, borderRadius: '10px', bgcolor: 'rgba(210, 153, 34, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <WarningAmberIcon sx={{ color: '#d29922' }} />
+              <Box
+                sx={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: '10px',
+                  bgcolor: 'rgba(245, 158, 11, 0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '1px solid rgba(245, 158, 11, 0.2)',
+                }}
+              >
+                <WarningAmberIcon sx={{ color: '#F59E0B' }} />
               </Box>
               <Box>
-                <Typography variant="h4" sx={{ fontWeight: 700, color: '#ffffff', lineHeight: 1.2 }}>
+                <Typography
+                  variant="h4"
+                  sx={{ fontWeight: 700, color: '#DEE5FF', lineHeight: 1.2, fontSize: '1.5rem' }}
+                >
                   {expiringCount}
                 </Typography>
-                <Typography variant="caption" sx={{ color: '#8b949e' }}>
+                <Typography variant="caption" sx={{ color: '#6475A1' }}>
                   Expiring Soon
                 </Typography>
               </Box>
@@ -308,16 +361,36 @@ export const EnvironmentPage: React.FC = () => {
           </Card>
         </Grid>
         <Grid item xs={12} sm={4}>
-          <Card sx={{ bgcolor: '#161b22', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px' }}>
+          <Card
+            sx={{
+              bgcolor: '#0F1E3F',
+              border: '1px solid rgba(100, 117, 161, 0.2)',
+              borderRadius: '12px',
+            }}
+          >
             <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2, py: 2.5 }}>
-              <Box sx={{ width: 44, height: 44, borderRadius: '10px', bgcolor: 'rgba(108, 99, 255, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <AttachMoneyIcon sx={{ color: '#6C63FF' }} />
+              <Box
+                sx={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: '10px',
+                  bgcolor: 'rgba(105, 156, 255, 0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '1px solid rgba(105, 156, 255, 0.2)',
+                }}
+              >
+                <AttachMoneyIcon sx={{ color: '#699CFF' }} />
               </Box>
               <Box>
-                <Typography variant="h4" sx={{ fontWeight: 700, color: '#ffffff', lineHeight: 1.2 }}>
+                <Typography
+                  variant="h4"
+                  sx={{ fontWeight: 700, color: '#DEE5FF', lineHeight: 1.2, fontSize: '1.5rem' }}
+                >
                   ${totalCost.toLocaleString()}
                 </Typography>
-                <Typography variant="caption" sx={{ color: '#8b949e' }}>
+                <Typography variant="caption" sx={{ color: '#6475A1' }}>
                   Total Cost / Month
                 </Typography>
               </Box>
@@ -329,21 +402,23 @@ export const EnvironmentPage: React.FC = () => {
       {/* Filter Tabs */}
       <Tabs
         value={activeTab}
-        onChange={(_, v) => setActiveTab(v)}
+        onChange={(_, v: number) => setActiveTab(v)}
         sx={{
           mb: 3,
           '& .MuiTab-root': {
-            color: '#8b949e',
+            color: '#6475A1',
             fontWeight: 500,
             textTransform: 'none',
             minHeight: 40,
-            '&.Mui-selected': { color: '#6C63FF' },
+            '&.Mui-selected': { color: '#699CFF' },
           },
-          '& .MuiTabs-indicator': { bgcolor: '#6C63FF', height: 2, borderRadius: 1 },
+          '& .MuiTabs-indicator': { bgcolor: '#699CFF', height: 2, borderRadius: 1 },
         }}
       >
         <Tab label={`All (${environments.length})`} />
-        <Tab label={`Development (${environments.filter((e) => e.type === 'development').length})`} />
+        <Tab
+          label={`Development (${environments.filter((e) => e.type === 'development').length})`}
+        />
         <Tab label={`Staging (${environments.filter((e) => e.type === 'staging').length})`} />
         <Tab label={`Production (${environments.filter((e) => e.type === 'production').length})`} />
       </Tabs>
@@ -354,13 +429,12 @@ export const EnvironmentPage: React.FC = () => {
           <Grid item xs={12} sm={6} lg={4} key={env.id}>
             <Card
               sx={{
-                bgcolor: '#161b22',
-                border: '1px solid rgba(255,255,255,0.06)',
+                bgcolor: '#0F1E3F',
+                border: '1px solid rgba(100, 117, 161, 0.2)',
                 borderRadius: '12px',
                 transition: 'all 0.2s ease',
                 '&:hover': {
-                  bgcolor: '#1c2128',
-                  border: '1px solid rgba(108, 99, 255, 0.2)',
+                  border: '1px solid rgba(105, 156, 255, 0.3)',
                   transform: 'translateY(-2px)',
                   boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
                 },
@@ -368,7 +442,14 @@ export const EnvironmentPage: React.FC = () => {
             >
               <CardContent sx={{ pb: 1 }}>
                 {/* Top row: type badge + status */}
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    mb: 2,
+                  }}
+                >
                   <Chip
                     label={typeColors[env.type].label}
                     size="small"
@@ -378,18 +459,25 @@ export const EnvironmentPage: React.FC = () => {
                       fontWeight: 600,
                       fontSize: '0.7rem',
                       height: 22,
+                      border: `1px solid ${typeColors[env.type].color}33`,
                     }}
                   />
                   <Stack direction="row" alignItems="center" spacing={0.5}>
                     <CircleIcon sx={{ fontSize: 8, color: statusConfig[env.status].color }} />
-                    <Typography variant="caption" sx={{ color: statusConfig[env.status].color, fontWeight: 500 }}>
+                    <Typography
+                      variant="caption"
+                      sx={{ color: statusConfig[env.status].color, fontWeight: 500 }}
+                    >
                       {statusConfig[env.status].label}
                     </Typography>
                   </Stack>
                 </Box>
 
                 {/* Name */}
-                <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#ffffff', mb: 0.5, fontSize: '0.95rem' }}>
+                <Typography
+                  variant="subtitle1"
+                  sx={{ fontWeight: 600, color: '#DEE5FF', mb: 0.5, fontSize: '0.9rem' }}
+                >
                   {env.name}
                 </Typography>
 
@@ -401,21 +489,39 @@ export const EnvironmentPage: React.FC = () => {
                 </Box>
 
                 {/* Owner and expiry */}
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    mt: 2,
+                  }}
+                >
                   <Stack direction="row" alignItems="center" spacing={1}>
-                    <Avatar sx={{ width: 24, height: 24, fontSize: '0.6rem', bgcolor: 'rgba(108,99,255,0.2)', color: '#6C63FF' }}>
+                    <Avatar
+                      sx={{
+                        width: 24,
+                        height: 24,
+                        fontSize: '0.6rem',
+                        bgcolor: 'rgba(105, 156, 255, 0.15)',
+                        color: '#ADC6FF',
+                        border: '1px solid rgba(105, 156, 255, 0.2)',
+                      }}
+                    >
                       {env.ownerAvatar}
                     </Avatar>
-                    <Typography variant="caption" sx={{ color: '#8b949e' }}>
+                    <Typography variant="caption" sx={{ color: '#6475A1' }}>
                       {env.owner}
                     </Typography>
                   </Stack>
                   <Typography
                     variant="caption"
                     sx={{
-                      color: env.expiresAt && new Date(env.expiresAt).getTime() - Date.now() < 3 * 24 * 60 * 60 * 1000
-                        ? '#d29922'
-                        : '#8b949e',
+                      color:
+                        env.expiresAt &&
+                        new Date(env.expiresAt).getTime() - Date.now() < 3 * 24 * 60 * 60 * 1000
+                          ? '#F59E0B'
+                          : '#6475A1',
                       fontWeight: 500,
                     }}
                   >
@@ -425,25 +531,38 @@ export const EnvironmentPage: React.FC = () => {
               </CardContent>
 
               {/* Actions */}
-              <CardActions sx={{ px: 2, pb: 2, pt: 1, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+              <CardActions
+                sx={{ px: 2, pb: 2, pt: 1, borderTop: '1px solid rgba(100, 117, 161, 0.1)' }}
+              >
                 <Button
                   size="small"
                   startIcon={<OpenInNewIcon sx={{ fontSize: 14 }} />}
-                  sx={{ color: '#c9d1d9', fontSize: '0.75rem', '&:hover': { bgcolor: 'rgba(255,255,255,0.04)' } }}
+                  sx={{
+                    color: '#99AAD9',
+                    fontSize: '0.75rem',
+                    '&:hover': { bgcolor: 'rgba(100, 117, 161, 0.08)' },
+                  }}
                 >
                   Open
                 </Button>
                 <Button
                   size="small"
                   startIcon={<MoreTimeIcon sx={{ fontSize: 14 }} />}
-                  sx={{ color: '#c9d1d9', fontSize: '0.75rem', '&:hover': { bgcolor: 'rgba(255,255,255,0.04)' } }}
+                  sx={{
+                    color: '#99AAD9',
+                    fontSize: '0.75rem',
+                    '&:hover': { bgcolor: 'rgba(100, 117, 161, 0.08)' },
+                  }}
                 >
                   Extend
                 </Button>
                 <Box sx={{ flex: 1 }} />
                 {env.type !== 'production' && (
                   <Tooltip title="Delete environment">
-                    <IconButton size="small" sx={{ color: '#f85149', '&:hover': { bgcolor: 'rgba(248, 81, 73, 0.1)' } }}>
+                    <IconButton
+                      size="small"
+                      sx={{ color: '#FA746F', '&:hover': { bgcolor: 'rgba(250, 116, 111, 0.1)' } }}
+                    >
                       <DeleteIcon sx={{ fontSize: 16 }} />
                     </IconButton>
                   </Tooltip>

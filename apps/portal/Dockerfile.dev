@@ -5,7 +5,7 @@ RUN apk add --no-cache curl
 
 # Install dependencies directly (standalone, not via pnpm workspace)
 COPY package.json ./
-RUN npm install
+RUN sed -i '/@idp\/shared/d' package.json && sed -i 's/"workspace:\*"/"*"/g' package.json && npm install --legacy-peer-deps
 
 # Copy source
 COPY index.html ./

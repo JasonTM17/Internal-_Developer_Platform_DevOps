@@ -25,8 +25,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  useTheme,
-  alpha,
 } from '@mui/material';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -46,27 +44,26 @@ const statusConfig: Record<
     chipColor: 'success' | 'error' | 'info' | 'warning' | 'default';
   }
 > = {
-  pending: { icon: <PendingIcon sx={{ fontSize: 16 }} />, color: '#8b949e', chipColor: 'default' },
+  pending: { icon: <PendingIcon sx={{ fontSize: 16 }} />, color: '#6475A1', chipColor: 'default' },
   in_progress: {
     icon: <RocketLaunchIcon sx={{ fontSize: 16 }} />,
-    color: '#2196f3',
+    color: '#4CD7F6',
     chipColor: 'info',
   },
   succeeded: {
     icon: <CheckCircleIcon sx={{ fontSize: 16 }} />,
-    color: '#4caf50',
+    color: '#58E7AB',
     chipColor: 'success',
   },
-  failed: { icon: <ErrorIcon sx={{ fontSize: 16 }} />, color: '#f44336', chipColor: 'error' },
+  failed: { icon: <ErrorIcon sx={{ fontSize: 16 }} />, color: '#FA746F', chipColor: 'error' },
   rolled_back: {
     icon: <ErrorIcon sx={{ fontSize: 16 }} />,
-    color: '#ff9800',
+    color: '#F59E0B',
     chipColor: 'warning',
   },
 };
 
 export const DeploymentPage: React.FC = () => {
-  const theme = useTheme();
   const { t } = useTranslation();
   const [deployments, setDeployments] = useState<Deployment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -115,10 +112,10 @@ export const DeploymentPage: React.FC = () => {
     <Box sx={{ maxWidth: 1440, mx: 'auto', animation: 'fadeIn 0.5s ease-out both' }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Box>
-          <Typography variant="h4" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
+          <Typography variant="h4" sx={{ fontWeight: 700, color: '#DEE5FF', fontSize: '1.5rem' }}>
             {t('deployments.title')}
           </Typography>
-          <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mt: 0.5 }}>
+          <Typography variant="body2" sx={{ color: '#6475A1', mt: 0.5 }}>
             {t('deployments.subtitle')}
           </Typography>
         </Box>
@@ -130,7 +127,11 @@ export const DeploymentPage: React.FC = () => {
             onClick={() => {
               void fetchDeployments();
             }}
-            sx={{ borderColor: theme.palette.divider, color: theme.palette.text.primary }}
+            sx={{
+              borderColor: 'rgba(100, 117, 161, 0.3)',
+              color: '#DEE5FF',
+              '&:hover': { borderColor: '#699CFF', bgcolor: 'rgba(105, 156, 255, 0.06)' },
+            }}
           >
             {t('common.refresh')}
           </Button>
@@ -139,9 +140,10 @@ export const DeploymentPage: React.FC = () => {
             size="small"
             startIcon={<AddIcon />}
             sx={{
-              background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
+              background: 'linear-gradient(135deg, #699CFF, #3B82F6)',
+              boxShadow: '0 4px 12px rgba(105, 156, 255, 0.3)',
               '&:hover': {
-                background: `linear-gradient(135deg, ${theme.palette.primary.dark}, ${theme.palette.primary.main})`,
+                background: 'linear-gradient(135deg, #ADC6FF, #699CFF)',
               },
             }}
           >
@@ -152,48 +154,84 @@ export const DeploymentPage: React.FC = () => {
 
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid item xs={6} sm={3}>
-          <Card>
+          <Card
+            sx={{
+              bgcolor: '#0F1E3F',
+              border: '1px solid rgba(100, 117, 161, 0.2)',
+              borderLeft: '3px solid #4CD7F6',
+            }}
+          >
             <CardContent sx={{ textAlign: 'center', py: 2 }}>
-              <Typography variant="h3" sx={{ color: theme.palette.info.main, fontWeight: 700 }}>
+              <Typography
+                variant="h3"
+                sx={{ color: '#4CD7F6', fontWeight: 700, fontSize: '1.75rem' }}
+              >
                 {activeDeployments.length}
               </Typography>
-              <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+              <Typography variant="body2" sx={{ color: '#6475A1', fontSize: '0.75rem' }}>
                 {t('deployments.inProgress')}
               </Typography>
             </CardContent>
           </Card>
         </Grid>
         <Grid item xs={6} sm={3}>
-          <Card>
+          <Card
+            sx={{
+              bgcolor: '#0F1E3F',
+              border: '1px solid rgba(100, 117, 161, 0.2)',
+              borderLeft: '3px solid #58E7AB',
+            }}
+          >
             <CardContent sx={{ textAlign: 'center', py: 2 }}>
-              <Typography variant="h3" sx={{ color: theme.palette.success.main, fontWeight: 700 }}>
+              <Typography
+                variant="h3"
+                sx={{ color: '#58E7AB', fontWeight: 700, fontSize: '1.75rem' }}
+              >
                 {recentSuccesses}
               </Typography>
-              <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+              <Typography variant="body2" sx={{ color: '#6475A1', fontSize: '0.75rem' }}>
                 {t('deployments.succeeded')}
               </Typography>
             </CardContent>
           </Card>
         </Grid>
         <Grid item xs={6} sm={3}>
-          <Card>
+          <Card
+            sx={{
+              bgcolor: '#0F1E3F',
+              border: '1px solid rgba(100, 117, 161, 0.2)',
+              borderLeft: '3px solid #FA746F',
+            }}
+          >
             <CardContent sx={{ textAlign: 'center', py: 2 }}>
-              <Typography variant="h3" sx={{ color: theme.palette.error.main, fontWeight: 700 }}>
+              <Typography
+                variant="h3"
+                sx={{ color: '#FA746F', fontWeight: 700, fontSize: '1.75rem' }}
+              >
                 {recentFailures}
               </Typography>
-              <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+              <Typography variant="body2" sx={{ color: '#6475A1', fontSize: '0.75rem' }}>
                 {t('deployments.failed')}
               </Typography>
             </CardContent>
           </Card>
         </Grid>
         <Grid item xs={6} sm={3}>
-          <Card>
+          <Card
+            sx={{
+              bgcolor: '#0F1E3F',
+              border: '1px solid rgba(100, 117, 161, 0.2)',
+              borderLeft: '3px solid #ADC6FF',
+            }}
+          >
             <CardContent sx={{ textAlign: 'center', py: 2 }}>
-              <Typography variant="h3" sx={{ color: theme.palette.text.primary, fontWeight: 700 }}>
+              <Typography
+                variant="h3"
+                sx={{ color: '#DEE5FF', fontWeight: 700, fontSize: '1.75rem' }}
+              >
                 {successRate}%
               </Typography>
-              <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+              <Typography variant="body2" sx={{ color: '#6475A1', fontSize: '0.75rem' }}>
                 {t('deployments.successRate')}
               </Typography>
             </CardContent>
@@ -202,13 +240,13 @@ export const DeploymentPage: React.FC = () => {
       </Grid>
 
       {activeDeployments.length > 0 && (
-        <Card sx={{ mb: 3, borderColor: alpha(theme.palette.info.main, 0.3) }}>
+        <Card sx={{ mb: 3, bgcolor: '#0F1E3F', border: '1px solid rgba(76, 215, 246, 0.2)' }}>
           <CardContent>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-              <RocketLaunchIcon sx={{ color: theme.palette.info.main }} />
+              <RocketLaunchIcon sx={{ color: '#4CD7F6' }} />
               <Typography
                 variant="subtitle1"
-                sx={{ fontWeight: 600, color: theme.palette.text.primary }}
+                sx={{ fontWeight: 600, color: '#DEE5FF', fontSize: '0.9rem' }}
               >
                 {t('deployments.activeDeployments', { count: activeDeployments.length })}
               </Typography>
@@ -220,8 +258,8 @@ export const DeploymentPage: React.FC = () => {
                   mb: 1.5,
                   p: 1.5,
                   borderRadius: 1,
-                  bgcolor: alpha(theme.palette.info.main, 0.04),
-                  border: `1px solid ${alpha(theme.palette.info.main, 0.1)}`,
+                  bgcolor: 'rgba(76, 215, 246, 0.04)',
+                  border: '1px solid rgba(76, 215, 246, 0.1)',
                 }}
               >
                 <Box
@@ -234,7 +272,7 @@ export const DeploymentPage: React.FC = () => {
                 >
                   <Typography
                     variant="body2"
-                    sx={{ color: theme.palette.text.primary, fontWeight: 500 }}
+                    sx={{ color: '#DEE5FF', fontWeight: 500, fontSize: '0.8rem' }}
                   >
                     {d.artifacts?.image || d.version} → {d.environment}
                   </Typography>
@@ -244,8 +282,9 @@ export const DeploymentPage: React.FC = () => {
                     sx={{
                       height: 20,
                       fontSize: '0.65rem',
-                      bgcolor: alpha(theme.palette.info.main, 0.1),
-                      color: theme.palette.info.main,
+                      bgcolor: 'rgba(76, 215, 246, 0.1)',
+                      color: '#4CD7F6',
+                      border: '1px solid rgba(76, 215, 246, 0.2)',
                     }}
                   />
                 </Box>
@@ -254,8 +293,8 @@ export const DeploymentPage: React.FC = () => {
                   sx={{
                     borderRadius: 1,
                     height: 4,
-                    bgcolor: alpha(theme.palette.info.main, 0.1),
-                    '& .MuiLinearProgress-bar': { bgcolor: theme.palette.info.main },
+                    bgcolor: 'rgba(76, 215, 246, 0.1)',
+                    '& .MuiLinearProgress-bar': { bgcolor: '#4CD7F6' },
                   }}
                 />
               </Box>
@@ -266,11 +305,19 @@ export const DeploymentPage: React.FC = () => {
 
       <Box sx={{ display: 'flex', gap: 2, mb: 3, alignItems: 'center' }}>
         <FormControl size="small" sx={{ minWidth: 150 }}>
-          <InputLabel>{t('deployments.filters.status')}</InputLabel>
+          <InputLabel sx={{ color: '#6475A1' }}>{t('deployments.filters.status')}</InputLabel>
           <Select
             value={statusFilter}
             label={t('deployments.filters.status')}
             onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
+            sx={{
+              color: '#DEE5FF',
+              '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(100, 117, 161, 0.3)' },
+              '&:hover .MuiOutlinedInput-notchedOutline': {
+                borderColor: 'rgba(105, 156, 255, 0.4)',
+              },
+              '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#699CFF' },
+            }}
           >
             <MenuItem value="all">{t('deployments.filters.allStatuses')}</MenuItem>
             <MenuItem value="in_progress">{t('deployments.status.in_progress')}</MenuItem>
@@ -280,11 +327,19 @@ export const DeploymentPage: React.FC = () => {
           </Select>
         </FormControl>
         <FormControl size="small" sx={{ minWidth: 150 }}>
-          <InputLabel>{t('deployments.filters.environment')}</InputLabel>
+          <InputLabel sx={{ color: '#6475A1' }}>{t('deployments.filters.environment')}</InputLabel>
           <Select
             value={envFilter}
             label={t('deployments.filters.environment')}
             onChange={(e) => setEnvFilter(e.target.value as EnvFilter)}
+            sx={{
+              color: '#DEE5FF',
+              '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(100, 117, 161, 0.3)' },
+              '&:hover .MuiOutlinedInput-notchedOutline': {
+                borderColor: 'rgba(105, 156, 255, 0.4)',
+              },
+              '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#699CFF' },
+            }}
           >
             <MenuItem value="all">{t('deployments.filters.allEnvironments')}</MenuItem>
             <MenuItem value="development">{t('deployments.filters.development')}</MenuItem>
@@ -299,8 +354,8 @@ export const DeploymentPage: React.FC = () => {
           variant="outlined"
           size="small"
           sx={{
-            color: autoRefresh ? theme.palette.success.main : theme.palette.text.secondary,
-            borderColor: autoRefresh ? theme.palette.success.main : theme.palette.divider,
+            color: autoRefresh ? '#58E7AB' : '#6475A1',
+            borderColor: autoRefresh ? 'rgba(88, 231, 171, 0.3)' : 'rgba(100, 117, 161, 0.2)',
           }}
         />
       </Box>
@@ -312,12 +367,20 @@ export const DeploymentPage: React.FC = () => {
       )}
 
       {loading ? (
-        <LinearProgress />
+        <LinearProgress
+          sx={{
+            bgcolor: 'rgba(100, 117, 161, 0.1)',
+            '& .MuiLinearProgress-bar': { bgcolor: '#699CFF' },
+          }}
+        />
       ) : (
-        <Card>
+        <Card sx={{ bgcolor: '#0F1E3F', border: '1px solid rgba(100, 117, 161, 0.2)' }}>
           <CardContent sx={{ p: 0 }}>
-            <Box sx={{ px: 3, py: 2, borderBottom: `1px solid ${theme.palette.divider}` }}>
-              <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
+            <Box sx={{ px: 3, py: 2, borderBottom: '1px solid rgba(100, 117, 161, 0.12)' }}>
+              <Typography
+                variant="h6"
+                sx={{ fontWeight: 600, color: '#DEE5FF', fontSize: '0.9rem' }}
+              >
                 {t('deployments.history')}
               </Typography>
             </Box>
@@ -325,19 +388,19 @@ export const DeploymentPage: React.FC = () => {
               <Table>
                 <TableHead>
                   <TableRow>
-                    <TableCell sx={{ color: theme.palette.text.secondary, fontWeight: 600 }}>
+                    <TableCell sx={{ color: '#6475A1', fontWeight: 600 }}>
                       {t('deployments.table.status')}
                     </TableCell>
-                    <TableCell sx={{ color: theme.palette.text.secondary, fontWeight: 600 }}>
+                    <TableCell sx={{ color: '#6475A1', fontWeight: 600 }}>
                       {t('deployments.table.serviceVersion')}
                     </TableCell>
-                    <TableCell sx={{ color: theme.palette.text.secondary, fontWeight: 600 }}>
+                    <TableCell sx={{ color: '#6475A1', fontWeight: 600 }}>
                       {t('deployments.table.environment')}
                     </TableCell>
-                    <TableCell sx={{ color: theme.palette.text.secondary, fontWeight: 600 }}>
+                    <TableCell sx={{ color: '#6475A1', fontWeight: 600 }}>
                       {t('deployments.table.strategy')}
                     </TableCell>
-                    <TableCell sx={{ color: theme.palette.text.secondary, fontWeight: 600 }}>
+                    <TableCell sx={{ color: '#6475A1', fontWeight: 600 }}>
                       {t('deployments.table.time')}
                     </TableCell>
                   </TableRow>
@@ -349,7 +412,7 @@ export const DeploymentPage: React.FC = () => {
                       <TableRow
                         key={d.id}
                         sx={{
-                          '&:hover': { bgcolor: alpha(theme.palette.text.primary, 0.02) },
+                          '&:hover': { bgcolor: 'rgba(100, 117, 161, 0.04)' },
                           animation: 'fadeIn 0.3s ease-out both',
                           animationDelay: `${i * 30}ms`,
                         }}
@@ -360,13 +423,23 @@ export const DeploymentPage: React.FC = () => {
                             <Chip
                               label={d.status.replace('_', ' ')}
                               size="small"
-                              color={config.chipColor}
-                              variant="outlined"
-                              sx={{ fontSize: '0.7rem', height: 22 }}
+                              sx={{
+                                fontSize: '0.65rem',
+                                height: 20,
+                                bgcolor: `${config.color}1A`,
+                                color: config.color,
+                                border: `1px solid ${config.color}33`,
+                              }}
                             />
                           </Box>
                         </TableCell>
-                        <TableCell sx={{ color: theme.palette.text.primary }}>
+                        <TableCell
+                          sx={{
+                            color: '#DEE5FF',
+                            fontFamily: '"JetBrains Mono", monospace',
+                            fontSize: '0.75rem',
+                          }}
+                        >
                           {d.artifacts?.image || d.version}
                         </TableCell>
                         <TableCell>
@@ -374,27 +447,34 @@ export const DeploymentPage: React.FC = () => {
                             label={d.environment}
                             size="small"
                             sx={{
-                              height: 22,
-                              fontSize: '0.7rem',
+                              height: 20,
+                              fontSize: '0.65rem',
                               bgcolor:
                                 d.environment === 'production'
-                                  ? alpha(theme.palette.error.main, 0.1)
+                                  ? 'rgba(250, 116, 111, 0.1)'
                                   : d.environment === 'staging'
-                                    ? alpha(theme.palette.warning.main, 0.1)
-                                    : alpha(theme.palette.primary.main, 0.1),
+                                    ? 'rgba(245, 158, 11, 0.1)'
+                                    : 'rgba(105, 156, 255, 0.1)',
                               color:
                                 d.environment === 'production'
-                                  ? theme.palette.error.main
+                                  ? '#FA746F'
                                   : d.environment === 'staging'
-                                    ? theme.palette.warning.main
-                                    : theme.palette.primary.main,
+                                    ? '#F59E0B'
+                                    : '#ADC6FF',
+                              border: `1px solid ${
+                                d.environment === 'production'
+                                  ? 'rgba(250, 116, 111, 0.2)'
+                                  : d.environment === 'staging'
+                                    ? 'rgba(245, 158, 11, 0.2)'
+                                    : 'rgba(105, 156, 255, 0.2)'
+                              }`,
                             }}
                           />
                         </TableCell>
-                        <TableCell sx={{ color: theme.palette.text.secondary }}>
+                        <TableCell sx={{ color: '#99AAD9', fontSize: '0.75rem' }}>
                           {d.strategy || 'rolling'}
                         </TableCell>
-                        <TableCell sx={{ color: theme.palette.text.secondary }}>
+                        <TableCell sx={{ color: '#6475A1', fontSize: '0.75rem' }}>
                           {timeAgo(d.createdAt)}
                         </TableCell>
                       </TableRow>
@@ -405,7 +485,7 @@ export const DeploymentPage: React.FC = () => {
             </TableContainer>
             {deployments.length === 0 && (
               <Box sx={{ textAlign: 'center', py: 6 }}>
-                <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+                <Typography variant="body2" sx={{ color: '#6475A1' }}>
                   No deployments found
                 </Typography>
               </Box>

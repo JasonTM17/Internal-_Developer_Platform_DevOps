@@ -32,7 +32,6 @@ import {
   Tooltip,
   Chip,
   Stack,
-  alpha,
 } from '@mui/material';
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -115,7 +114,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        bgcolor: theme.palette.background.default,
+        bgcolor: '#060E20',
+        borderRight: '1px solid rgba(100, 117, 161, 0.15)',
       }}
     >
       <Box
@@ -125,34 +125,58 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           alignItems: 'center',
           gap: 1.5,
           justifyContent: collapsed ? 'center' : 'flex-start',
+          minHeight: 64,
         }}
       >
-        <img src="/logo.svg" alt="IDP" style={{ width: 32, height: 32 }} />
+        <Box
+          sx={{
+            width: 32,
+            height: 32,
+            borderRadius: 1.5,
+            background: 'linear-gradient(135deg, #699CFF, #4CD7F6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 2px 8px rgba(105, 156, 255, 0.3)',
+          }}
+        >
+          <img
+            src="/logo.svg"
+            alt="IDP"
+            style={{ width: 20, height: 20, filter: 'brightness(10)' }}
+          />
+        </Box>
         {!collapsed && (
           <>
             <Box>
               <Typography
                 variant="subtitle1"
-                sx={{ fontWeight: 700, color: theme.palette.text.primary, lineHeight: 1.2 }}
+                sx={{ fontWeight: 700, color: '#DEE5FF', lineHeight: 1.2, fontSize: '0.9rem' }}
               >
                 IDP
               </Typography>
               <Typography
                 variant="caption"
-                sx={{ color: theme.palette.text.secondary, fontSize: '0.65rem' }}
+                sx={{
+                  color: '#6475A1',
+                  fontSize: '0.6rem',
+                  letterSpacing: '0.5px',
+                  textTransform: 'uppercase',
+                }}
               >
-                Developer Platform
+                DevOps Platform
               </Typography>
             </Box>
             <Chip
-              label="Local"
+              label="v1.2"
               size="small"
               sx={{
                 ml: 'auto',
                 height: 20,
                 fontSize: '0.6rem',
-                bgcolor: alpha(theme.palette.success.main, 0.12),
-                color: theme.palette.success.main,
+                bgcolor: 'rgba(88, 231, 171, 0.1)',
+                color: '#58E7AB',
+                border: '1px solid rgba(88, 231, 171, 0.2)',
               }}
             />
           </>
@@ -175,16 +199,12 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                   py: 1,
                   px: collapsed ? 1.5 : 2,
                   justifyContent: collapsed ? 'center' : 'flex-start',
-                  bgcolor: isActive(item.path)
-                    ? alpha(theme.palette.primary.main, 0.12)
-                    : 'transparent',
-                  borderLeft: isActive(item.path)
-                    ? `3px solid ${theme.palette.primary.main}`
-                    : '3px solid transparent',
+                  bgcolor: isActive(item.path) ? 'rgba(105, 156, 255, 0.12)' : 'transparent',
+                  borderLeft: isActive(item.path) ? '3px solid #699CFF' : '3px solid transparent',
                   '&:hover': {
                     bgcolor: isActive(item.path)
-                      ? alpha(theme.palette.primary.main, 0.16)
-                      : alpha(theme.palette.text.primary, 0.04),
+                      ? 'rgba(105, 156, 255, 0.16)'
+                      : 'rgba(100, 117, 161, 0.08)',
                   },
                   transition: 'all 0.2s ease',
                 }}
@@ -192,9 +212,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                 <ListItemIcon
                   sx={{
                     minWidth: collapsed ? 'auto' : 36,
-                    color: isActive(item.path)
-                      ? theme.palette.primary.main
-                      : theme.palette.text.secondary,
+                    color: isActive(item.path) ? '#ADC6FF' : '#6475A1',
                   }}
                 >
                   {item.badge ? (
@@ -213,11 +231,9 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                   <ListItemText
                     primary={item.label}
                     primaryTypographyProps={{
-                      fontSize: '0.85rem',
+                      fontSize: '0.8rem',
                       fontWeight: isActive(item.path) ? 600 : 400,
-                      color: isActive(item.path)
-                        ? theme.palette.text.primary
-                        : theme.palette.text.secondary,
+                      color: isActive(item.path) ? '#DEE5FF' : '#99AAD9',
                     }}
                   />
                 )}
@@ -232,20 +248,23 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       <Box sx={{ p: collapsed ? 1 : 2 }}>
         <Tooltip title={collapsed ? t('nav.settings') : ''} placement="right" arrow>
           <ListItemButton
-            sx={{ borderRadius: 2, py: 1, justifyContent: collapsed ? 'center' : 'flex-start' }}
+            sx={{
+              borderRadius: 2,
+              py: 1,
+              justifyContent: collapsed ? 'center' : 'flex-start',
+              '&:hover': { bgcolor: 'rgba(100, 117, 161, 0.08)' },
+            }}
             onClick={() => navigate('/settings')}
           >
-            <ListItemIcon
-              sx={{ minWidth: collapsed ? 'auto' : 36, color: theme.palette.text.secondary }}
-            >
+            <ListItemIcon sx={{ minWidth: collapsed ? 'auto' : 36, color: '#6475A1' }}>
               <SettingsIcon fontSize="small" />
             </ListItemIcon>
             {!collapsed && (
               <ListItemText
                 primary={t('nav.settings')}
                 primaryTypographyProps={{
-                  fontSize: '0.85rem',
-                  color: theme.palette.text.secondary,
+                  fontSize: '0.8rem',
+                  color: '#99AAD9',
                 }}
               />
             )}
@@ -259,20 +278,21 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
               px: 2,
               py: 1,
               borderRadius: 2,
-              bgcolor: alpha(theme.palette.text.primary, 0.02),
+              bgcolor: 'rgba(100, 117, 161, 0.06)',
+              border: '1px solid rgba(100, 117, 161, 0.1)',
             }}
           >
             <Stack direction="row" alignItems="center" spacing={1}>
               <CircleIcon
                 sx={{
                   fontSize: 8,
-                  color: apiConnected ? theme.palette.success.main : theme.palette.error.main,
+                  color: apiConnected ? '#58E7AB' : '#FA746F',
                 }}
               />
               <Typography
                 variant="caption"
                 sx={{
-                  color: apiConnected ? theme.palette.success.main : theme.palette.error.main,
+                  color: apiConnected ? '#58E7AB' : '#FA746F',
                   fontSize: '0.7rem',
                   fontWeight: 500,
                 }}
@@ -287,7 +307,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   );
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: theme.palette.background.default }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#060E20' }}>
       {isSmall ? (
         <Drawer
           variant="temporary"
@@ -296,8 +316,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           sx={{
             '& .MuiDrawer-paper': {
               width: DRAWER_WIDTH,
-              bgcolor: theme.palette.background.default,
-              borderRight: `1px solid ${theme.palette.divider}`,
+              bgcolor: '#060E20',
+              borderRight: '1px solid rgba(100, 117, 161, 0.15)',
             },
           }}
         >
@@ -311,8 +331,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             transition: 'width 0.2s ease',
             '& .MuiDrawer-paper': {
               width: currentDrawerWidth,
-              bgcolor: theme.palette.background.default,
-              borderRight: `1px solid ${theme.palette.divider}`,
+              bgcolor: '#060E20',
+              borderRight: '1px solid rgba(100, 117, 161, 0.15)',
               transition: 'width 0.2s ease',
               overflowX: 'hidden',
             },
@@ -327,8 +347,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           position="sticky"
           elevation={0}
           sx={{
-            bgcolor: theme.palette.background.paper,
-            borderBottom: `1px solid ${theme.palette.divider}`,
+            bgcolor: '#0A1836',
+            borderBottom: '1px solid rgba(100, 117, 161, 0.15)',
           }}
         >
           <Toolbar sx={{ minHeight: '56px !important' }}>
@@ -336,7 +356,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
               <IconButton
                 edge="start"
                 onClick={() => setMobileOpen(true)}
-                sx={{ mr: 2, color: theme.palette.text.primary }}
+                sx={{ mr: 2, color: '#DEE5FF' }}
               >
                 <MenuIcon />
               </IconButton>
@@ -345,18 +365,34 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             <Tooltip title={t('language.switchLanguage')}>
               <IconButton
                 onClick={toggleLanguage}
-                sx={{ color: theme.palette.text.secondary, mr: 1 }}
+                sx={{
+                  color: '#6475A1',
+                  mr: 1,
+                  '&:hover': { color: '#99AAD9', bgcolor: 'rgba(100, 117, 161, 0.1)' },
+                }}
               >
                 <TranslateIcon fontSize="small" />
               </IconButton>
             </Tooltip>
             <Tooltip title={themeTooltip}>
-              <IconButton onClick={toggleTheme} sx={{ color: theme.palette.text.secondary, mr: 1 }}>
+              <IconButton
+                onClick={toggleTheme}
+                sx={{
+                  color: '#6475A1',
+                  mr: 1,
+                  '&:hover': { color: '#99AAD9', bgcolor: 'rgba(100, 117, 161, 0.1)' },
+                }}
+              >
                 {themeIcon}
               </IconButton>
             </Tooltip>
             <Tooltip title="Notifications">
-              <IconButton sx={{ color: theme.palette.text.secondary }}>
+              <IconButton
+                sx={{
+                  color: '#6475A1',
+                  '&:hover': { color: '#99AAD9', bgcolor: 'rgba(100, 117, 161, 0.1)' },
+                }}
+              >
                 <Badge
                   badgeContent={2}
                   color="error"
@@ -371,8 +407,9 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                 width: 32,
                 height: 32,
                 ml: 2,
-                bgcolor: theme.palette.primary.main,
+                bgcolor: '#699CFF',
                 fontSize: '0.8rem',
+                fontWeight: 600,
               }}
             >
               JS

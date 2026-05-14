@@ -22,15 +22,15 @@ export const useThemeMode = () => useContext(ThemeContext);
 
 const darkPalette = {
   mode: 'dark' as const,
-  primary: { main: '#3B82F6', light: '#60A5FA', dark: '#2563EB' },
-  secondary: { main: '#06B6D4', light: '#22D3EE', dark: '#0891B2' },
-  background: { default: '#0F172A', paper: '#1E293B' },
-  text: { primary: '#F8FAFC', secondary: '#94A3B8' },
-  success: { main: '#10B981', light: '#34D399', dark: '#059669' },
+  primary: { main: '#699CFF', light: '#ADC6FF', dark: '#3B82F6' },
+  secondary: { main: '#4CD7F6', light: '#74E3FF', dark: '#06B6D4' },
+  background: { default: '#060E20', paper: '#0A1836' },
+  text: { primary: '#DEE5FF', secondary: '#99AAD9' },
+  success: { main: '#58E7AB', light: '#9BFFCE', dark: '#10B981' },
   warning: { main: '#F59E0B', light: '#FBBF24', dark: '#D97706' },
-  error: { main: '#EF4444', light: '#F87171', dark: '#DC2626' },
-  info: { main: '#06B6D4', light: '#22D3EE', dark: '#0891B2' },
-  divider: 'rgba(148, 163, 184, 0.12)',
+  error: { main: '#FA746F', light: '#FF9993', dark: '#C54D4A' },
+  info: { main: '#4CD7F6', light: '#74E3FF', dark: '#0891B2' },
+  divider: 'rgba(100, 117, 161, 0.2)',
 };
 
 const lightPalette = {
@@ -112,7 +112,9 @@ export const ThemeContextProvider: React.FC<{ children: React.ReactNode }> = ({ 
             styleOverrides: {
               root: {
                 backgroundImage: 'none',
-                border: `1px solid ${resolvedMode === 'dark' ? 'rgba(148, 163, 184, 0.12)' : 'rgba(15, 23, 42, 0.08)'}`,
+                backgroundColor: resolvedMode === 'dark' ? '#0F1E3F' : '#FFFFFF',
+                border: `1px solid ${resolvedMode === 'dark' ? 'rgba(100, 117, 161, 0.2)' : 'rgba(15, 23, 42, 0.08)'}`,
+                borderRadius: 12,
               },
             },
           },
@@ -124,8 +126,22 @@ export const ThemeContextProvider: React.FC<{ children: React.ReactNode }> = ({ 
             styleOverrides: {
               root: {
                 borderColor:
-                  resolvedMode === 'dark' ? 'rgba(148, 163, 184, 0.08)' : 'rgba(15, 23, 42, 0.06)',
+                  resolvedMode === 'dark' ? 'rgba(100, 117, 161, 0.12)' : 'rgba(15, 23, 42, 0.06)',
                 padding: '10px 16px',
+                fontSize: '0.8125rem',
+              },
+            },
+          },
+          MuiTableHead: {
+            styleOverrides: {
+              root: {
+                '& .MuiTableCell-head': {
+                  backgroundColor: resolvedMode === 'dark' ? '#0A1836' : '#F8FAFC',
+                  fontWeight: 600,
+                  fontSize: '0.75rem',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                },
               },
             },
           },

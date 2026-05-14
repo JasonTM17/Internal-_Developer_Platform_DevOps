@@ -27,7 +27,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  useTheme,
   alpha,
 } from '@mui/material';
 import React, { useState, useEffect } from 'react';
@@ -65,7 +64,6 @@ const StatCard: React.FC<{
   delay?: number;
 }> = ({ title, value, suffix = '', icon, color, trend, delay = 0 }) => {
   const animVal = useCounter(value);
-  const theme = useTheme();
   return (
     <Card
       sx={{
@@ -73,16 +71,14 @@ const StatCard: React.FC<{
         overflow: 'hidden',
         animation: 'fadeInUp 0.5s ease-out both',
         animationDelay: `${delay}ms`,
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: '3px',
-          background: `linear-gradient(90deg, ${color}, transparent)`,
+        bgcolor: '#0F1E3F',
+        border: '1px solid rgba(100, 117, 161, 0.2)',
+        borderLeft: `3px solid ${color}`,
+        '&:hover': {
+          transform: 'translateY(-2px)',
+          boxShadow: `0 8px 32px ${alpha(color, 0.15)}, 0 0 0 1px ${alpha(color, 0.2)}`,
+          borderColor: alpha(color, 0.4),
         },
-        '&:hover': { transform: 'translateY(-4px)', boxShadow: `0 8px 25px ${alpha(color, 0.12)}` },
         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
       }}
     >
@@ -92,34 +88,55 @@ const StatCard: React.FC<{
             <Typography
               variant="caption"
               sx={{
-                color: theme.palette.text.secondary,
+                color: '#6475A1',
                 textTransform: 'uppercase',
-                letterSpacing: 1,
-                fontSize: '0.7rem',
+                letterSpacing: '0.8px',
+                fontSize: '0.65rem',
+                fontWeight: 600,
               }}
             >
               {title}
             </Typography>
             <Typography
               variant="h3"
-              sx={{ fontWeight: 700, mt: 0.5, lineHeight: 1, color: theme.palette.text.primary }}
+              sx={{
+                fontWeight: 700,
+                mt: 0.5,
+                lineHeight: 1,
+                color: '#DEE5FF',
+                fontSize: '1.75rem',
+              }}
             >
               {animVal}
               {suffix}
             </Typography>
           </Box>
-          <Avatar sx={{ bgcolor: alpha(color, 0.12), color, width: 44, height: 44 }}>{icon}</Avatar>
+          <Avatar
+            sx={{
+              bgcolor: alpha(color, 0.1),
+              color,
+              width: 40,
+              height: 40,
+              border: `1px solid ${alpha(color, 0.2)}`,
+            }}
+          >
+            {icon}
+          </Avatar>
         </Box>
         {trend !== undefined && (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 1.5 }}>
             {trend >= 0 ? (
-              <TrendingUpIcon sx={{ fontSize: 16, color: theme.palette.success.main }} />
+              <TrendingUpIcon sx={{ fontSize: 14, color: '#58E7AB' }} />
             ) : (
-              <TrendingDownIcon sx={{ fontSize: 16, color: theme.palette.error.main }} />
+              <TrendingDownIcon sx={{ fontSize: 14, color: '#FA746F' }} />
             )}
             <Typography
               variant="caption"
-              sx={{ color: trend >= 0 ? theme.palette.success.main : theme.palette.error.main }}
+              sx={{
+                color: trend >= 0 ? '#58E7AB' : '#FA746F',
+                fontSize: '0.7rem',
+                fontWeight: 500,
+              }}
             >
               {trend > 0 ? '+' : ''}
               {trend}% from last week
@@ -139,7 +156,6 @@ const QuickAction: React.FC<{
   color: string;
   delay?: number;
 }> = ({ title, description, icon, onClick, color, delay = 0 }) => {
-  const theme = useTheme();
   return (
     <Card
       onClick={onClick}
@@ -147,35 +163,48 @@ const QuickAction: React.FC<{
         cursor: 'pointer',
         animation: 'fadeInUp 0.4s ease-out both',
         animationDelay: `${delay}ms`,
+        bgcolor: '#0F1E3F',
+        border: '1px solid rgba(100, 117, 161, 0.15)',
         '&:hover': {
           transform: 'translateY(-2px)',
-          borderColor: color,
-          boxShadow: `0 4px 16px ${alpha(color, 0.12)}`,
+          borderColor: alpha(color, 0.4),
+          boxShadow: `0 4px 20px ${alpha(color, 0.1)}`,
           '& .action-arrow': { transform: 'translateX(4px)', opacity: 1 },
         },
         transition: 'all 0.25s ease',
       }}
     >
       <CardContent sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
-        <Avatar sx={{ bgcolor: alpha(color, 0.12), color, width: 40, height: 40 }}>{icon}</Avatar>
+        <Avatar
+          sx={{
+            bgcolor: alpha(color, 0.1),
+            color,
+            width: 36,
+            height: 36,
+            border: `1px solid ${alpha(color, 0.2)}`,
+            '& .MuiSvgIcon-root': { fontSize: '1.1rem' },
+          }}
+        >
+          {icon}
+        </Avatar>
         <Box sx={{ flex: 1 }}>
           <Typography
             variant="subtitle2"
-            sx={{ fontWeight: 600, color: theme.palette.text.primary }}
+            sx={{ fontWeight: 600, color: '#DEE5FF', fontSize: '0.8rem' }}
           >
             {title}
           </Typography>
-          <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
+          <Typography variant="caption" sx={{ color: '#6475A1', fontSize: '0.7rem' }}>
             {description}
           </Typography>
         </Box>
         <ArrowForwardIcon
           className="action-arrow"
           sx={{
-            color: theme.palette.text.secondary,
+            color: '#6475A1',
             opacity: 0.3,
             transition: 'all 0.2s ease',
-            fontSize: 18,
+            fontSize: 16,
           }}
         />
       </CardContent>
@@ -194,7 +223,6 @@ interface RecentDeployment {
 
 export const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
-  const theme = useTheme();
   const { t } = useTranslation();
   const [recentDeployments, setRecentDeployments] = useState<RecentDeployment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -208,12 +236,10 @@ export const DashboardPage: React.FC = () => {
   }, []);
 
   const statusIcon = (s: string) => {
-    if (s === 'succeeded')
-      return <CheckCircleIcon sx={{ fontSize: 16, color: theme.palette.success.main }} />;
-    if (s === 'failed') return <ErrorIcon sx={{ fontSize: 16, color: theme.palette.error.main }} />;
-    if (s === 'in_progress')
-      return <RocketLaunchIcon sx={{ fontSize: 16, color: theme.palette.info.main }} />;
-    return <WarningIcon sx={{ fontSize: 16, color: theme.palette.warning.main }} />;
+    if (s === 'succeeded') return <CheckCircleIcon sx={{ fontSize: 16, color: '#58E7AB' }} />;
+    if (s === 'failed') return <ErrorIcon sx={{ fontSize: 16, color: '#FA746F' }} />;
+    if (s === 'in_progress') return <RocketLaunchIcon sx={{ fontSize: 16, color: '#4CD7F6' }} />;
+    return <WarningIcon sx={{ fontSize: 16, color: '#F59E0B' }} />;
   };
 
   const today = new Date().toLocaleDateString('en-US', {
@@ -226,10 +252,10 @@ export const DashboardPage: React.FC = () => {
   return (
     <Box sx={{ maxWidth: 1440, mx: 'auto' }}>
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
+        <Typography variant="h4" sx={{ fontWeight: 700, color: '#DEE5FF', fontSize: '1.5rem' }}>
           {t('dashboard.title')}
         </Typography>
-        <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mt: 0.5 }}>
+        <Typography variant="body2" sx={{ color: '#6475A1', mt: 0.5, fontSize: '0.8rem' }}>
           {today}
         </Typography>
       </Box>
@@ -240,7 +266,7 @@ export const DashboardPage: React.FC = () => {
             title={t('dashboard.services')}
             value={12}
             icon={<StorageIcon />}
-            color={theme.palette.primary.main}
+            color="#699CFF"
             delay={0}
           />
         </Grid>
@@ -249,7 +275,7 @@ export const DashboardPage: React.FC = () => {
             title={t('dashboard.deploymentsToday')}
             value={8}
             icon={<RocketLaunchIcon />}
-            color={theme.palette.secondary.main}
+            color="#4CD7F6"
             trend={12}
             delay={80}
           />
@@ -259,7 +285,7 @@ export const DashboardPage: React.FC = () => {
             title={t('dashboard.environments')}
             value={4}
             icon={<CloudIcon />}
-            color={theme.palette.success.main}
+            color="#58E7AB"
             delay={160}
           />
         </Grid>
@@ -269,7 +295,7 @@ export const DashboardPage: React.FC = () => {
             value={98}
             suffix="%"
             icon={<SpeedIcon />}
-            color={theme.palette.warning.main}
+            color="#F59E0B"
             trend={2.5}
             delay={240}
           />
@@ -278,59 +304,66 @@ export const DashboardPage: React.FC = () => {
 
       <Grid container spacing={3}>
         <Grid item xs={12} md={7}>
-          <Card>
+          <Card sx={{ bgcolor: '#0F1E3F', border: '1px solid rgba(100, 117, 161, 0.2)' }}>
             <CardContent sx={{ p: 0 }}>
               <Box
                 sx={{
                   px: 3,
-                  py: 2.5,
+                  py: 2,
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
-                  borderBottom: `1px solid ${theme.palette.divider}`,
+                  borderBottom: '1px solid rgba(100, 117, 161, 0.12)',
                 }}
               >
                 <Box>
                   <Typography
                     variant="h6"
-                    sx={{ fontWeight: 600, color: theme.palette.text.primary }}
+                    sx={{ fontWeight: 600, color: '#DEE5FF', fontSize: '0.9rem' }}
                   >
                     {t('dashboard.recentDeployments')}
                   </Typography>
-                  <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
+                  <Typography variant="caption" sx={{ color: '#6475A1', fontSize: '0.7rem' }}>
                     {t('dashboard.latestActivity')}
                   </Typography>
                 </Box>
                 <Button
                   size="small"
                   onClick={() => navigate('/deployments')}
-                  sx={{ color: theme.palette.primary.main }}
+                  sx={{
+                    color: '#699CFF',
+                    fontSize: '0.75rem',
+                    '&:hover': { bgcolor: 'rgba(105, 156, 255, 0.08)' },
+                  }}
                 >
                   {t('common.viewAll')}
                 </Button>
               </Box>
               {loading ? (
                 <Box sx={{ p: 3 }}>
-                  <LinearProgress />
+                  <LinearProgress
+                    sx={{
+                      bgcolor: 'rgba(100, 117, 161, 0.1)',
+                      '& .MuiLinearProgress-bar': { bgcolor: '#699CFF' },
+                    }}
+                  />
                 </Box>
               ) : (
                 <TableContainer>
                   <Table size="small">
                     <TableHead>
                       <TableRow>
-                        <TableCell sx={{ color: theme.palette.text.secondary }}>Status</TableCell>
-                        <TableCell sx={{ color: theme.palette.text.secondary }}>Service</TableCell>
-                        <TableCell sx={{ color: theme.palette.text.secondary }}>
-                          Environment
-                        </TableCell>
-                        <TableCell sx={{ color: theme.palette.text.secondary }}>Time</TableCell>
+                        <TableCell sx={{ color: '#6475A1' }}>Status</TableCell>
+                        <TableCell sx={{ color: '#6475A1' }}>Service</TableCell>
+                        <TableCell sx={{ color: '#6475A1' }}>Environment</TableCell>
+                        <TableCell sx={{ color: '#6475A1' }}>Time</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
                       {recentDeployments.map((d) => (
                         <TableRow
                           key={d.id}
-                          sx={{ '&:hover': { bgcolor: alpha(theme.palette.text.primary, 0.02) } }}
+                          sx={{ '&:hover': { bgcolor: 'rgba(100, 117, 161, 0.04)' } }}
                         >
                           <TableCell>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -338,19 +371,39 @@ export const DashboardPage: React.FC = () => {
                               <Chip
                                 label={d.status.replace('_', ' ')}
                                 size="small"
-                                color={
-                                  d.status === 'succeeded'
-                                    ? 'success'
-                                    : d.status === 'failed'
-                                      ? 'error'
-                                      : 'info'
-                                }
-                                variant="outlined"
-                                sx={{ fontSize: '0.7rem', height: 22 }}
+                                sx={{
+                                  fontSize: '0.65rem',
+                                  height: 20,
+                                  bgcolor:
+                                    d.status === 'succeeded'
+                                      ? 'rgba(88, 231, 171, 0.1)'
+                                      : d.status === 'failed'
+                                        ? 'rgba(250, 116, 111, 0.1)'
+                                        : 'rgba(76, 215, 246, 0.1)',
+                                  color:
+                                    d.status === 'succeeded'
+                                      ? '#58E7AB'
+                                      : d.status === 'failed'
+                                        ? '#FA746F'
+                                        : '#4CD7F6',
+                                  border: `1px solid ${
+                                    d.status === 'succeeded'
+                                      ? 'rgba(88, 231, 171, 0.2)'
+                                      : d.status === 'failed'
+                                        ? 'rgba(250, 116, 111, 0.2)'
+                                        : 'rgba(76, 215, 246, 0.2)'
+                                  }`,
+                                }}
                               />
                             </Box>
                           </TableCell>
-                          <TableCell sx={{ color: theme.palette.text.primary }}>
+                          <TableCell
+                            sx={{
+                              color: '#DEE5FF',
+                              fontFamily: '"JetBrains Mono", monospace',
+                              fontSize: '0.75rem',
+                            }}
+                          >
                             {d.artifacts?.image || d.version}
                           </TableCell>
                           <TableCell>
@@ -358,14 +411,15 @@ export const DashboardPage: React.FC = () => {
                               label={d.environment}
                               size="small"
                               sx={{
-                                fontSize: '0.7rem',
-                                height: 22,
-                                bgcolor: alpha(theme.palette.primary.main, 0.1),
-                                color: theme.palette.primary.light,
+                                fontSize: '0.65rem',
+                                height: 20,
+                                bgcolor: 'rgba(105, 156, 255, 0.1)',
+                                color: '#ADC6FF',
+                                border: '1px solid rgba(105, 156, 255, 0.2)',
                               }}
                             />
                           </TableCell>
-                          <TableCell sx={{ color: theme.palette.text.secondary }}>
+                          <TableCell sx={{ color: '#6475A1', fontSize: '0.75rem' }}>
                             {timeAgo(d.createdAt)}
                           </TableCell>
                         </TableRow>
@@ -381,7 +435,7 @@ export const DashboardPage: React.FC = () => {
         <Grid item xs={12} md={5}>
           <Typography
             variant="h6"
-            sx={{ fontWeight: 600, mb: 2, color: theme.palette.text.primary }}
+            sx={{ fontWeight: 600, mb: 2, color: '#DEE5FF', fontSize: '0.9rem' }}
           >
             {t('dashboard.quickActions')}
           </Typography>
@@ -390,7 +444,7 @@ export const DashboardPage: React.FC = () => {
               title={t('nav.catalog')}
               description={t('dashboard.registerService')}
               icon={<StorageIcon />}
-              color={theme.palette.primary.main}
+              color="#699CFF"
               onClick={() => navigate('/catalog')}
               delay={300}
             />
@@ -398,7 +452,7 @@ export const DashboardPage: React.FC = () => {
               title={t('dashboard.newDeployment')}
               description={t('dashboard.newDeployment')}
               icon={<RocketLaunchIcon />}
-              color={theme.palette.secondary.main}
+              color="#4CD7F6"
               onClick={() => navigate('/deployments')}
               delay={360}
             />
@@ -406,7 +460,7 @@ export const DashboardPage: React.FC = () => {
               title={t('nav.environments')}
               description={t('nav.environments')}
               icon={<CloudIcon />}
-              color={theme.palette.success.main}
+              color="#58E7AB"
               onClick={() => navigate('/environments')}
               delay={420}
             />
@@ -414,7 +468,7 @@ export const DashboardPage: React.FC = () => {
               title={t('nav.health')}
               description={t('dashboard.viewHealth')}
               icon={<MonitorHeartIcon />}
-              color={theme.palette.warning.main}
+              color="#F59E0B"
               onClick={() => navigate('/health')}
               delay={480}
             />
@@ -422,7 +476,7 @@ export const DashboardPage: React.FC = () => {
               title={t('nav.cost')}
               description={t('nav.cost')}
               icon={<AttachMoneyIcon />}
-              color={theme.palette.error.main}
+              color="#FA746F"
               onClick={() => navigate('/cost')}
               delay={540}
             />
