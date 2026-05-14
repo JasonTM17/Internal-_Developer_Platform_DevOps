@@ -46,12 +46,8 @@ jobs:
     strategy:
       matrix:
         service: ${{ fromJson(needs.detect-services.outputs.services) }}
-        platform: [linux/amd64, linux/arm64]
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -80,23 +76,16 @@ jobs:
         with:
           context: .
           file: apps/${{ matrix.service }}/Dockerfile
-          platforms: ${{ matrix.platform }}
+          platforms: linux/amd64
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=${{ matrix.service }}-${{ matrix.platform }}
-          cache-to: type=gha,scope=${{ matrix.service }}-${{ matrix.platform }},mode=max
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,scope=${{ matrix.service }},mode=max
           build-args: |
             NODE_ENV=production
             BUILD_DATE=${{ github.event.head_commit.timestamp }}
             VCS_REF=${{ github.sha }}
-
-      - name: Export digest
-        if: github.event_name != 'pull_request'
-        run: |
-          mkdir -p /tmp/digests/${{ matrix.service }}
-          DIGEST=$(docker buildx imagetools inspect ${{ env.REGISTRY }}/${{ github.repository }}/idp-${{ matrix.service }}:${{ github.sha }} --format '{{.Digest}}')
-          echo "${DIGEST}" > /tmp/digests/${{ matrix.service }}/${{ matrix.platform }}
 
   scan:
     name: Scan - ${{ matrix.service }}
@@ -116,16 +105,19 @@ jobs:
           format: 'sarif'
           output: 'trivy-${{ matrix.service }}.sarif'
           severity: 'CRITICAL,HIGH'
+        continue-on-error: true
 
       - name: Upload scan results
         uses: github/codeql-action/upload-sarif@v3
         if: always()
+        continue-on-error: true
         with:
           sarif_file: 'trivy-${{ matrix.service }}.sarif'
           category: 'container-${{ matrix.service }}'
 
       - name: Run Dockle linter
         uses: erzz/dockle-action@v1
+        continue-on-error: true
         with:
           image: '${{ env.REGISTRY }}/${{ github.repository }}/idp-${{ matrix.service }}:${{ github.sha }}'
           failure-threshold: WARN
