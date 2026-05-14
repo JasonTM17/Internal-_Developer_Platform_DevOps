@@ -6,6 +6,8 @@
     "environments": "Môi trường",
     "health": "Giám sát sức khỏe",
     "cost": "Phân tích chi phí",
+    "incidents": "Sự cố",
+    "audit": "Nhật ký kiểm toán",
     "settings": "Cài đặt"
   },
   "common": {
@@ -154,6 +156,43 @@
     "password": "Mật khẩu",
     "signIn": "Đăng nhập",
     "terms": "Bằng việc đăng nhập, bạn đồng ý với Điều khoản dịch vụ và Chính sách bảo mật."
+  },
+  "incidents": {
+    "title": "Sự cố",
+    "subtitle": "Sự cố đang hoạt động và đã giải quyết trên nền tảng",
+    "declare": "Khai báo sự cố",
+    "critical": "Nghiêm trọng",
+    "active": "Đang hoạt động",
+    "resolved": "Đã giải quyết",
+    "mttr": "MTTR TB"
+  },
+  "audit": {
+    "title": "Nhật ký kiểm toán",
+    "subtitle": "Lịch sử đầy đủ các hành động và thay đổi trên nền tảng",
+    "export": "Xuất",
+    "searchPlaceholder": "Tìm theo người thực hiện hoặc chi tiết...",
+    "actionType": "Loại hành động",
+    "table": {
+      "time": "Thời gian",
+      "actor": "Người thực hiện",
+      "action": "Hành động",
+      "resource": "Tài nguyên",
+      "details": "Chi tiết",
+      "outcome": "Kết quả"
+    }
+  },
+  "serviceDetail": {
+    "dependencies": "Phụ thuộc",
+    "metadata": "Thông tin",
+    "recentDeployments": "Triển khai gần đây"
+  },
+  "deploymentDetail": {
+    "rollback": "Hoàn tác",
+    "duration": "Thời lượng",
+    "strategy": "Chiến lược",
+    "canary": "Canary %",
+    "actor": "Kích hoạt bởi",
+    "eventLog": "Nhật ký sự kiện"
   },
   "language": {
     "en": "English",

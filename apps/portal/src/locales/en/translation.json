@@ -6,6 +6,8 @@
     "environments": "Environments",
     "health": "Health Monitor",
     "cost": "Cost Analysis",
+    "incidents": "Incidents",
+    "audit": "Audit Log",
     "settings": "Settings"
   },
   "common": {
@@ -154,6 +156,43 @@
     "password": "Password",
     "signIn": "Sign In",
     "terms": "By signing in, you agree to our Terms of Service and Privacy Policy."
+  },
+  "incidents": {
+    "title": "Incidents",
+    "subtitle": "Active and resolved incidents across the platform",
+    "declare": "Declare Incident",
+    "critical": "Critical",
+    "active": "Active",
+    "resolved": "Resolved",
+    "mttr": "Avg MTTR"
+  },
+  "audit": {
+    "title": "Audit Log",
+    "subtitle": "Complete history of platform actions and changes",
+    "export": "Export",
+    "searchPlaceholder": "Search by actor or details...",
+    "actionType": "Action Type",
+    "table": {
+      "time": "Time",
+      "actor": "Actor",
+      "action": "Action",
+      "resource": "Resource",
+      "details": "Details",
+      "outcome": "Outcome"
+    }
+  },
+  "serviceDetail": {
+    "dependencies": "Dependencies",
+    "metadata": "Metadata",
+    "recentDeployments": "Recent Deployments"
+  },
+  "deploymentDetail": {
+    "rollback": "Rollback",
+    "duration": "Duration",
+    "strategy": "Strategy",
+    "canary": "Canary %",
+    "actor": "Triggered By",
+    "eventLog": "Event Log"
   },
   "language": {
     "en": "English",

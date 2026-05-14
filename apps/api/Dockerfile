@@ -4,40 +4,32 @@
 # IDP API - Multi-stage Production Dockerfile (pnpm)
 # =============================================================================
 
-# Stage 1: Dependencies
-FROM node:20-alpine AS deps
+# Stage 1: Builder (install + build in same stage to preserve pnpm symlinks)
+FROM node:20-alpine AS builder
 WORKDIR /app
+
+ARG VERSION=unknown
 
 RUN apk add --no-cache libc6-compat python3 make g++
 RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
+RUN npm install -g typescript@5.4
 
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
+COPY .npmrc package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
 COPY apps/api/package.json ./apps/api/
 COPY packages/shared/package.json ./packages/shared/
 COPY packages/config/package.json ./packages/config/
 COPY packages/ui/package.json ./packages/ui/
+COPY packages/cli/package.json ./packages/cli/
 
 RUN pnpm install --frozen-lockfile
 
-# Stage 2: Builder
-FROM node:20-alpine AS builder
-WORKDIR /app
+COPY apps/api ./apps/api
+COPY packages ./packages
+COPY tsconfig.json ./
 
-ARG NODE_ENV=production
-ARG VERSION=unknown
-ENV NODE_ENV=${NODE_ENV}
+RUN cd apps/api && tsc -p tsconfig.build.json
 
-RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
-
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
-COPY --from=deps /app/packages ./packages
-COPY . .
-
-# Build the API with TypeScript compiler
-RUN pnpm --filter @idp/api run build
-
-# Stage 3: Production
+# Stage 2: Production
 FROM node:20-alpine AS production
 WORKDIR /app
 

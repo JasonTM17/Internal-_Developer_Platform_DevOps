@@ -8,6 +8,8 @@ import LightModeIcon from '@mui/icons-material/LightMode';
 import MenuIcon from '@mui/icons-material/Menu';
 import MonitorHeartIcon from '@mui/icons-material/MonitorHeart';
 import NotificationsIcon from '@mui/icons-material/Notifications';
+import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
+import PolicyIcon from '@mui/icons-material/Policy';
 import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
 import SettingsIcon from '@mui/icons-material/Settings';
 import SettingsBrightnessIcon from '@mui/icons-material/SettingsBrightness';
@@ -74,7 +76,9 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     { path: '/deployments', label: t('nav.deployments'), icon: <RocketLaunchIcon />, badge: 3 },
     { path: '/environments', label: t('nav.environments'), icon: <CloudIcon /> },
     { path: '/health', label: t('nav.health'), icon: <MonitorHeartIcon /> },
+    { path: '/incidents', label: t('nav.incidents'), icon: <NotificationsActiveIcon />, badge: 1 },
     { path: '/cost', label: t('nav.cost'), icon: <AttachMoneyIcon /> },
+    { path: '/audit', label: t('nav.audit'), icon: <PolicyIcon /> },
   ];
 
   const toggleLanguage = () => {

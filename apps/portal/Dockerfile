@@ -4,14 +4,20 @@
 # IDP Portal - Multi-stage Production Dockerfile (pnpm + Nginx)
 # =============================================================================
 
-# Stage 1: Dependencies
-FROM node:20-alpine AS deps
+# Stage 1: Builder (install + build in same stage to preserve pnpm symlinks)
+FROM node:20-alpine AS builder
 WORKDIR /app
+
+ARG VERSION=unknown
+ARG API_URL=https://api.idp.example.com
+
+ENV VITE_API_URL=${API_URL} \
+    VITE_VERSION=${VERSION}
 
 RUN apk add --no-cache libc6-compat
 RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
 
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
+COPY .npmrc package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
 COPY apps/portal/package.json ./apps/portal/
 COPY packages/shared/package.json ./packages/shared/
 COPY packages/config/package.json ./packages/config/
@@ -19,26 +25,11 @@ COPY packages/ui/package.json ./packages/ui/
 
 RUN pnpm install --frozen-lockfile
 
-# Stage 2: Builder
-FROM node:20-alpine AS builder
-WORKDIR /app
+COPY apps/portal ./apps/portal
+COPY packages ./packages
+COPY tsconfig.json ./
 
-ARG NODE_ENV=production
-ARG VERSION=unknown
-ARG API_URL=https://api.idp.example.com
-
-ENV NODE_ENV=${NODE_ENV} \
-    VITE_API_URL=${API_URL} \
-    VITE_VERSION=${VERSION}
-
-RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
-
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps/portal/node_modules ./apps/portal/node_modules
-COPY --from=deps /app/packages ./packages
-COPY . .
-
-RUN pnpm --filter @idp/portal... run build
+RUN cd apps/portal && pnpm run build
 
 # Stage 3: Production (Nginx)
 FROM nginx:1.25-alpine AS production

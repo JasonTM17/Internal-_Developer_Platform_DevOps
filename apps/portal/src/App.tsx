@@ -1,12 +1,12 @@
+import { CssBaseline, Box, CircularProgress, Typography } from '@mui/material';
 import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { CssBaseline } from '@mui/material';
-import { Box, CircularProgress, Typography } from '@mui/material';
+
 import { AuthProvider, useAuth } from './auth/AuthProvider';
 import { ProtectedRoute } from './auth/ProtectedRoute';
+import { CommandPalette } from './components/CommandPalette';
 import { AppLayout } from './layout/AppLayout';
 import { ThemeContextProvider } from './theme/ThemeContext';
-import { CommandPalette } from './components/CommandPalette';
 
 import './index.css';
 
@@ -18,6 +18,10 @@ const EnvironmentPage = lazy(() => import('./plugins/environments/EnvironmentPag
 const HealthDashboard = lazy(() => import('./plugins/health/HealthDashboard'));
 const CostDashboard = lazy(() => import('./plugins/cost/CostDashboard'));
 const SettingsPage = lazy(() => import('./plugins/settings/SettingsPage'));
+const ServiceDetailPage = lazy(() => import('./plugins/catalog/ServiceDetailPage'));
+const DeploymentDetailPage = lazy(() => import('./plugins/deployments/DeploymentDetailPage'));
+const AuditPage = lazy(() => import('./plugins/audit/AuditPage'));
+const IncidentsPage = lazy(() => import('./plugins/incidents/IncidentsPage'));
 const NotFoundPage = lazy(() => import('./plugins/NotFoundPage'));
 const LoginPage = lazy(() => import('./auth/LoginPage'));
 
@@ -46,9 +50,7 @@ const PageLoader: React.FC = () => (
 export const navigationConfig = [
   {
     group: 'Overview',
-    items: [
-      { path: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
-    ],
+    items: [{ path: '/dashboard', label: 'Dashboard', icon: 'dashboard' }],
   },
   {
     group: 'Platform',
@@ -90,51 +92,107 @@ const AppRoutes: React.FC = () => {
           {/* Dashboard */}
           <Route
             path="/dashboard"
-            element={<ProtectedRoute><DashboardPage /></ProtectedRoute>}
+            element={
+              <ProtectedRoute>
+                <DashboardPage />
+              </ProtectedRoute>
+            }
           />
 
           {/* Service Catalog */}
           <Route
             path="/catalog"
-            element={<ProtectedRoute><CatalogPage /></ProtectedRoute>}
+            element={
+              <ProtectedRoute>
+                <CatalogPage />
+              </ProtectedRoute>
+            }
           />
           <Route
             path="/catalog/services/:serviceId"
-            element={<ProtectedRoute><CatalogPage /></ProtectedRoute>}
+            element={
+              <ProtectedRoute>
+                <ServiceDetailPage />
+              </ProtectedRoute>
+            }
           />
 
           {/* Deployments */}
           <Route
             path="/deployments"
-            element={<ProtectedRoute><DeploymentPage /></ProtectedRoute>}
+            element={
+              <ProtectedRoute>
+                <DeploymentPage />
+              </ProtectedRoute>
+            }
           />
           <Route
             path="/deployments/:deploymentId"
-            element={<ProtectedRoute><DeploymentPage /></ProtectedRoute>}
+            element={
+              <ProtectedRoute>
+                <DeploymentDetailPage />
+              </ProtectedRoute>
+            }
           />
 
           {/* Environments */}
           <Route
             path="/environments"
-            element={<ProtectedRoute><EnvironmentPage /></ProtectedRoute>}
+            element={
+              <ProtectedRoute>
+                <EnvironmentPage />
+              </ProtectedRoute>
+            }
           />
 
           {/* Health */}
           <Route
             path="/health"
-            element={<ProtectedRoute><HealthDashboard /></ProtectedRoute>}
+            element={
+              <ProtectedRoute>
+                <HealthDashboard />
+              </ProtectedRoute>
+            }
           />
 
           {/* Cost */}
           <Route
             path="/cost"
-            element={<ProtectedRoute><CostDashboard /></ProtectedRoute>}
+            element={
+              <ProtectedRoute>
+                <CostDashboard />
+              </ProtectedRoute>
+            }
           />
 
           {/* Settings */}
           <Route
             path="/settings"
-            element={<ProtectedRoute><SettingsPage /></ProtectedRoute>}
+            element={
+              <ProtectedRoute>
+                <SettingsPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Audit */}
+          <Route
+            path="/audit"
+            element={
+              <ProtectedRoute>
+                <AuditPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Incidents */}
+          <Route
+            path="/incidents"
+            element={
+              <ProtectedRoute>
+                <IncidentsPage />
+              </ProtectedRoute>
+            }
           />
 
           {/* 404 */}
