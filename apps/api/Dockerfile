@@ -71,5 +71,6 @@ CMD ["node", "--enable-source-maps", "--max-old-space-size=512", "dist/index.js"
 
 LABEL org.opencontainers.image.title="IDP API" \
       org.opencontainers.image.description="Internal Developer Platform API Service" \
+      org.opencontainers.image.source="https://github.com/JasonTM17/Internal_Developer_Platform_DevOps" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.vendor="Platform Engineering"
