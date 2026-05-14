@@ -26,7 +26,13 @@ The IDP follows a monorepo architecture powered by Turborepo, featuring a React-
 > The developer portal provides a self-service UI for managing services, deployments, and environments.
 > Run `docker compose up -d` and visit [http://localhost:5173](http://localhost:5173) to explore.
 
-<!-- Add screenshots here: ![Screen Name](docs/assets/screenshots/screen-name.png) -->
+|                     Login                      |                       Dashboard                        |                  Service Catalog                   |
+| :--------------------------------------------: | :----------------------------------------------------: | :------------------------------------------------: |
+| ![Login](docs/assets/screenshots/01-login.png) | ![Dashboard](docs/assets/screenshots/02-dashboard.png) | ![Catalog](docs/assets/screenshots/03-catalog.png) |
+
+|                        Deployments                         |                Health Monitoring                 |                         Environments                         |
+| :--------------------------------------------------------: | :----------------------------------------------: | :----------------------------------------------------------: |
+| ![Deployments](docs/assets/screenshots/04-deployments.png) | ![Health](docs/assets/screenshots/05-health.png) | ![Environments](docs/assets/screenshots/06-environments.png) |
 
 ---
 
