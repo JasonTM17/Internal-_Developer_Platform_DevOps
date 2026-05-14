@@ -9,7 +9,12 @@
  * - Interactive message actions (approve/reject)
  */
 
-import type { ChannelHandler, NotificationPayload, DeliveryResult, NotificationSeverity } from './notification-service';
+import type {
+  ChannelHandler,
+  NotificationPayload,
+  DeliveryResult,
+  NotificationSeverity,
+} from './notification-service';
 
 /** Slack configuration. */
 export interface SlackConfig {
@@ -38,7 +43,13 @@ interface SlackBlock {
   type: string;
   text?: { type: string; text: string; emoji?: boolean };
   fields?: Array<{ type: string; text: string }>;
-  elements?: Array<{ type: string; text?: { type: string; text: string }; action_id?: string; style?: string; url?: string }>;
+  elements?: Array<{
+    type: string;
+    text?: { type: string; text: string };
+    action_id?: string;
+    style?: string;
+    url?: string;
+  }>;
   accessory?: unknown;
 }
 
@@ -63,6 +74,7 @@ const SEVERITY_EMOJI: Record<NotificationSeverity, string> = {
 
 /** Severity to color mapping for attachments. */
 const _SEVERITY_COLOR: Record<NotificationSeverity, string> = {
+  // eslint-disable-line @typescript-eslint/no-unused-vars
   info: '#36a64f',
   warning: '#ff9900',
   error: '#dc3545',
