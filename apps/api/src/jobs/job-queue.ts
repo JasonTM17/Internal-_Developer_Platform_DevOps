@@ -11,7 +11,7 @@
  * - Job progress tracking
  * - Graceful shutdown
  */
-import { Queue, Worker, Job, QueueScheduler, QueueEvents, JobsOptions } from 'bullmq';
+import { Queue, Worker, Job, QueueEvents, JobsOptions } from 'bullmq';
 import { Redis } from 'ioredis';
 
 export interface JobQueueOptions {
@@ -41,7 +41,6 @@ export type JobHandler<T = unknown, R = void> = (job: Job<T>) => Promise<R>;
 export class JobQueue<T = unknown> {
   private queue: Queue<T>;
   private worker: Worker<T> | null = null;
-  private scheduler: QueueScheduler;
   private events: QueueEvents;
   private handlers: Map<string, JobHandler<T>> = new Map();
   private readonly options: Required<JobQueueOptions>;
@@ -59,7 +58,6 @@ export class JobQueue<T = unknown> {
     const connection = opts.redis;
 
     this.queue = new Queue<T>(opts.queueName, { connection });
-    this.scheduler = new QueueScheduler(opts.queueName, { connection });
     this.events = new QueueEvents(opts.queueName, { connection });
   }
 
@@ -215,7 +213,6 @@ export class JobQueue<T = unknown> {
     if (this.worker) {
       await this.worker.close();
     }
-    await this.scheduler.close();
     await this.events.close();
     await this.queue.close();
   }
