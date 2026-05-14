@@ -1,27 +1,47 @@
-import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import {
-  Box, Drawer, AppBar, Toolbar, Typography, List, ListItem,
-  ListItemButton, ListItemIcon, ListItemText, IconButton,
-  Avatar, Badge, Divider, useTheme, useMediaQuery, Tooltip,
-  Chip, Stack
-} from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
-import DashboardIcon from '@mui/icons-material/Dashboard';
 import AppsIcon from '@mui/icons-material/Apps';
-import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
-import CloudIcon from '@mui/icons-material/Cloud';
-import MonitorHeartIcon from '@mui/icons-material/MonitorHeart';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
-import NotificationsIcon from '@mui/icons-material/Notifications';
-import SettingsIcon from '@mui/icons-material/Settings';
 import CircleIcon from '@mui/icons-material/Circle';
+import CloudIcon from '@mui/icons-material/Cloud';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
+import DashboardIcon from '@mui/icons-material/Dashboard';
 import LightModeIcon from '@mui/icons-material/LightMode';
+import MenuIcon from '@mui/icons-material/Menu';
+import MonitorHeartIcon from '@mui/icons-material/MonitorHeart';
+import NotificationsIcon from '@mui/icons-material/Notifications';
+import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
+import SettingsIcon from '@mui/icons-material/Settings';
+import SettingsBrightnessIcon from '@mui/icons-material/SettingsBrightness';
+import TranslateIcon from '@mui/icons-material/Translate';
+import {
+  Box,
+  Drawer,
+  AppBar,
+  Toolbar,
+  Typography,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  IconButton,
+  Avatar,
+  Badge,
+  Divider,
+  useTheme,
+  useMediaQuery,
+  Tooltip,
+  Chip,
+  Stack,
+  alpha,
+} from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useLocation, useNavigate } from 'react-router-dom';
+
 import { useThemeMode } from '../theme/ThemeContext';
 
-const DRAWER_WIDTH = 260;
-const DRAWER_COLLAPSED_WIDTH = 72;
+const DRAWER_WIDTH = 240;
+const DRAWER_COLLAPSED_WIDTH = 56;
 
 interface NavItem {
   path: string;
@@ -29,15 +49,6 @@ interface NavItem {
   icon: React.ReactNode;
   badge?: number;
 }
-
-const navItems: NavItem[] = [
-  { path: '/dashboard', label: 'Dashboard', icon: <DashboardIcon /> },
-  { path: '/catalog', label: 'Service Catalog', icon: <AppsIcon /> },
-  { path: '/deployments', label: 'Deployments', icon: <RocketLaunchIcon />, badge: 3 },
-  { path: '/environments', label: 'Environments', icon: <CloudIcon /> },
-  { path: '/health', label: 'Health Monitor', icon: <MonitorHeartIcon /> },
-  { path: '/cost', label: 'Cost Analysis', icon: <AttachMoneyIcon /> },
-];
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -51,73 +62,152 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const navigate = useNavigate();
   const theme = useTheme();
   const { mode, toggleTheme } = useThemeMode();
+  const { t, i18n } = useTranslation();
 
-  // Responsive breakpoints
-  const isSmall = useMediaQuery(theme.breakpoints.down('sm'));   // < 600px — hamburger
-  const isMedium = useMediaQuery(theme.breakpoints.between('sm', 'md')); // 600-960px — icons only
-  const isDesktop = useMediaQuery(theme.breakpoints.up('md'));   // > 960px — full sidebar
+  const isSmall = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMedium = useMediaQuery(theme.breakpoints.between('sm', 'md'));
 
-  const collapsed = isMedium; // Icons-only mode at medium breakpoint
+  const collapsed = isMedium;
 
-  // Simulate API connection check
+  const navItems: NavItem[] = [
+    { path: '/dashboard', label: t('nav.dashboard'), icon: <DashboardIcon /> },
+    { path: '/catalog', label: t('nav.catalog'), icon: <AppsIcon /> },
+    { path: '/deployments', label: t('nav.deployments'), icon: <RocketLaunchIcon />, badge: 3 },
+    { path: '/environments', label: t('nav.environments'), icon: <CloudIcon /> },
+    { path: '/health', label: t('nav.health'), icon: <MonitorHeartIcon /> },
+    { path: '/cost', label: t('nav.cost'), icon: <AttachMoneyIcon /> },
+  ];
+
+  const toggleLanguage = () => {
+    void i18n.changeLanguage(i18n.language === 'vi' ? 'en' : 'vi');
+  };
+
   useEffect(() => {
-    const checkConnection = () => {
-      setApiConnected(true);
-    };
+    const checkConnection = () => setApiConnected(true);
     checkConnection();
     const interval = setInterval(checkConnection, 30000);
     return () => clearInterval(interval);
   }, []);
 
-  const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + '/');
+  const isActive = (path: string) =>
+    location.pathname === path || location.pathname.startsWith(path + '/');
 
   const currentDrawerWidth = collapsed ? DRAWER_COLLAPSED_WIDTH : DRAWER_WIDTH;
 
+  const themeIcon =
+    mode === 'dark' ? (
+      <LightModeIcon fontSize="small" />
+    ) : mode === 'light' ? (
+      <DarkModeIcon fontSize="small" />
+    ) : (
+      <SettingsBrightnessIcon fontSize="small" />
+    );
+  const themeTooltip =
+    mode === 'dark'
+      ? 'Switch to light mode'
+      : mode === 'light'
+        ? 'Switch to system mode'
+        : 'Switch to dark mode';
+
   const drawer = (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', bgcolor: theme.palette.background.default }}>
-      {/* Logo */}
-      <Box sx={{ p: collapsed ? 1.5 : 2.5, display: 'flex', alignItems: 'center', gap: 1.5, justifyContent: collapsed ? 'center' : 'flex-start' }}>
-        <img src="/logo.svg" alt="IDP" style={{ width: 36, height: 36 }} />
+    <Box
+      sx={{
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        bgcolor: theme.palette.background.default,
+      }}
+    >
+      <Box
+        sx={{
+          p: collapsed ? 1.5 : 2.5,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1.5,
+          justifyContent: collapsed ? 'center' : 'flex-start',
+        }}
+      >
+        <img src="/logo.svg" alt="IDP" style={{ width: 32, height: 32 }} />
         {!collapsed && (
           <>
             <Box>
-              <Typography variant="subtitle1" sx={{ fontWeight: 700, color: theme.palette.text.primary, lineHeight: 1.2 }}>
+              <Typography
+                variant="subtitle1"
+                sx={{ fontWeight: 700, color: theme.palette.text.primary, lineHeight: 1.2 }}
+              >
                 IDP
               </Typography>
-              <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontSize: '0.65rem' }}>
+              <Typography
+                variant="caption"
+                sx={{ color: theme.palette.text.secondary, fontSize: '0.65rem' }}
+              >
                 Developer Platform
               </Typography>
             </Box>
-            <Chip label="Local" size="small" sx={{ ml: 'auto', height: 20, fontSize: '0.6rem', bgcolor: 'rgba(76,175,80,0.15)', color: '#4caf50' }} />
+            <Chip
+              label="Local"
+              size="small"
+              sx={{
+                ml: 'auto',
+                height: 20,
+                fontSize: '0.6rem',
+                bgcolor: alpha(theme.palette.success.main, 0.12),
+                color: theme.palette.success.main,
+              }}
+            />
           </>
         )}
       </Box>
 
-      <Divider sx={{ borderColor: theme.palette.divider }} />
+      <Divider />
 
-      {/* Navigation */}
-      <List sx={{ flex: 1, px: collapsed ? 1 : 1.5, py: 2 }}>
+      <List sx={{ flex: 1, px: collapsed ? 0.5 : 1.5, py: 2 }}>
         {navItems.map((item) => (
           <ListItem key={item.path} disablePadding sx={{ mb: 0.5 }}>
             <Tooltip title={collapsed ? item.label : ''} placement="right" arrow>
               <ListItemButton
-                onClick={() => { navigate(item.path); setMobileOpen(false); }}
+                onClick={() => {
+                  navigate(item.path);
+                  setMobileOpen(false);
+                }}
                 sx={{
                   borderRadius: 2,
-                  py: 1.2,
+                  py: 1,
                   px: collapsed ? 1.5 : 2,
                   justifyContent: collapsed ? 'center' : 'flex-start',
-                  bgcolor: isActive(item.path) ? 'rgba(108,99,255,0.12)' : 'transparent',
-                  '&:hover': { bgcolor: isActive(item.path) ? 'rgba(108,99,255,0.18)' : 'rgba(255,255,255,0.04)' },
+                  bgcolor: isActive(item.path)
+                    ? alpha(theme.palette.primary.main, 0.12)
+                    : 'transparent',
+                  borderLeft: isActive(item.path)
+                    ? `3px solid ${theme.palette.primary.main}`
+                    : '3px solid transparent',
+                  '&:hover': {
+                    bgcolor: isActive(item.path)
+                      ? alpha(theme.palette.primary.main, 0.16)
+                      : alpha(theme.palette.text.primary, 0.04),
+                  },
                   transition: 'all 0.2s ease',
                 }}
               >
-                <ListItemIcon sx={{ minWidth: collapsed ? 'auto' : 36, color: isActive(item.path) ? '#6C63FF' : theme.palette.text.secondary }}>
+                <ListItemIcon
+                  sx={{
+                    minWidth: collapsed ? 'auto' : 36,
+                    color: isActive(item.path)
+                      ? theme.palette.primary.main
+                      : theme.palette.text.secondary,
+                  }}
+                >
                   {item.badge ? (
-                    <Badge badgeContent={item.badge} color="error" sx={{ '& .MuiBadge-badge': { fontSize: '0.6rem', minWidth: 16, height: 16 } }}>
+                    <Badge
+                      badgeContent={item.badge}
+                      color="error"
+                      sx={{ '& .MuiBadge-badge': { fontSize: '0.6rem', minWidth: 16, height: 16 } }}
+                    >
                       {item.icon}
                     </Badge>
-                  ) : item.icon}
+                  ) : (
+                    item.icon
+                  )}
                 </ListItemIcon>
                 {!collapsed && (
                   <ListItemText
@@ -125,7 +215,9 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                     primaryTypographyProps={{
                       fontSize: '0.85rem',
                       fontWeight: isActive(item.path) ? 600 : 400,
-                      color: isActive(item.path) ? theme.palette.text.primary : theme.palette.text.secondary,
+                      color: isActive(item.path)
+                        ? theme.palette.text.primary
+                        : theme.palette.text.secondary,
                     }}
                   />
                 )}
@@ -135,26 +227,57 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         ))}
       </List>
 
-      <Divider sx={{ borderColor: theme.palette.divider }} />
+      <Divider />
 
-      {/* Bottom section */}
       <Box sx={{ p: collapsed ? 1 : 2 }}>
-        <Tooltip title={collapsed ? 'Settings' : ''} placement="right" arrow>
-          <ListItemButton sx={{ borderRadius: 2, py: 1, justifyContent: collapsed ? 'center' : 'flex-start' }} onClick={() => navigate('/settings')}>
-            <ListItemIcon sx={{ minWidth: collapsed ? 'auto' : 36, color: theme.palette.text.secondary }}>
+        <Tooltip title={collapsed ? t('nav.settings') : ''} placement="right" arrow>
+          <ListItemButton
+            sx={{ borderRadius: 2, py: 1, justifyContent: collapsed ? 'center' : 'flex-start' }}
+            onClick={() => navigate('/settings')}
+          >
+            <ListItemIcon
+              sx={{ minWidth: collapsed ? 'auto' : 36, color: theme.palette.text.secondary }}
+            >
               <SettingsIcon fontSize="small" />
             </ListItemIcon>
-            {!collapsed && <ListItemText primary="Settings" primaryTypographyProps={{ fontSize: '0.85rem', color: theme.palette.text.secondary }} />}
+            {!collapsed && (
+              <ListItemText
+                primary={t('nav.settings')}
+                primaryTypographyProps={{
+                  fontSize: '0.85rem',
+                  color: theme.palette.text.secondary,
+                }}
+              />
+            )}
           </ListItemButton>
         </Tooltip>
 
-        {/* API Connection Status */}
         {!collapsed && (
-          <Box sx={{ mt: 1.5, px: 2, py: 1, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.02)' }}>
+          <Box
+            sx={{
+              mt: 1.5,
+              px: 2,
+              py: 1,
+              borderRadius: 2,
+              bgcolor: alpha(theme.palette.text.primary, 0.02),
+            }}
+          >
             <Stack direction="row" alignItems="center" spacing={1}>
-              <CircleIcon sx={{ fontSize: 8, color: apiConnected ? '#3fb950' : '#f85149' }} />
-              <Typography variant="caption" sx={{ color: apiConnected ? '#3fb950' : '#f85149', fontSize: '0.7rem', fontWeight: 500 }}>
-                {apiConnected ? 'API Connected' : 'API Disconnected'}
+              <CircleIcon
+                sx={{
+                  fontSize: 8,
+                  color: apiConnected ? theme.palette.success.main : theme.palette.error.main,
+                }}
+              />
+              <Typography
+                variant="caption"
+                sx={{
+                  color: apiConnected ? theme.palette.success.main : theme.palette.error.main,
+                  fontSize: '0.7rem',
+                  fontWeight: 500,
+                }}
+              >
+                {apiConnected ? t('common.apiConnected') : t('common.apiDisconnected')}
               </Typography>
             </Stack>
           </Box>
@@ -165,14 +288,24 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: theme.palette.background.default }}>
-      {/* Sidebar */}
       {isSmall ? (
-        <Drawer variant="temporary" open={mobileOpen} onClose={() => setMobileOpen(false)}
-          sx={{ '& .MuiDrawer-paper': { width: DRAWER_WIDTH, bgcolor: theme.palette.background.default, borderRight: `1px solid ${theme.palette.divider}` } }}>
+        <Drawer
+          variant="temporary"
+          open={mobileOpen}
+          onClose={() => setMobileOpen(false)}
+          sx={{
+            '& .MuiDrawer-paper': {
+              width: DRAWER_WIDTH,
+              bgcolor: theme.palette.background.default,
+              borderRight: `1px solid ${theme.palette.divider}`,
+            },
+          }}
+        >
           {drawer}
         </Drawer>
       ) : (
-        <Drawer variant="permanent"
+        <Drawer
+          variant="permanent"
           sx={{
             width: currentDrawerWidth,
             transition: 'width 0.2s ease',
@@ -183,39 +316,70 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
               transition: 'width 0.2s ease',
               overflowX: 'hidden',
             },
-          }}>
+          }}
+        >
           {drawer}
         </Drawer>
       )}
 
-      {/* Main content */}
       <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-        {/* Top bar */}
-        <AppBar position="sticky" elevation={0} sx={{ bgcolor: theme.palette.background.paper, borderBottom: `1px solid ${theme.palette.divider}` }}>
+        <AppBar
+          position="sticky"
+          elevation={0}
+          sx={{
+            bgcolor: theme.palette.background.paper,
+            borderBottom: `1px solid ${theme.palette.divider}`,
+          }}
+        >
           <Toolbar sx={{ minHeight: '56px !important' }}>
             {isSmall && (
-              <IconButton edge="start" onClick={() => setMobileOpen(true)} sx={{ mr: 2, color: theme.palette.text.primary }}>
+              <IconButton
+                edge="start"
+                onClick={() => setMobileOpen(true)}
+                sx={{ mr: 2, color: theme.palette.text.primary }}
+              >
                 <MenuIcon />
               </IconButton>
             )}
             <Box sx={{ flex: 1 }} />
-            <Tooltip title={mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
+            <Tooltip title={t('language.switchLanguage')}>
+              <IconButton
+                onClick={toggleLanguage}
+                sx={{ color: theme.palette.text.secondary, mr: 1 }}
+              >
+                <TranslateIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title={themeTooltip}>
               <IconButton onClick={toggleTheme} sx={{ color: theme.palette.text.secondary, mr: 1 }}>
-                {mode === 'dark' ? <LightModeIcon fontSize="small" /> : <DarkModeIcon fontSize="small" />}
+                {themeIcon}
               </IconButton>
             </Tooltip>
             <Tooltip title="Notifications">
               <IconButton sx={{ color: theme.palette.text.secondary }}>
-                <Badge badgeContent={2} color="error" sx={{ '& .MuiBadge-badge': { fontSize: '0.6rem', minWidth: 16, height: 16 } }}>
+                <Badge
+                  badgeContent={2}
+                  color="error"
+                  sx={{ '& .MuiBadge-badge': { fontSize: '0.6rem', minWidth: 16, height: 16 } }}
+                >
                   <NotificationsIcon fontSize="small" />
                 </Badge>
               </IconButton>
             </Tooltip>
-            <Avatar sx={{ width: 32, height: 32, ml: 2, bgcolor: '#6C63FF', fontSize: '0.8rem' }}>JS</Avatar>
+            <Avatar
+              sx={{
+                width: 32,
+                height: 32,
+                ml: 2,
+                bgcolor: theme.palette.primary.main,
+                fontSize: '0.8rem',
+              }}
+            >
+              JS
+            </Avatar>
           </Toolbar>
         </AppBar>
 
-        {/* Page content with responsive padding */}
         <Box
           component="main"
           sx={{

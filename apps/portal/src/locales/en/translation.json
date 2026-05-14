@@ -1,0 +1,134 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "catalog": "Service Catalog",
+    "deployments": "Deployments",
+    "environments": "Environments",
+    "health": "Health Monitor",
+    "cost": "Cost Analysis",
+    "settings": "Settings"
+  },
+  "common": {
+    "loading": "Loading...",
+    "search": "Search",
+    "new": "New",
+    "refresh": "Refresh",
+    "viewAll": "View All",
+    "apiConnected": "API Connected",
+    "apiDisconnected": "API Disconnected",
+    "noData": "No data available",
+    "error": "An error occurred",
+    "retry": "Retry"
+  },
+  "dashboard": {
+    "title": "Overview",
+    "subtitle": "Platform metrics and recent activity",
+    "services": "Services",
+    "deploymentsToday": "Deployments Today",
+    "environments": "Environments",
+    "healthScore": "Health Score",
+    "recentDeployments": "Recent Deployments",
+    "latestActivity": "Latest pipeline activity",
+    "quickActions": "Quick Actions",
+    "fromLastWeek": "from last week",
+    "newDeployment": "New Deployment",
+    "registerService": "Register Service",
+    "viewHealth": "View Health"
+  },
+  "catalog": {
+    "title": "Service Catalog",
+    "subtitle": "{{count}} services registered across the platform",
+    "searchPlaceholder": "Search services by name, owner, or tag...",
+    "filters": {
+      "all": "All",
+      "production": "Production",
+      "development": "Development",
+      "deprecated": "Deprecated"
+    },
+    "noServices": "No services found",
+    "adjustFilters": "Try adjusting your search or filters",
+    "registerFirst": "Get started by registering your first service",
+    "registerButton": "Register Your First Service",
+    "lastDeployed": "Last deployed: {{time}}",
+    "unassigned": "Unassigned",
+    "noDescription": "No description provided"
+  },
+  "deployments": {
+    "title": "Deployments",
+    "subtitle": "Monitor and manage deployment pipelines across all environments",
+    "newDeployment": "New Deployment",
+    "history": "Deployment History",
+    "noDeployments": "No deployments found",
+    "activeDeployments": "Active Deployments ({{count}})",
+    "autoRefreshOn": "Auto-refresh ON",
+    "autoRefreshOff": "Auto-refresh OFF",
+    "inProgress": "In Progress",
+    "succeeded": "Succeeded",
+    "failed": "Failed",
+    "successRate": "Success Rate",
+    "status": {
+      "pending": "pending",
+      "in_progress": "in progress",
+      "succeeded": "succeeded",
+      "failed": "failed",
+      "rolled_back": "rolled back"
+    },
+    "filters": {
+      "allStatuses": "All Statuses",
+      "allEnvironments": "All Environments",
+      "status": "Status",
+      "environment": "Environment",
+      "development": "Development",
+      "staging": "Staging",
+      "production": "Production"
+    },
+    "table": {
+      "status": "Status",
+      "serviceVersion": "Service / Version",
+      "environment": "Environment",
+      "strategy": "Strategy",
+      "time": "Time"
+    }
+  },
+  "health": {
+    "title": "Health Monitor",
+    "subtitle": "Real-time platform health and service status overview",
+    "healthScore": "Health Score",
+    "servicesHealthy": "{{healthy}} of {{total}} services healthy",
+    "incidentTimeline": "Incident Timeline",
+    "serviceHealth": "Service Health",
+    "sloCompliance": "SLO Compliance",
+    "uptime": "Uptime",
+    "p95Latency": "P95 Latency",
+    "lastCheck": "Last Check",
+    "errorBudget": "Error budget: {{value}}%",
+    "met": "Met",
+    "atRisk": "At Risk",
+    "status": {
+      "healthy": "Healthy",
+      "degraded": "Degraded",
+      "down": "Down"
+    },
+    "incidentStatus": {
+      "investigating": "investigating",
+      "monitoring": "monitoring",
+      "resolved": "resolved"
+    }
+  },
+  "login": {
+    "title": "Internal Developer Platform",
+    "subtitle": "Sign in to access your platform",
+    "github": "Continue with GitHub",
+    "google": "Continue with Google SSO",
+    "emailDivider": "or sign in with email",
+    "email": "Email",
+    "password": "Password",
+    "signIn": "Sign In",
+    "terms": "By signing in, you agree to our Terms of Service and Privacy Policy."
+  },
+  "language": {
+    "en": "English",
+    "vi": "Tiếng Việt",
+    "switchLanguage": "Language"
+  }
+}

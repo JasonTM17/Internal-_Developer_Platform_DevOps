@@ -1,0 +1,134 @@
+{
+  "nav": {
+    "dashboard": "Tổng quan",
+    "catalog": "Danh mục dịch vụ",
+    "deployments": "Triển khai",
+    "environments": "Môi trường",
+    "health": "Giám sát sức khỏe",
+    "cost": "Phân tích chi phí",
+    "settings": "Cài đặt"
+  },
+  "common": {
+    "loading": "Đang tải...",
+    "search": "Tìm kiếm",
+    "new": "Tạo mới",
+    "refresh": "Làm mới",
+    "viewAll": "Xem tất cả",
+    "apiConnected": "API đã kết nối",
+    "apiDisconnected": "API mất kết nối",
+    "noData": "Không có dữ liệu",
+    "error": "Đã xảy ra lỗi",
+    "retry": "Thử lại"
+  },
+  "dashboard": {
+    "title": "Tổng quan",
+    "subtitle": "Số liệu nền tảng và hoạt động gần đây",
+    "services": "Dịch vụ",
+    "deploymentsToday": "Triển khai hôm nay",
+    "environments": "Môi trường",
+    "healthScore": "Điểm sức khỏe",
+    "recentDeployments": "Triển khai gần đây",
+    "latestActivity": "Hoạt động pipeline mới nhất",
+    "quickActions": "Thao tác nhanh",
+    "fromLastWeek": "so với tuần trước",
+    "newDeployment": "Triển khai mới",
+    "registerService": "Đăng ký dịch vụ",
+    "viewHealth": "Xem sức khỏe"
+  },
+  "catalog": {
+    "title": "Danh mục dịch vụ",
+    "subtitle": "{{count}} dịch vụ đã đăng ký trên nền tảng",
+    "searchPlaceholder": "Tìm kiếm dịch vụ theo tên, chủ sở hữu hoặc thẻ...",
+    "filters": {
+      "all": "Tất cả",
+      "production": "Sản xuất",
+      "development": "Phát triển",
+      "deprecated": "Ngừng sử dụng"
+    },
+    "noServices": "Không tìm thấy dịch vụ",
+    "adjustFilters": "Thử điều chỉnh tìm kiếm hoặc bộ lọc",
+    "registerFirst": "Bắt đầu bằng cách đăng ký dịch vụ đầu tiên",
+    "registerButton": "Đăng ký dịch vụ đầu tiên",
+    "lastDeployed": "Triển khai lần cuối: {{time}}",
+    "unassigned": "Chưa phân công",
+    "noDescription": "Chưa có mô tả"
+  },
+  "deployments": {
+    "title": "Triển khai",
+    "subtitle": "Giám sát và quản lý pipeline triển khai trên tất cả môi trường",
+    "newDeployment": "Triển khai mới",
+    "history": "Lịch sử triển khai",
+    "noDeployments": "Không tìm thấy triển khai nào",
+    "activeDeployments": "Đang triển khai ({{count}})",
+    "autoRefreshOn": "Tự động làm mới BẬT",
+    "autoRefreshOff": "Tự động làm mới TẮT",
+    "inProgress": "Đang chạy",
+    "succeeded": "Thành công",
+    "failed": "Thất bại",
+    "successRate": "Tỷ lệ thành công",
+    "status": {
+      "pending": "chờ xử lý",
+      "in_progress": "đang chạy",
+      "succeeded": "thành công",
+      "failed": "thất bại",
+      "rolled_back": "đã rollback"
+    },
+    "filters": {
+      "allStatuses": "Tất cả trạng thái",
+      "allEnvironments": "Tất cả môi trường",
+      "status": "Trạng thái",
+      "environment": "Môi trường",
+      "development": "Phát triển",
+      "staging": "Staging",
+      "production": "Sản xuất"
+    },
+    "table": {
+      "status": "Trạng thái",
+      "serviceVersion": "Dịch vụ / Phiên bản",
+      "environment": "Môi trường",
+      "strategy": "Chiến lược",
+      "time": "Thời gian"
+    }
+  },
+  "health": {
+    "title": "Giám sát sức khỏe",
+    "subtitle": "Tổng quan sức khỏe nền tảng và trạng thái dịch vụ theo thời gian thực",
+    "healthScore": "Điểm sức khỏe",
+    "servicesHealthy": "{{healthy}} trên {{total}} dịch vụ hoạt động tốt",
+    "incidentTimeline": "Dòng thời gian sự cố",
+    "serviceHealth": "Sức khỏe dịch vụ",
+    "sloCompliance": "Tuân thủ SLO",
+    "uptime": "Thời gian hoạt động",
+    "p95Latency": "Độ trễ P95",
+    "lastCheck": "Kiểm tra lần cuối",
+    "errorBudget": "Ngân sách lỗi: {{value}}%",
+    "met": "Đạt",
+    "atRisk": "Có rủi ro",
+    "status": {
+      "healthy": "Tốt",
+      "degraded": "Suy giảm",
+      "down": "Ngừng hoạt động"
+    },
+    "incidentStatus": {
+      "investigating": "đang điều tra",
+      "monitoring": "đang theo dõi",
+      "resolved": "đã giải quyết"
+    }
+  },
+  "login": {
+    "title": "Nền tảng phát triển nội bộ",
+    "subtitle": "Đăng nhập để truy cập nền tảng",
+    "github": "Tiếp tục với GitHub",
+    "google": "Tiếp tục với Google SSO",
+    "emailDivider": "hoặc đăng nhập bằng email",
+    "email": "Email",
+    "password": "Mật khẩu",
+    "signIn": "Đăng nhập",
+    "terms": "Bằng việc đăng nhập, bạn đồng ý với Điều khoản dịch vụ và Chính sách bảo mật."
+  },
+  "language": {
+    "en": "English",
+    "vi": "Tiếng Việt",
+    "switchLanguage": "Ngôn ngữ"
+  }
+}
