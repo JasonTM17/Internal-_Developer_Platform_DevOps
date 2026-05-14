@@ -47,11 +47,13 @@ This documentation set provides comprehensive coverage of the IDP's architecture
 
 ### Operations & Reliability
 
-| Document                               | Description                                |
-| -------------------------------------- | ------------------------------------------ |
-| [SLO Definitions](slo/)                | Service Level Objectives and error budgets |
-| [Incident Response Runbook](runbooks/) | Step-by-step incident handling             |
-| [Disaster Recovery](runbooks/)         | RTO/RPO targets and recovery procedures    |
+| Document                                                     | Description                                |
+| ------------------------------------------------------------ | ------------------------------------------ |
+| [Operations Guide (VI/EN)](operations/README.md)             | Day-to-day operational procedures          |
+| [CI/CD Pipeline Guide (VI/EN)](operations/ci-cd-guide-vi.md) | Pipeline architecture and troubleshooting  |
+| [SLO Definitions](slo/)                                      | Service Level Objectives and error budgets |
+| [Incident Response Runbook](runbooks/)                       | Step-by-step incident handling             |
+| [Disaster Recovery](runbooks/)                               | RTO/RPO targets and recovery procedures    |
 
 ### Developer Guides
 
