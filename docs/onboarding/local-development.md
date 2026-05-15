@@ -1,5 +1,7 @@
 # Local Development Setup
 
+> 🇻🇳 [Phiên bản Tiếng Việt](./local-development-vi.md)
+
 ## System Requirements
 
 - **OS**: macOS 13+, Ubuntu 22.04+, Windows 11 (WSL2)

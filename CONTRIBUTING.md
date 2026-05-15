@@ -1,5 +1,7 @@
 # Contributing to the Internal Developer Platform
 
+> 🇻🇳 [Phiên bản Tiếng Việt](./CONTRIBUTING-vi.md)
+
 Thank you for your interest in contributing to the IDP! This guide covers everything you need to get started.
 
 ---

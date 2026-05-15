@@ -1,5 +1,7 @@
 # Security Policy
 
+> 🇻🇳 [Phiên bản Tiếng Việt](./SECURITY-vi.md)
+
 ## Supported Versions
 
 | Version | Supported |

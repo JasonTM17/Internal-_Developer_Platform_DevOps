@@ -1,5 +1,7 @@
 # Documentation Index
 
+> 🇻🇳 [Phiên bản Tiếng Việt](./README-vi.md)
+
 ## Internal Developer Platform — Technical Documentation
 
 This documentation set provides comprehensive coverage of the IDP's architecture, operations, and development practices. It is structured for both onboarding new engineers and serving as a reference for experienced platform operators.
