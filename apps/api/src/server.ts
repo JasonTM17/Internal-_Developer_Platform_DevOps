@@ -240,6 +240,22 @@ export function createServer(): ServerInstance {
  * This is the main entry point for running the server.
  */
 export async function bootstrap(): Promise<void> {
+  // Initialize OpenTelemetry if enabled
+  if (process.env.OTEL_ENABLED === 'true') {
+    try {
+      const { initTracing } = await import('./tracing/otel');
+      initTracing({
+        serviceName: 'idp-api',
+        serviceVersion: process.env.VERSION || '1.0.0',
+        environment: process.env.NODE_ENV || 'development',
+        exporterUrl: process.env.OTEL_EXPORTER_URL,
+        enabled: true,
+      });
+    } catch {
+      logger.warn('OpenTelemetry packages not installed, tracing disabled');
+    }
+  }
+
   const server = createServer();
 
   // Graceful shutdown on SIGTERM/SIGINT

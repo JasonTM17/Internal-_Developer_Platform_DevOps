@@ -45,6 +45,24 @@ export class PostgresPool implements DatabasePool {
     });
   }
 
+  async connectWithRetry(maxRetries = 5, baseDelayMs = 1000): Promise<void> {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        await this.pool.query('SELECT 1');
+        logger.info({ attempt }, 'Database connection established');
+        return;
+      } catch (err) {
+        if (attempt === maxRetries) {
+          logger.fatal({ err, attempt }, 'Database connection failed after all retries');
+          throw err;
+        }
+        const delay = baseDelayMs * Math.pow(2, attempt - 1);
+        logger.warn({ err, attempt, nextRetryMs: delay }, 'Database connection failed, retrying');
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+    }
+  }
+
   async query<T extends QueryResultRow = QueryResultRow>(
     text: string,
     params?: unknown[],

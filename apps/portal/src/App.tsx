@@ -5,6 +5,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'r
 import { AuthProvider, useAuth } from './auth/AuthProvider';
 import { ProtectedRoute } from './auth/ProtectedRoute';
 import { CommandPalette } from './components/CommandPalette';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { AppLayout } from './layout/AppLayout';
 import { ThemeContextProvider } from './theme/ThemeContext';
 
@@ -208,12 +209,14 @@ const App: React.FC = () => {
   return (
     <ThemeContextProvider>
       <CssBaseline />
-      <AuthProvider>
-        <Router>
-          <CommandPalette />
-          <AppRoutes />
-        </Router>
-      </AuthProvider>
+      <ErrorBoundary>
+        <AuthProvider>
+          <Router>
+            <CommandPalette />
+            <AppRoutes />
+          </Router>
+        </AuthProvider>
+      </ErrorBoundary>
     </ThemeContextProvider>
   );
 };

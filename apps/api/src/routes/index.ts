@@ -23,6 +23,7 @@ import { registerDeploymentRoutes } from '../deployment/routes';
 import { EnvironmentManager } from '../environment/environment-manager';
 import { InMemoryEnvironmentStore } from '../environment/environment-store';
 import { registerEnvironmentRoutes } from '../environment/routes';
+import { createRateLimiter, RATE_LIMIT_PRESETS } from '../middleware/rate-limiter';
 
 /**
  * API module metadata for documentation and discovery.
@@ -132,9 +133,16 @@ export function registerApiRoutes(router: RouterType): void {
     });
   });
 
-  // Register domain routes (these register their own sub-paths)
+  // Register domain routes with per-route rate limiting
+  router.use('/api/v1/catalog', createRateLimiter(null, RATE_LIMIT_PRESETS.search));
   registerCatalogRoutes(router, services.catalog);
+
+  router.use('/api/v1/deployments', createRateLimiter(null, RATE_LIMIT_PRESETS.deploy));
   registerDeploymentRoutes(router, services.deploymentEngine);
+
+  router.use('/api/v1/environments', createRateLimiter(null, RATE_LIMIT_PRESETS.write));
   registerEnvironmentRoutes(router, services.environmentManager);
+
+  router.use('/api/v1/config', createRateLimiter(null, RATE_LIMIT_PRESETS.write));
   registerConfigRoutes(router, services.configService);
 }
