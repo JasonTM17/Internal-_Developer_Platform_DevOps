@@ -1,5 +1,11 @@
 # Internal Developer Platform (IDP)
 
+> **[VN]** Đây là dự án học tập của **Nguyễn Sơn** — xây dựng một Internal Developer Platform hoàn chỉnh với kiến trúc production-ready. Mọi góp ý, feedback, hoặc pull request đều được chào đón. Hãy mở issue hoặc liên hệ trực tiếp nếu bạn có ý tưởng cải thiện!
+>
+> **[EN]** This is a learning project by **Nguyen Son** — building a complete Internal Developer Platform with production-ready architecture. All feedback, suggestions, and pull requests are welcome. Feel free to open an issue or reach out directly if you have ideas for improvement!
+
+---
+
 **Enterprise-grade platform engineering solution for modern DevOps teams**
 
 [![CI Pipeline](https://github.com/JasonTM17/Internal_Developer_Platform_DevOps/actions/workflows/ci.yaml/badge.svg)](https://github.com/JasonTM17/Internal_Developer_Platform_DevOps/actions/workflows/ci.yaml)
@@ -20,6 +26,20 @@
 ## Overview
 
 A production-ready Internal Developer Platform that enables engineering teams to self-service infrastructure provisioning, application deployments, and environment management through a unified portal. Built with cloud-native principles, GitOps workflows, and enterprise security patterns.
+
+### Tổng quan (Tiếng Việt)
+
+Một Internal Developer Platform cấp production giúp các team kỹ thuật tự phục vụ việc cung cấp hạ tầng, triển khai ứng dụng, và quản lý môi trường thông qua một portal thống nhất. Được xây dựng theo nguyên tắc cloud-native, quy trình GitOps, và các mẫu bảo mật doanh nghiệp.
+
+**Dự án bao gồm:**
+
+- Portal tự phục vụ (React) — quản lý service, deployment, environment
+- API Gateway (Node.js/Express) — xác thực, phân quyền, rate limiting
+- Hạ tầng dưới dạng mã (Terraform) — 10 module cho AWS (EKS, RDS, VPC...)
+- CI/CD hoàn chỉnh (GitHub Actions) — 14 workflow tự động
+- Observability stack — Prometheus, Grafana, Jaeger, Loki
+- Service mesh (Istio) + Canary deployment (Flagger)
+- Chaos engineering (LitmusChaos) cho kiểm thử độ bền
 
 ### Key Highlights
 
@@ -338,6 +358,8 @@ make k8s-deploy             # Deploy to Kubernetes
 ## Contributing
 
 Contributions are welcome. See the [Contributing Guide](CONTRIBUTING.md) for details.
+
+> **[VN]** Mọi đóng góp đều được hoan nghênh! Dù là sửa lỗi nhỏ, cải thiện tài liệu, hay đề xuất tính năng mới — hãy thoải mái mở issue hoặc pull request. Đây là dự án học tập nên mình rất trân trọng mọi góp ý từ cộng đồng.
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/amazing-feature`)
