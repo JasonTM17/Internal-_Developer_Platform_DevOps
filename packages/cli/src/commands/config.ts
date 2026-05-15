@@ -12,16 +12,14 @@
  */
 
 import type { Command } from 'commander';
-import type { ApiClient } from '../utils/api-client.js';
+import { getRootOpts } from '../utils/command-helpers.js';
 import { formatTable, printSuccess, printError } from '../utils/output.js';
 
 /**
  * Register the config command and its subcommands.
  */
 export function registerConfigCommand(program: Command): void {
-  const config = program
-    .command('config')
-    .description('Manage platform configuration');
+  const config = program.command('config').description('Manage platform configuration');
 
   // idp config get
   config
@@ -30,8 +28,7 @@ export function registerConfigCommand(program: Command): void {
     .option('-s, --scope <scope>', 'Configuration scope (global|environment|service)', 'global')
     .option('--scope-id <id>', 'Scope identifier (environment name or service ID)')
     .action(async (key: string, opts, cmd) => {
-      const client: ApiClient = cmd.parent.parent.opts()._apiClient;
-      const isJson = cmd.parent.parent.opts().json;
+      const { _apiClient: client, json: isJson } = getRootOpts(cmd);
 
       try {
         const params = new URLSearchParams({ scope: opts.scope });
@@ -67,7 +64,7 @@ export function registerConfigCommand(program: Command): void {
     .option('-d, --description <text>', 'Description of this config entry')
     .option('--tags <tags>', 'Comma-separated tags')
     .action(async (key: string, value: string, opts, cmd) => {
-      const client: ApiClient = cmd.parent.parent.opts()._apiClient;
+      const { _apiClient: client } = getRootOpts(cmd);
 
       try {
         const response = await client.post('/api/v1/config', {
@@ -94,7 +91,7 @@ export function registerConfigCommand(program: Command): void {
     .option('--scope-id <id>', 'Scope identifier')
     .option('-f, --force', 'Skip confirmation')
     .action(async (key: string, opts, cmd) => {
-      const client: ApiClient = cmd.parent.parent.opts()._apiClient;
+      const { _apiClient: client } = getRootOpts(cmd);
 
       if (!opts.force) {
         console.log(`Warning: This will delete configuration '${key}' from scope '${opts.scope}'.`);
@@ -119,12 +116,13 @@ export function registerConfigCommand(program: Command): void {
     .description('Resolve effective configuration for a service')
     .requiredOption('-e, --env <environment>', 'Target environment')
     .action(async (serviceId: string, opts, cmd) => {
-      const client: ApiClient = cmd.parent.parent.opts()._apiClient;
-      const isJson = cmd.parent.parent.opts().json;
+      const { _apiClient: client, json: isJson } = getRootOpts(cmd);
 
       try {
         const params = new URLSearchParams({ environment: opts.env });
-        const response = await client.get(`/api/v1/config/resolve/${serviceId}?${params.toString()}`);
+        const response = await client.get(
+          `/api/v1/config/resolve/${serviceId}?${params.toString()}`,
+        );
 
         if (isJson) {
           console.log(JSON.stringify(response, null, 2));
@@ -157,8 +155,7 @@ export function registerConfigCommand(program: Command): void {
     .option('-s, --scope <scope>', 'Configuration scope', 'global')
     .option('--scope-id <id>', 'Scope identifier')
     .action(async (key: string, opts, cmd) => {
-      const client: ApiClient = cmd.parent.parent.opts()._apiClient;
-      const isJson = cmd.parent.parent.opts().json;
+      const { _apiClient: client, json: isJson } = getRootOpts(cmd);
 
       try {
         const params = new URLSearchParams({ scope: opts.scope });
@@ -178,7 +175,8 @@ export function registerConfigCommand(program: Command): void {
 
         const rows = response.data.map((v: Record<string, unknown>) => ({
           Version: `v${v.version}`,
-          Value: (v.value as string).length > 40 ? (v.value as string).slice(0, 40) + '...' : v.value,
+          Value:
+            (v.value as string).length > 40 ? (v.value as string).slice(0, 40) + '...' : v.value,
           'Changed By': v.changedBy,
           'Changed At': new Date(v.changedAt as string).toLocaleString(),
         }));
@@ -197,7 +195,7 @@ export function registerConfigCommand(program: Command): void {
     .option('-s, --scope <scope>', 'Configuration scope', 'global')
     .option('--scope-id <id>', 'Scope identifier')
     .action(async (key: string, opts, cmd) => {
-      const client: ApiClient = cmd.parent.parent.opts()._apiClient;
+      const { _apiClient: client } = getRootOpts(cmd);
 
       try {
         const response = await client.post(`/api/v1/config/${key}/rollback`, {
@@ -206,7 +204,9 @@ export function registerConfigCommand(program: Command): void {
           scopeId: opts.scopeId,
         });
 
-        printSuccess(`Configuration '${key}' rolled back to v${opts.toVersion} (now v${response.data.version})`);
+        printSuccess(
+          `Configuration '${key}' rolled back to v${opts.toVersion} (now v${response.data.version})`,
+        );
       } catch (error) {
         printError('Failed to rollback configuration', error);
       }

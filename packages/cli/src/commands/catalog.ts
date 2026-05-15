@@ -11,16 +11,14 @@
  */
 
 import type { Command } from 'commander';
-import type { ApiClient } from '../utils/api-client.js';
+import { getRootOpts } from '../utils/command-helpers.js';
 import { formatTable, formatStatus, printSuccess, printError } from '../utils/output.js';
 
 /**
  * Register the catalog command and its subcommands.
  */
 export function registerCatalogCommand(program: Command): void {
-  const catalog = program
-    .command('catalog')
-    .description('Manage the service catalog');
+  const catalog = program.command('catalog').description('Manage the service catalog');
 
   // idp catalog search
   catalog
@@ -28,8 +26,7 @@ export function registerCatalogCommand(program: Command): void {
     .description('Search the service catalog')
     .option('-n, --limit <count>', 'Maximum results', '50')
     .action(async (query: string, opts, cmd) => {
-      const client: ApiClient = cmd.parent.parent.opts()._apiClient;
-      const isJson = cmd.parent.parent.opts().json;
+      const { _apiClient: client, json: isJson } = getRootOpts(cmd);
 
       try {
         const params = new URLSearchParams({ q: query });
@@ -72,12 +69,15 @@ export function registerCatalogCommand(program: Command): void {
     .requiredOption('--owner <owner>', 'Service owner (team)')
     .requiredOption('--repo <url>', 'Repository URL')
     .option('-d, --description <text>', 'Service description', '')
-    .option('--lifecycle <stage>', 'Lifecycle stage (experimental|development|production|deprecated)', 'development')
+    .option(
+      '--lifecycle <stage>',
+      'Lifecycle stage (experimental|development|production|deprecated)',
+      'development',
+    )
     .option('--tags <tags>', 'Comma-separated tags', '')
     .option('--source-repo <url>', 'Source repository for catalog definition')
     .action(async (opts, cmd) => {
-      const client: ApiClient = cmd.parent.parent.opts()._apiClient;
-      const isJson = cmd.parent.parent.opts().json;
+      const { _apiClient: client, json: isJson } = getRootOpts(cmd);
 
       try {
         const response = await client.post('/api/v1/catalog', {
@@ -113,8 +113,7 @@ export function registerCatalogCommand(program: Command): void {
     .description('Get detailed information about a service')
     .option('--versions', 'Include version history')
     .action(async (id: string, opts, cmd) => {
-      const client: ApiClient = cmd.parent.parent.opts()._apiClient;
-      const isJson = cmd.parent.parent.opts().json;
+      const { _apiClient: client, json: isJson } = getRootOpts(cmd);
 
       try {
         const response = await client.get(`/api/v1/catalog/${id}`);
@@ -143,7 +142,9 @@ export function registerCatalogCommand(program: Command): void {
           if (versionsResp.data.length > 0) {
             console.log(`\n  Version History:`);
             for (const v of versionsResp.data.slice(0, 10)) {
-              console.log(`    v${v.version} - ${v.changedBy} at ${new Date(v.changedAt).toLocaleString()}`);
+              console.log(
+                `    v${v.version} - ${v.changedBy} at ${new Date(v.changedAt).toLocaleString()}`,
+              );
             }
           }
         }
@@ -161,7 +162,7 @@ export function registerCatalogCommand(program: Command): void {
     .option('--lifecycle <stage>', 'New lifecycle stage')
     .option('--tags <tags>', 'New comma-separated tags')
     .action(async (id: string, opts, cmd) => {
-      const client: ApiClient = cmd.parent.parent.opts()._apiClient;
+      const { _apiClient: client } = getRootOpts(cmd);
 
       const updates: Record<string, unknown> = {};
       if (opts.description) updates.description = opts.description;
@@ -190,8 +191,7 @@ export function registerCatalogCommand(program: Command): void {
     .option('--type <type>', 'Dependency type', 'runtime')
     .option('--remove <targetId>', 'Remove a dependency')
     .action(async (id: string, opts, cmd) => {
-      const client: ApiClient = cmd.parent.parent.opts()._apiClient;
-      const isJson = cmd.parent.parent.opts().json;
+      const { _apiClient: client, json: isJson } = getRootOpts(cmd);
 
       try {
         if (opts.add) {

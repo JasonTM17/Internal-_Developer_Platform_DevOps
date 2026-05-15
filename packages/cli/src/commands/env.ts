@@ -11,16 +11,14 @@
  */
 
 import type { Command } from 'commander';
-import type { ApiClient } from '../utils/api-client.js';
+import { getRootOpts, getRootOptsDeep } from '../utils/command-helpers.js';
 import { formatTable, formatStatus, printSuccess, printError } from '../utils/output.js';
 
 /**
  * Register the env command and its subcommands.
  */
 export function registerEnvCommand(program: Command): void {
-  const env = program
-    .command('env')
-    .description('Manage environments');
+  const env = program.command('env').description('Manage environments');
 
   // idp env list
   env
@@ -30,8 +28,7 @@ export function registerEnvCommand(program: Command): void {
     .option('--status <status>', 'Filter by status')
     .option('--region <region>', 'Filter by region')
     .action(async (opts, cmd) => {
-      const client: ApiClient = cmd.parent.parent.opts()._apiClient;
-      const isJson = cmd.parent.parent.opts().json;
+      const { _apiClient: client, json: isJson } = getRootOpts(cmd);
 
       try {
         const params = new URLSearchParams();
@@ -72,7 +69,10 @@ export function registerEnvCommand(program: Command): void {
     .command('create')
     .description('Create a new environment')
     .requiredOption('-n, --name <name>', 'Environment name')
-    .requiredOption('-t, --tier <tier>', 'Environment tier (development|staging|production|preview)')
+    .requiredOption(
+      '-t, --tier <tier>',
+      'Environment tier (development|staging|production|preview)',
+    )
     .option('-d, --description <text>', 'Environment description')
     .option('--region <region>', 'Cloud region', 'us-east-1')
     .option('--cluster <name>', 'Target cluster name')
@@ -80,8 +80,7 @@ export function registerEnvCommand(program: Command): void {
     .option('--auto-scaling', 'Enable auto-scaling')
     .option('--ttl <hours>', 'TTL in hours (preview environments only)')
     .action(async (opts, cmd) => {
-      const client: ApiClient = cmd.parent.parent.opts()._apiClient;
-      const isJson = cmd.parent.parent.opts().json;
+      const { _apiClient: client, json: isJson } = getRootOpts(cmd);
 
       try {
         const response = await client.post('/api/v1/environments', {
@@ -118,8 +117,7 @@ export function registerEnvCommand(program: Command): void {
     .command('info <id>')
     .description('Get environment details')
     .action(async (id: string, _opts, cmd) => {
-      const client: ApiClient = cmd.parent.parent.opts()._apiClient;
-      const isJson = cmd.parent.parent.opts().json;
+      const { _apiClient: client, json: isJson } = getRootOpts(cmd);
 
       try {
         const response = await client.get(`/api/v1/environments/${id}`);
@@ -157,7 +155,7 @@ export function registerEnvCommand(program: Command): void {
     .description('Delete an environment')
     .option('-f, --force', 'Skip confirmation prompt')
     .action(async (id: string, opts, cmd) => {
-      const client: ApiClient = cmd.parent.parent.opts()._apiClient;
+      const { _apiClient: client } = getRootOpts(cmd);
 
       if (!opts.force) {
         console.log(`Warning: This will permanently delete environment '${id}'.`);
@@ -179,7 +177,7 @@ export function registerEnvCommand(program: Command): void {
     .description('Promote environment to next tier')
     .requiredOption('--target <tier>', 'Target tier (staging|production)')
     .action(async (id: string, opts, cmd) => {
-      const client: ApiClient = cmd.parent.parent.opts()._apiClient;
+      const { _apiClient: client } = getRootOpts(cmd);
 
       try {
         const response = await client.post(`/api/v1/environments/${id}/promote`, {
@@ -193,16 +191,13 @@ export function registerEnvCommand(program: Command): void {
     });
 
   // idp env vars
-  const vars = env
-    .command('vars')
-    .description('Manage environment variables');
+  const vars = env.command('vars').description('Manage environment variables');
 
   vars
     .command('list <environmentId>')
     .description('List environment variables')
     .action(async (environmentId: string, _opts, cmd) => {
-      const client: ApiClient = cmd.parent.parent.parent.opts()._apiClient;
-      const isJson = cmd.parent.parent.parent.opts().json;
+      const { _apiClient: client, json: isJson } = getRootOptsDeep(cmd);
 
       try {
         const response = await client.get(`/api/v1/environments/${environmentId}/variables`);
@@ -234,7 +229,7 @@ export function registerEnvCommand(program: Command): void {
     .description('Set an environment variable')
     .option('--secret', 'Mark as secret (encrypted at rest)')
     .action(async (environmentId: string, key: string, value: string, opts, cmd) => {
-      const client: ApiClient = cmd.parent.parent.parent.opts()._apiClient;
+      const { _apiClient: client } = getRootOptsDeep(cmd);
 
       try {
         await client.put(`/api/v1/environments/${environmentId}/variables/${key}`, {

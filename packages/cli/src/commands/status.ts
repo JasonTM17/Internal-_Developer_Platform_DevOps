@@ -9,24 +9,27 @@
  */
 
 import type { Command } from 'commander';
-import type { ApiClient } from '../utils/api-client.js';
-import { formatTable, formatStatus, printSuccess, printError, printWarning } from '../utils/output.js';
+import { getRootOpts } from '../utils/command-helpers.js';
+import {
+  formatTable,
+  formatStatus,
+  printSuccess,
+  printError,
+  printWarning,
+} from '../utils/output.js';
 
 /**
  * Register the status command and its subcommands.
  */
 export function registerStatusCommand(program: Command): void {
-  const status = program
-    .command('status')
-    .description('Platform status and health overview');
+  const status = program.command('status').description('Platform status and health overview');
 
   // idp status (default - overall health)
   status
     .command('platform', { isDefault: true })
     .description('Show overall platform health')
     .action(async (_opts, cmd) => {
-      const client: ApiClient = cmd.parent.parent.opts()._apiClient;
-      const isJson = cmd.parent.parent.opts().json;
+      const { _apiClient: client, json: isJson } = getRootOpts(cmd);
 
       try {
         // Fetch health and readiness
@@ -36,10 +39,16 @@ export function registerStatusCommand(program: Command): void {
         ]);
 
         if (isJson) {
-          console.log(JSON.stringify({
-            health: health.status === 'fulfilled' ? health.value : null,
-            ready: ready.status === 'fulfilled' ? ready.value : null,
-          }, null, 2));
+          console.log(
+            JSON.stringify(
+              {
+                health: health.status === 'fulfilled' ? health.value : null,
+                ready: ready.status === 'fulfilled' ? ready.value : null,
+              },
+              null,
+              2,
+            ),
+          );
           return;
         }
 
@@ -61,9 +70,15 @@ export function registerStatusCommand(program: Command): void {
           console.log(`\n  Readiness: ${formatStatus(r.status)}`);
           if (r.checks) {
             for (const [name, checks] of Object.entries(r.checks)) {
-              const checkList = checks as Array<{ status: string; observedValue?: number; observedUnit?: string }>;
+              const checkList = checks as Array<{
+                status: string;
+                observedValue?: number;
+                observedUnit?: string;
+              }>;
               for (const check of checkList) {
-                const timing = check.observedValue ? ` (${check.observedValue}${check.observedUnit || 'ms'})` : '';
+                const timing = check.observedValue
+                  ? ` (${check.observedValue}${check.observedUnit || 'ms'})`
+                  : '';
                 console.log(`    ${formatStatus(check.status)} ${name}${timing}`);
               }
             }
@@ -76,7 +91,9 @@ export function registerStatusCommand(program: Command): void {
         try {
           const apiInfo = await client.get('/api');
           console.log(`\n  API Version: ${apiInfo.version}`);
-          console.log(`  Modules: ${apiInfo.modules.map((m: { name: string }) => m.name).join(', ')}`);
+          console.log(
+            `  Modules: ${apiInfo.modules.map((m: { name: string }) => m.name).join(', ')}`,
+          );
         } catch {
           // API info endpoint not critical
         }
@@ -93,8 +110,7 @@ export function registerStatusCommand(program: Command): void {
     .description('Show service health overview')
     .option('-e, --env <environment>', 'Filter by environment')
     .action(async (opts, cmd) => {
-      const client: ApiClient = cmd.parent.parent.opts()._apiClient;
-      const isJson = cmd.parent.parent.opts().json;
+      const { _apiClient: client, json: isJson } = getRootOpts(cmd);
 
       try {
         const params = new URLSearchParams();
@@ -135,8 +151,7 @@ export function registerStatusCommand(program: Command): void {
     .description('Show active deployments')
     .option('-e, --env <environment>', 'Filter by environment')
     .action(async (opts, cmd) => {
-      const client: ApiClient = cmd.parent.parent.opts()._apiClient;
-      const isJson = cmd.parent.parent.opts().json;
+      const { _apiClient: client, json: isJson } = getRootOpts(cmd);
 
       try {
         const params = new URLSearchParams({ limit: '20' });
@@ -150,7 +165,8 @@ export function registerStatusCommand(program: Command): void {
         }
 
         const active = response.data.filter(
-          (d: Record<string, unknown>) => !['completed', 'failed', 'cancelled'].includes(d.state as string),
+          (d: Record<string, unknown>) =>
+            !['completed', 'failed', 'cancelled'].includes(d.state as string),
         );
 
         if (active.length === 0) {
@@ -179,8 +195,7 @@ export function registerStatusCommand(program: Command): void {
     .command('envs')
     .description('Show environment status')
     .action(async (_opts, cmd) => {
-      const client: ApiClient = cmd.parent.parent.opts()._apiClient;
-      const isJson = cmd.parent.parent.opts().json;
+      const { _apiClient: client, json: isJson } = getRootOpts(cmd);
 
       try {
         const response = await client.get('/api/v1/environments');

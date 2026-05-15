@@ -8,7 +8,7 @@
  */
 
 import type { Command } from 'commander';
-import type { ApiClient } from '../utils/api-client.js';
+import { getRootOpts } from '../utils/command-helpers.js';
 import { printError, printWarning } from '../utils/output.js';
 
 /** Log entry structure. */
@@ -22,11 +22,11 @@ interface LogEntry {
 
 /** Log level colors for terminal output. */
 const LEVEL_COLORS: Record<string, string> = {
-  debug: '\x1b[90m',   // gray
-  info: '\x1b[36m',    // cyan
-  warn: '\x1b[33m',    // yellow
-  error: '\x1b[31m',   // red
-  fatal: '\x1b[35m',   // magenta
+  debug: '\x1b[90m', // gray
+  info: '\x1b[36m', // cyan
+  warn: '\x1b[33m', // yellow
+  error: '\x1b[31m', // red
+  fatal: '\x1b[35m', // magenta
 };
 
 const RESET = '\x1b[0m';
@@ -37,7 +37,7 @@ const RESET = '\x1b[0m';
 function formatLogEntry(entry: LogEntry, opts: { noColor?: boolean; verbose?: boolean }): string {
   const timestamp = new Date(entry.timestamp).toLocaleTimeString();
   const level = entry.level.toUpperCase().padEnd(5);
-  const color = opts.noColor ? '' : (LEVEL_COLORS[entry.level] || '');
+  const color = opts.noColor ? '' : LEVEL_COLORS[entry.level] || '';
   const reset = opts.noColor ? '' : RESET;
 
   let line = `${color}${timestamp} [${level}] ${entry.service}: ${entry.message}${reset}`;
@@ -53,9 +53,7 @@ function formatLogEntry(entry: LogEntry, opts: { noColor?: boolean; verbose?: bo
  * Register the logs command and its subcommands.
  */
 export function registerLogsCommand(program: Command): void {
-  const logs = program
-    .command('logs')
-    .description('Stream and search service logs');
+  const logs = program.command('logs').description('Stream and search service logs');
 
   // idp logs stream
   logs
@@ -67,7 +65,8 @@ export function registerLogsCommand(program: Command): void {
     .option('--filter <pattern>', 'Filter logs by message pattern')
     .option('--no-color', 'Disable colored output')
     .action(async (opts, cmd) => {
-      const parentOpts = cmd.parent.parent.opts();
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+      const parentOpts = (cmd as any).parent?.parent?.opts() as Record<string, any>;
       const apiUrl = parentOpts._config?.apiUrl || 'http://localhost:3001';
       const noColor = parentOpts.noColor || opts.noColor;
       const verbose = parentOpts.verbose;
@@ -110,7 +109,9 @@ export function registerLogsCommand(program: Command): void {
         });
 
         ws.on('close', (code: number, reason: Buffer) => {
-          console.log(`\nConnection closed (code: ${code}, reason: ${reason.toString() || 'none'})`);
+          console.log(
+            `\nConnection closed (code: ${code}, reason: ${reason.toString() || 'none'})`,
+          );
         });
 
         // Handle Ctrl+C gracefully
@@ -139,10 +140,12 @@ export function registerLogsCommand(program: Command): void {
     .option('--since <duration>', 'Show logs since duration (e.g., 1h, 30m, 1d)', '1h')
     .option('--no-color', 'Disable colored output')
     .action(async (opts, cmd) => {
-      const client: ApiClient = cmd.parent.parent.opts()._apiClient;
-      const isJson = cmd.parent.parent.opts().json;
-      const noColor = cmd.parent.parent.opts().noColor || opts.noColor;
-      const verbose = cmd.parent.parent.opts().verbose;
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+      const parentOpts = (cmd as any).parent?.parent?.opts() as Record<string, any>;
+      const client = parentOpts._apiClient as import('../utils/api-client.js').ApiClient;
+      const isJson = parentOpts.json as boolean;
+      const noColor = parentOpts.noColor || opts.noColor;
+      const verbose = parentOpts.verbose;
 
       try {
         const params = new URLSearchParams({
@@ -186,10 +189,12 @@ export function registerLogsCommand(program: Command): void {
     .option('-n, --limit <count>', 'Maximum results', '100')
     .option('-l, --level <level>', 'Minimum log level')
     .action(async (query: string, opts, cmd) => {
-      const client: ApiClient = cmd.parent.parent.opts()._apiClient;
-      const isJson = cmd.parent.parent.opts().json;
-      const noColor = cmd.parent.parent.opts().noColor;
-      const verbose = cmd.parent.parent.opts().verbose;
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+      const parentOpts = (cmd as any).parent?.parent?.opts() as Record<string, any>;
+      const client = parentOpts._apiClient as import('../utils/api-client.js').ApiClient;
+      const isJson = parentOpts.json as boolean;
+      const noColor = parentOpts.noColor;
+      const verbose = parentOpts.verbose;
 
       try {
         const params = new URLSearchParams({
@@ -218,7 +223,9 @@ export function registerLogsCommand(program: Command): void {
           console.log(formatLogEntry(entry, { noColor, verbose }));
         }
 
-        console.log(`\n--- ${response.data.length} results (of ${response.meta?.total || 'unknown'} total) ---`);
+        console.log(
+          `\n--- ${response.data.length} results (of ${response.meta?.total || 'unknown'} total) ---`,
+        );
       } catch (error) {
         printError('Failed to search logs', error);
       }

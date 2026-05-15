@@ -12,16 +12,20 @@
  */
 
 import type { Command } from 'commander';
-import type { ApiClient } from '../utils/api-client.js';
-import { formatTable, formatStatus, printSuccess, printError, printWarning } from '../utils/output.js';
+import { getRootOpts } from '../utils/command-helpers.js';
+import {
+  formatTable,
+  formatStatus,
+  printSuccess,
+  printError,
+  printWarning,
+} from '../utils/output.js';
 
 /**
  * Register the deploy command and its subcommands.
  */
 export function registerDeployCommand(program: Command): void {
-  const deploy = program
-    .command('deploy')
-    .description('Manage service deployments');
+  const deploy = program.command('deploy').description('Manage service deployments');
 
   // idp deploy create
   deploy
@@ -30,15 +34,18 @@ export function registerDeployCommand(program: Command): void {
     .requiredOption('-s, --service <id>', 'Service ID to deploy')
     .requiredOption('-e, --env <environment>', 'Target environment')
     .requiredOption('--version <version>', 'Version to deploy')
-    .option('--strategy <strategy>', 'Deployment strategy (rolling|blue-green|canary|recreate)', 'rolling')
+    .option(
+      '--strategy <strategy>',
+      'Deployment strategy (rolling|blue-green|canary|recreate)',
+      'rolling',
+    )
     .option('--canary-pct <percentage>', 'Canary traffic percentage (1-100)')
     .option('--timeout <seconds>', 'Deployment timeout in seconds', '600')
     .option('--no-auto-rollback', 'Disable automatic rollback on failure')
     .option('--require-approval', 'Require manual approval before deploying')
     .option('--description <text>', 'Deployment description')
     .action(async (opts, cmd) => {
-      const client: ApiClient = cmd.parent.parent.opts()._apiClient;
-      const isJson = cmd.parent.parent.opts().json;
+      const { _apiClient: client, json: isJson } = getRootOpts(cmd);
 
       try {
         const response = await client.post('/api/v1/deployments', {
@@ -78,8 +85,7 @@ export function registerDeployCommand(program: Command): void {
     .option('--watch', 'Watch for status changes')
     .option('--interval <seconds>', 'Watch polling interval', '5')
     .action(async (deploymentId: string, opts, cmd) => {
-      const client: ApiClient = cmd.parent.parent.opts()._apiClient;
-      const isJson = cmd.parent.parent.opts().json;
+      const { _apiClient: client, json: isJson } = getRootOpts(cmd);
 
       try {
         const response = await client.get(`/api/v1/deployments/${deploymentId}`);
@@ -123,8 +129,7 @@ export function registerDeployCommand(program: Command): void {
     .option('--state <state>', 'Filter by state')
     .option('-n, --limit <count>', 'Number of results', '20')
     .action(async (opts, cmd) => {
-      const client: ApiClient = cmd.parent.parent.opts()._apiClient;
-      const isJson = cmd.parent.parent.opts().json;
+      const { _apiClient: client, json: isJson } = getRootOpts(cmd);
 
       try {
         const params = new URLSearchParams();
@@ -167,7 +172,7 @@ export function registerDeployCommand(program: Command): void {
     .command('approve <deploymentId>')
     .description('Approve a pending deployment')
     .action(async (deploymentId: string, _opts, cmd) => {
-      const client: ApiClient = cmd.parent.parent.opts()._apiClient;
+      const { _apiClient: client } = getRootOpts(cmd);
 
       try {
         const response = await client.post(`/api/v1/deployments/${deploymentId}/approve`, {});
@@ -184,7 +189,7 @@ export function registerDeployCommand(program: Command): void {
     .description('Cancel an active deployment')
     .option('-r, --reason <reason>', 'Cancellation reason', 'Cancelled via CLI')
     .action(async (deploymentId: string, opts, cmd) => {
-      const client: ApiClient = cmd.parent.parent.opts()._apiClient;
+      const { _apiClient: client } = getRootOpts(cmd);
 
       try {
         await client.post(`/api/v1/deployments/${deploymentId}/cancel`, {
@@ -201,7 +206,7 @@ export function registerDeployCommand(program: Command): void {
     .command('rollback <deploymentId>')
     .description('Rollback a failed deployment')
     .action(async (deploymentId: string, _opts, cmd) => {
-      const client: ApiClient = cmd.parent.parent.opts()._apiClient;
+      const { _apiClient: client } = getRootOpts(cmd);
 
       try {
         const response = await client.post(`/api/v1/deployments/${deploymentId}/rollback`, {});
