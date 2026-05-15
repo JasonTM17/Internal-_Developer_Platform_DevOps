@@ -50,9 +50,9 @@ A production-ready Internal Developer Platform that enables engineering teams to
 
 ### More Pages & API
 
-|                      Incidents                       |                      Audit Log                      |                       API Docs                       |
-| :--------------------------------------------------: | :-------------------------------------------------: | :--------------------------------------------------: |
-| ![Incidents](docs/assets/screenshots/07-grafana.png) | ![Audit](docs/assets/screenshots/08-prometheus.png) | ![API Docs](docs/assets/screenshots/13-api-docs.png) |
+|                       Incidents                        |                   Audit Log                    |                       API Docs                       |
+| :----------------------------------------------------: | :--------------------------------------------: | :--------------------------------------------------: |
+| ![Incidents](docs/assets/screenshots/07-incidents.png) | ![Audit](docs/assets/screenshots/08-audit.png) | ![API Docs](docs/assets/screenshots/13-api-docs.png) |
 
 |                        API Health                        |
 | :------------------------------------------------------: |
