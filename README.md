@@ -1,5 +1,7 @@
 # Internal Developer Platform (IDP)
 
+**🇻🇳 Tiếng Việt** | **🇬🇧 English** — Tài liệu song ngữ / Bilingual documentation
+
 > **[VN]** Đây là dự án học tập của **Nguyễn Sơn** — xây dựng một Internal Developer Platform hoàn chỉnh với kiến trúc production-ready. Mọi góp ý, feedback, hoặc pull request đều được chào đón. Hãy mở issue hoặc liên hệ trực tiếp nếu bạn có ý tưởng cải thiện!
 >
 > **[EN]** This is a learning project by **Nguyen Son** — building a complete Internal Developer Platform with production-ready architecture. All feedback, suggestions, and pull requests are welcome. Feel free to open an issue or reach out directly if you have ideas for improvement!

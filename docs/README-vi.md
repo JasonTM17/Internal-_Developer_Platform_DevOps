@@ -78,12 +78,14 @@ Bộ tài liệu này cung cấp hướng dẫn toàn diện về kiến trúc, 
 | [Chính sách Bảo mật (VI)](../SECURITY-vi.md) | Bản tiếng Việt                   |
 | [Compliance Controls](compliance/)           | SOC2 mappings, phân loại dữ liệu |
 
-### Kế hoạch
+### Kế hoạch & Tham khảo
 
-| Tài liệu                | Mô tả                            |
-| ----------------------- | -------------------------------- |
-| [Roadmap](roadmap.md)   | Lộ trình tính năng và milestones |
-| [Glossary](glossary.md) | Định nghĩa thuật ngữ platform    |
+| Tài liệu                              | Mô tả                            |
+| ------------------------------------- | -------------------------------- |
+| [Roadmap](roadmap.md)                 | Lộ trình tính năng và milestones |
+| [Glossary](glossary.md)               | Định nghĩa thuật ngữ platform    |
+| [Bảng Thuật ngữ (VI)](glossary-vi.md) | Thuật ngữ DevOps Anh-Việt        |
+| [FAQ (VI)](faq-vi.md)                 | Câu hỏi thường gặp               |
 
 ---
 
