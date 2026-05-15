@@ -48,15 +48,15 @@ A production-ready Internal Developer Platform that enables engineering teams to
 | :--------------------------------------------------------: |
 | ![Full Portal](docs/assets/screenshots/10-portal-full.png) |
 
-### Observability Stack
+### More Pages & API
 
-|                      Grafana                       |                        Prometheus                        |                       API Docs                       |
-| :------------------------------------------------: | :------------------------------------------------------: | :--------------------------------------------------: |
-| ![Grafana](docs/assets/screenshots/07-grafana.png) | ![Prometheus](docs/assets/screenshots/08-prometheus.png) | ![API Docs](docs/assets/screenshots/13-api-docs.png) |
+|                      Incidents                       |                      Audit Log                      |                       API Docs                       |
+| :--------------------------------------------------: | :-------------------------------------------------: | :--------------------------------------------------: |
+| ![Incidents](docs/assets/screenshots/07-grafana.png) | ![Audit](docs/assets/screenshots/08-prometheus.png) | ![API Docs](docs/assets/screenshots/13-api-docs.png) |
 
-|                       Grafana Dashboards                        |                      Prometheus Targets                       |                        API Health                        |
-| :-------------------------------------------------------------: | :-----------------------------------------------------------: | :------------------------------------------------------: |
-| ![Dashboards](docs/assets/screenshots/11-grafana-dashboard.png) | ![Targets](docs/assets/screenshots/12-prometheus-targets.png) | ![API Health](docs/assets/screenshots/09-api-health.png) |
+|                        API Health                        |
+| :------------------------------------------------------: |
+| ![API Health](docs/assets/screenshots/09-api-health.png) |
 
 ---
 
