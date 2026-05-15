@@ -4,6 +4,7 @@
  * Tests: Requirements 1.4, 2.1, 2.2, 2.3
  */
 import { describe, it, expect } from 'vitest';
+
 import { validateCatalogEntityInput } from './validation';
 
 /**
@@ -66,9 +67,7 @@ describe('validateCatalogEntityInput', () => {
       const result1 = validateCatalogEntityInput(validInput({ description: 'x' }));
       expect(result1.success).toBe(true);
 
-      const result1024 = validateCatalogEntityInput(
-        validInput({ description: 'x'.repeat(1024) }),
-      );
+      const result1024 = validateCatalogEntityInput(validInput({ description: 'x'.repeat(1024) }));
       expect(result1024.success).toBe(true);
     });
   });
@@ -127,9 +126,7 @@ describe('validateCatalogEntityInput', () => {
     });
 
     it('should reject description exceeding 1024 characters', () => {
-      const result = validateCatalogEntityInput(
-        validInput({ description: 'd'.repeat(1025) }),
-      );
+      const result = validateCatalogEntityInput(validInput({ description: 'd'.repeat(1025) }));
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error.details.some((d) => d.field === 'description')).toBe(true);

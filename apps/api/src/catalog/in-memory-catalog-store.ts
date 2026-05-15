@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 /**
  * In-memory implementation of CatalogStore for testing.
  *
@@ -6,6 +7,7 @@
  */
 
 import type { CatalogEntity, CatalogEntityVersion, DependencyEdge } from '@idp/shared';
+
 import type { CatalogStore } from './catalog-store';
 import { DuplicateEntityError } from './catalog-store';
 

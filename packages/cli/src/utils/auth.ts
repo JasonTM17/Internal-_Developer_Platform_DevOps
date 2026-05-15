@@ -9,7 +9,6 @@
  * - Multiple profile support
  */
 
-import { randomUUID } from 'crypto';
 import { getCliConfig, saveCliConfig } from './config.js';
 
 /** Authentication method. */
@@ -105,9 +104,7 @@ export function loginWithApiKey(apiKey: string, profile = 'default'): void {
  * Login with a pre-existing token (e.g., from CI/CD).
  */
 export function loginWithToken(token: string, expiresIn?: number, profile = 'default'): void {
-  const expiresAt = expiresIn
-    ? new Date(Date.now() + expiresIn * 1000).toISOString()
-    : undefined;
+  const expiresAt = expiresIn ? new Date(Date.now() + expiresIn * 1000).toISOString() : undefined;
 
   saveCliConfig(profile, {
     token,

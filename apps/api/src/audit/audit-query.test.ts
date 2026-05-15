@@ -10,10 +10,11 @@
  * Requirements: 10.3, 10.4
  */
 
+import type { AuditEntry } from '@idp/shared';
 import { describe, it, expect, beforeEach } from 'vitest';
+
 import { AuditLogger, MAX_QUERY_LIMIT, MIN_RETENTION_DAYS } from './audit-logger';
 import { InMemoryAuditStore } from './in-memory-audit-store';
-import type { AuditEntry } from '@idp/shared';
 
 describe('Audit Log Query - Filtering and Pagination', () => {
   let store: InMemoryAuditStore;
@@ -37,9 +38,13 @@ describe('Audit Log Query - Filtering and Pagination', () => {
 
   describe('Filter by actor', () => {
     it('should return only entries matching the specified actor', async () => {
-      await logger.log(createEntry({ actor: 'alice', timestamp: new Date('2024-01-01T10:00:00Z') }));
+      await logger.log(
+        createEntry({ actor: 'alice', timestamp: new Date('2024-01-01T10:00:00Z') }),
+      );
       await logger.log(createEntry({ actor: 'bob', timestamp: new Date('2024-01-01T11:00:00Z') }));
-      await logger.log(createEntry({ actor: 'alice', timestamp: new Date('2024-01-01T12:00:00Z') }));
+      await logger.log(
+        createEntry({ actor: 'alice', timestamp: new Date('2024-01-01T12:00:00Z') }),
+      );
 
       const result = await logger.query({ actor: 'alice' });
 
@@ -59,9 +64,15 @@ describe('Audit Log Query - Filtering and Pagination', () => {
 
   describe('Filter by action', () => {
     it('should return only entries matching the specified action', async () => {
-      await logger.log(createEntry({ action: 'deploy', timestamp: new Date('2024-01-01T10:00:00Z') }));
-      await logger.log(createEntry({ action: 'provision', timestamp: new Date('2024-01-01T11:00:00Z') }));
-      await logger.log(createEntry({ action: 'deploy', timestamp: new Date('2024-01-01T12:00:00Z') }));
+      await logger.log(
+        createEntry({ action: 'deploy', timestamp: new Date('2024-01-01T10:00:00Z') }),
+      );
+      await logger.log(
+        createEntry({ action: 'provision', timestamp: new Date('2024-01-01T11:00:00Z') }),
+      );
+      await logger.log(
+        createEntry({ action: 'deploy', timestamp: new Date('2024-01-01T12:00:00Z') }),
+      );
 
       const result = await logger.query({ action: 'deploy' });
 
@@ -135,9 +146,27 @@ describe('Audit Log Query - Filtering and Pagination', () => {
 
   describe('Combined filters', () => {
     it('should apply actor and action filters together', async () => {
-      await logger.log(createEntry({ actor: 'alice', action: 'deploy', timestamp: new Date('2024-01-01T10:00:00Z') }));
-      await logger.log(createEntry({ actor: 'alice', action: 'provision', timestamp: new Date('2024-01-01T11:00:00Z') }));
-      await logger.log(createEntry({ actor: 'bob', action: 'deploy', timestamp: new Date('2024-01-01T12:00:00Z') }));
+      await logger.log(
+        createEntry({
+          actor: 'alice',
+          action: 'deploy',
+          timestamp: new Date('2024-01-01T10:00:00Z'),
+        }),
+      );
+      await logger.log(
+        createEntry({
+          actor: 'alice',
+          action: 'provision',
+          timestamp: new Date('2024-01-01T11:00:00Z'),
+        }),
+      );
+      await logger.log(
+        createEntry({
+          actor: 'bob',
+          action: 'deploy',
+          timestamp: new Date('2024-01-01T12:00:00Z'),
+        }),
+      );
 
       const result = await logger.query({ actor: 'alice', action: 'deploy' });
 
@@ -248,9 +277,10 @@ describe('Audit Log Query - Filtering and Pagination', () => {
       for (let i = 0; i < 15; i++) {
         await logger.log(
           createEntry({
-            timestamp: new Date('2024-01-01T00:00:00Z').getTime() + i * 60000 > 0
-              ? new Date(new Date('2024-01-01T00:00:00Z').getTime() + i * 60000)
-              : new Date(),
+            timestamp:
+              new Date('2024-01-01T00:00:00Z').getTime() + i * 60000 > 0
+                ? new Date(new Date('2024-01-01T00:00:00Z').getTime() + i * 60000)
+                : new Date(),
           }),
         );
       }
@@ -325,7 +355,9 @@ describe('Audit Log Query - Filtering and Pagination', () => {
 
     it('should retain entries within the 1-year retention window', () => {
       const now = new Date();
-      const withinRetention = new Date(now.getTime() - (MIN_RETENTION_DAYS - 1) * 24 * 60 * 60 * 1000);
+      const withinRetention = new Date(
+        now.getTime() - (MIN_RETENTION_DAYS - 1) * 24 * 60 * 60 * 1000,
+      );
 
       const entry = {
         id: 'test-id',
@@ -343,7 +375,9 @@ describe('Audit Log Query - Filtering and Pagination', () => {
 
     it('should identify entries outside the retention window', () => {
       const now = new Date();
-      const outsideRetention = new Date(now.getTime() - (MIN_RETENTION_DAYS + 1) * 24 * 60 * 60 * 1000);
+      const outsideRetention = new Date(
+        now.getTime() - (MIN_RETENTION_DAYS + 1) * 24 * 60 * 60 * 1000,
+      );
 
       const entry = {
         id: 'test-id',
@@ -414,7 +448,9 @@ describe('Audit Log Query - Filtering and Pagination', () => {
 
     it('should return totalCount reflecting all matching entries', async () => {
       for (let i = 0; i < 10; i++) {
-        await logger.log(createEntry({ actor: 'alice', timestamp: new Date(Date.now() + i * 1000) }));
+        await logger.log(
+          createEntry({ actor: 'alice', timestamp: new Date(Date.now() + i * 1000) }),
+        );
       }
 
       const result = await logger.query({ actor: 'alice', limit: 3 });

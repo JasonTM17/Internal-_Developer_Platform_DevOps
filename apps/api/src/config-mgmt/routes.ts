@@ -12,8 +12,10 @@
  */
 
 import type { Request, Response, Router } from 'express';
-import type { ConfigService, ConfigScope } from './config-service';
+
 import { asyncHandler, BadRequestError } from '../middleware/error-handler';
+
+import type { ConfigService, ConfigScope } from './config-service';
 
 /** Request with authenticated user context. */
 interface AuthenticatedRequest extends Request {
@@ -75,7 +77,10 @@ export function registerConfigRoutes(router: Router, configService: ConfigServic
 
       if (!entry) {
         res.status(404).json({
-          error: { code: 'NOT_FOUND', message: `Configuration '${key}' not found in scope '${scope}'` },
+          error: {
+            code: 'NOT_FOUND',
+            message: `Configuration '${key}' not found in scope '${scope}'`,
+          },
         });
         return;
       }
@@ -149,13 +154,7 @@ export function registerConfigRoutes(router: Router, configService: ConfigServic
         throw new BadRequestError('version (number) is required');
       }
 
-      const result = await configService.rollback(
-        key,
-        scope || 'global',
-        scopeId,
-        version,
-        actor,
-      );
+      const result = await configService.rollback(key, scope || 'global', scopeId, version, actor);
 
       if (!result.success) {
         res.status(422).json({

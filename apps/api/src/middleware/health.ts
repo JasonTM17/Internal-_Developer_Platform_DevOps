@@ -87,26 +87,21 @@ export class HealthCheckRegistry {
     const results: Record<string, ComponentHealth[]> = {};
     let overallStatus: HealthStatus = 'pass';
 
-    const checkPromises = Array.from(this.checks.entries()).map(
-      async ([name, checkFn]) => {
-        try {
-          const result = await Promise.race([
-            checkFn(),
-            this.createTimeout(name, 5000),
-          ]);
-          return { name, result };
-        } catch (error) {
-          const failResult: ComponentHealth = {
-            componentId: name,
-            componentType: 'unknown',
-            status: 'fail',
-            output: error instanceof Error ? error.message : 'Unknown error',
-            time: new Date().toISOString(),
-          };
-          return { name, result: failResult };
-        }
-      },
-    );
+    const checkPromises = Array.from(this.checks.entries()).map(async ([name, checkFn]) => {
+      try {
+        const result = await Promise.race([checkFn(), this.createTimeout(name, 5000)]);
+        return { name, result };
+      } catch (error) {
+        const failResult: ComponentHealth = {
+          componentId: name,
+          componentType: 'unknown',
+          status: 'fail',
+          output: error instanceof Error ? error.message : 'Unknown error',
+          time: new Date().toISOString(),
+        };
+        return { name, result: failResult };
+      }
+    });
 
     const checkResults = await Promise.allSettled(checkPromises);
 
@@ -156,9 +151,7 @@ export class HealthCheckRegistry {
 /**
  * Create a database health check function.
  */
-export function createDatabaseHealthCheck(
-  queryFn: () => Promise<void>,
-): HealthCheckFn {
+export function createDatabaseHealthCheck(queryFn: () => Promise<void>): HealthCheckFn {
   return async (): Promise<ComponentHealth> => {
     const start = Date.now();
     try {
@@ -190,9 +183,7 @@ export function createDatabaseHealthCheck(
 /**
  * Create a Redis health check function.
  */
-export function createRedisHealthCheck(
-  pingFn: () => Promise<string>,
-): HealthCheckFn {
+export function createRedisHealthCheck(pingFn: () => Promise<string>): HealthCheckFn {
   return async (): Promise<ComponentHealth> => {
     const start = Date.now();
     try {
@@ -268,11 +259,10 @@ export function createHealthRoutes(registry: HealthCheckRegistry) {
 /**
  * Register health check endpoints on an Express router.
  */
-export function registerHealthEndpoints(
-  router: Router,
-  registry: HealthCheckRegistry,
-): void {
+export function registerHealthEndpoints(router: Router, registry: HealthCheckRegistry): void {
   const handlers = createHealthRoutes(registry);
   router.get('/health', handlers.liveness);
-  router.get('/ready', handlers.readiness);
+  router.get('/ready', (req, res, next) => {
+    void handlers.readiness(req, res, next);
+  });
 }

@@ -9,7 +9,13 @@
  */
 
 import { createHash } from 'crypto';
-import type { AuditEntry, AuditLogEntry, AuditQueryFilters, PaginatedAuditResult } from '@idp/shared';
+
+import type {
+  AuditEntry,
+  AuditLogEntry,
+  AuditQueryFilters,
+  PaginatedAuditResult,
+} from '@idp/shared';
 
 /**
  * Genesis hash used as the previous_hash for the very first audit log entry.

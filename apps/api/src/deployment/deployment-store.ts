@@ -6,8 +6,8 @@
  * supporting both PostgreSQL and in-memory implementations.
  */
 
-import type { DeploymentState } from './state-machine';
 import type { DeploymentStrategy } from './deployment-engine';
+import type { DeploymentState } from './state-machine';
 
 /** Deployment event types. */
 export type DeploymentEventType =
@@ -89,7 +89,11 @@ export interface DeploymentStore {
   /**
    * Update the state of a deployment.
    */
-  updateState(id: string, state: DeploymentState, metadata?: Record<string, unknown>): Promise<void>;
+  updateState(
+    id: string,
+    state: DeploymentState,
+    metadata?: Record<string, unknown>,
+  ): Promise<void>;
 
   /**
    * Add an event to a deployment's event log.
@@ -160,9 +164,7 @@ export class InMemoryDeploymentStore implements DeploymentStore {
     const completed = Array.from(this.deployments.values())
       .filter(
         (d) =>
-          d.serviceId === serviceId &&
-          d.environment === environment &&
-          d.state === 'completed',
+          d.serviceId === serviceId && d.environment === environment && d.state === 'completed',
       )
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
@@ -176,7 +178,9 @@ export class InMemoryDeploymentStore implements DeploymentStore {
     ).length;
   }
 
-  async list(filters: DeploymentListFilters): Promise<{ deployments: Deployment[]; total: number }> {
+  async list(
+    filters: DeploymentListFilters,
+  ): Promise<{ deployments: Deployment[]; total: number }> {
     let results = Array.from(this.deployments.values());
 
     if (filters.serviceId) {

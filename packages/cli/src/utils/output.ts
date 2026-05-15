@@ -148,15 +148,11 @@ export function formatTable(rows: Record<string, unknown>[]): void {
   }
 
   // Print header
-  const headerLine = headers
-    .map((h) => h.padEnd(widths[h]))
-    .join('  ');
+  const headerLine = headers.map((h) => h.padEnd(widths[h])).join('  ');
   console.log(colorize(headerLine, 'bold'));
 
   // Print separator
-  const separator = headers
-    .map((h) => '─'.repeat(widths[h]))
-    .join('──');
+  const separator = headers.map((h) => '─'.repeat(widths[h])).join('──');
   console.log(colorize(separator, 'dim'));
 
   // Print rows
@@ -177,6 +173,7 @@ export function formatTable(rows: Record<string, unknown>[]): void {
  * Strip ANSI escape codes from a string.
  */
 function stripAnsi(text: string): string {
+  // eslint-disable-next-line no-control-regex
   return text.replace(/\x1b\[[0-9;]*m/g, '');
 }
 

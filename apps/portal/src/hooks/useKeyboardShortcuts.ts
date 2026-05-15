@@ -1,80 +1,47 @@
-import { useEffect, useRef, useCallback } from 'react';
-
-// -----------------------------------------------------------------------------
-// Types
-// -----------------------------------------------------------------------------
+import { useEffect, useRef, useCallback, useMemo } from 'react';
 
 interface ShortcutDefinition {
-  /** Human-readable description shown in the help dialog */
   description: string;
-  /** Handler invoked when the shortcut is triggered */
   handler: () => void;
 }
 
 type ShortcutMap = Record<string, ShortcutDefinition>;
-
-// -----------------------------------------------------------------------------
-// Default shortcuts
-// -----------------------------------------------------------------------------
 
 function getDefaultShortcuts(navigate?: (path: string) => void): ShortcutMap {
   return {
     'ctrl+k': {
       description: 'Open search',
       handler: () => {
-        console.log('[Shortcut] Open search (Ctrl+K)');
+        // TODO: open search dialog
       },
     },
     'ctrl+/': {
       description: 'Show keyboard shortcuts help',
       handler: () => {
-        console.log('[Shortcut] Show shortcuts help (Ctrl+/)');
-        console.table(
-          Object.entries(getDefaultShortcuts()).map(([key, def]) => ({
-            shortcut: key,
-            description: def.description,
-          })),
-        );
+        // TODO: open shortcuts help dialog
       },
     },
     'g>d': {
       description: 'Go to Dashboard',
       handler: () => {
-        console.log('[Shortcut] Navigate to Dashboard (G then D)');
         navigate?.('/');
       },
     },
     'g>c': {
       description: 'Go to Catalog',
       handler: () => {
-        console.log('[Shortcut] Navigate to Catalog (G then C)');
         navigate?.('/catalog');
       },
     },
     'g>e': {
       description: 'Go to Environments',
       handler: () => {
-        console.log('[Shortcut] Navigate to Environments (G then E)');
         navigate?.('/environments');
       },
     },
   };
 }
 
-// -----------------------------------------------------------------------------
-// Hook
-// -----------------------------------------------------------------------------
-
-/**
- * Global keyboard shortcuts hook.
- *
- * Supports:
- * - Modifier combos: ctrl+k, ctrl+/
- * - Sequential keys: g>d (press G then D within 1 second)
- *
- * @param navigate - Optional navigation function (e.g. from react-router)
- * @param overrides - Optional map to override or extend default shortcuts
- */
 export function useKeyboardShortcuts(
   navigate?: (path: string) => void,
   overrides?: Partial<ShortcutMap>,
@@ -82,10 +49,13 @@ export function useKeyboardShortcuts(
   const sequenceBuffer = useRef<string>('');
   const sequenceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const shortcuts: ShortcutMap = {
-    ...getDefaultShortcuts(navigate),
-    ...(overrides as ShortcutMap),
-  };
+  const shortcuts = useMemo<ShortcutMap>(
+    () => ({
+      ...getDefaultShortcuts(navigate),
+      ...(overrides as ShortcutMap),
+    }),
+    [navigate, overrides],
+  );
 
   const resetSequence = useCallback(() => {
     sequenceBuffer.current = '';
@@ -97,7 +67,6 @@ export function useKeyboardShortcuts(
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
-      // Ignore events from input elements
       const target = event.target as HTMLElement;
       if (
         target.tagName === 'INPUT' ||
@@ -108,7 +77,6 @@ export function useKeyboardShortcuts(
         return;
       }
 
-      // Build the key combo string
       const parts: string[] = [];
       if (event.ctrlKey || event.metaKey) parts.push('ctrl');
       if (event.altKey) parts.push('alt');
@@ -116,7 +84,6 @@ export function useKeyboardShortcuts(
 
       const key = event.key.toLowerCase();
 
-      // Check modifier-based shortcuts
       if (parts.length > 0) {
         parts.push(key);
         const combo = parts.join('+');
@@ -129,17 +96,14 @@ export function useKeyboardShortcuts(
         }
       }
 
-      // Handle sequential shortcuts (e.g., g>d)
       if (!event.ctrlKey && !event.metaKey && !event.altKey && key.length === 1) {
         sequenceBuffer.current += key;
 
-        // Reset timer on each keypress
         if (sequenceTimer.current) {
           clearTimeout(sequenceTimer.current);
         }
         sequenceTimer.current = setTimeout(resetSequence, 1000);
 
-        // Check if current buffer matches any sequence shortcut
         for (const [pattern, shortcut] of Object.entries(shortcuts)) {
           if (pattern.includes('>')) {
             const sequenceKeys = pattern.split('>').join('');
@@ -161,7 +125,7 @@ export function useKeyboardShortcuts(
         clearTimeout(sequenceTimer.current);
       }
     };
-  });
+  }, [shortcuts, resetSequence]);
 }
 
 export default useKeyboardShortcuts;

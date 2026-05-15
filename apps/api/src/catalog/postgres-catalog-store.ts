@@ -8,9 +8,11 @@
  */
 
 import type { CatalogEntity, CatalogEntityVersion, DependencyEdge } from '@idp/shared';
+
+import type { DatabasePool } from '../db';
+
 import type { CatalogStore } from './catalog-store';
 import { DuplicateEntityError } from './catalog-store';
-import type { DatabasePool } from '../db';
 
 /**
  * Row shape returned from the catalog_entities table.

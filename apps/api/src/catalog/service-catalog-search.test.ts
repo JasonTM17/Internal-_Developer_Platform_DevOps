@@ -11,11 +11,12 @@
  * Requirements: 1.2
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
-import { ServiceCatalog } from './service-catalog';
-import { InMemoryCatalogStore } from './in-memory-catalog-store';
 import { ERROR_CODES } from '@idp/shared';
 import type { CatalogEntityInput } from '@idp/shared';
+import { describe, it, expect, beforeEach } from 'vitest';
+
+import { InMemoryCatalogStore } from './in-memory-catalog-store';
+import { ServiceCatalog } from './service-catalog';
 
 describe('ServiceCatalog.search()', () => {
   let store: InMemoryCatalogStore;
@@ -44,10 +45,7 @@ describe('ServiceCatalog.search()', () => {
   describe('case-insensitive substring matching', () => {
     it('should match entities by name (case-insensitive)', async () => {
       await catalog.register(makeInput({ name: 'Payment-Service' }), actor);
-      await catalog.register(
-        makeInput({ name: 'user-service', namespace: 'ns2' }),
-        actor,
-      );
+      await catalog.register(makeInput({ name: 'user-service', namespace: 'ns2' }), actor);
 
       const result = await catalog.search('payment');
 
@@ -76,10 +74,7 @@ describe('ServiceCatalog.search()', () => {
     });
 
     it('should match entities by tag (case-insensitive)', async () => {
-      await catalog.register(
-        makeInput({ name: 'svc-1', tags: ['GraphQL', 'api'] }),
-        actor,
-      );
+      await catalog.register(makeInput({ name: 'svc-1', tags: ['GraphQL', 'api'] }), actor);
       await catalog.register(
         makeInput({ name: 'svc-2', namespace: 'ns2', tags: ['rest', 'http'] }),
         actor,
@@ -115,10 +110,7 @@ describe('ServiceCatalog.search()', () => {
     });
 
     it('should match substring within a tag', async () => {
-      await catalog.register(
-        makeInput({ name: 'svc-1', tags: ['microservice'] }),
-        actor,
-      );
+      await catalog.register(makeInput({ name: 'svc-1', tags: ['microservice'] }), actor);
 
       const result = await catalog.search('micro');
 
@@ -136,10 +128,7 @@ describe('ServiceCatalog.search()', () => {
         actor,
       );
       // Entity matches on tag
-      await catalog.register(
-        makeInput({ name: 'svc-3', namespace: 'ns3', tags: ['api'] }),
-        actor,
-      );
+      await catalog.register(makeInput({ name: 'svc-3', namespace: 'ns3', tags: ['api'] }), actor);
 
       const result = await catalog.search('api');
 
@@ -213,10 +202,7 @@ describe('ServiceCatalog.search()', () => {
     it('should respond within 1 second for cached results', async () => {
       // Register some entities
       for (let i = 0; i < 30; i++) {
-        await catalog.register(
-          makeInput({ name: `service-${i}`, namespace: `ns-${i}` }),
-          actor,
-        );
+        await catalog.register(makeInput({ name: `service-${i}`, namespace: `ns-${i}` }), actor);
       }
 
       // First search populates cache
@@ -241,10 +227,7 @@ describe('ServiceCatalog.search()', () => {
       expect(firstResult.entities).toHaveLength(1);
 
       // Register a new entity that matches the query
-      await catalog.register(
-        makeInput({ name: 'second-service', namespace: 'ns2' }),
-        actor,
-      );
+      await catalog.register(makeInput({ name: 'second-service', namespace: 'ns2' }), actor);
 
       // Search should reflect the new entity (cache invalidated)
       const secondResult = await catalog.search('service');

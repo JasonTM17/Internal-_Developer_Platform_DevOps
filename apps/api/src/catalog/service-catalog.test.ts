@@ -11,12 +11,13 @@
  * Requirements: 1.1, 1.3, 1.5, 1.6
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
-import { ServiceCatalog } from './service-catalog';
-import { InMemoryCatalogStore } from './in-memory-catalog-store';
-import { DuplicateEntityError } from './catalog-store';
 import { ERROR_CODES } from '@idp/shared';
 import type { CatalogEntityInput } from '@idp/shared';
+import { describe, it, expect, beforeEach } from 'vitest';
+
+import { DuplicateEntityError } from './catalog-store';
+import { InMemoryCatalogStore } from './in-memory-catalog-store';
+import { ServiceCatalog } from './service-catalog';
 
 describe('ServiceCatalog', () => {
   let store: InMemoryCatalogStore;
@@ -221,10 +222,7 @@ describe('ServiceCatalog', () => {
       // Simulate race: existsByNameAndNamespace returns false but insert throws
       racyStore.existsByNameAndNamespace = async () => false;
 
-      const result = await racyCatalog.register(
-        { ...validInput, owner: 'another-owner' },
-        actor,
-      );
+      const result = await racyCatalog.register({ ...validInput, owner: 'another-owner' }, actor);
 
       expect(result.success).toBe(false);
       if (result.success) return;
@@ -500,11 +498,7 @@ describe('ServiceCatalog', () => {
       expect(regResult.success).toBe(true);
       if (!regResult.success) return;
 
-      await catalog.update(
-        regResult.entity.id,
-        { description: 'Updated description' },
-        actor,
-      );
+      await catalog.update(regResult.entity.id, { description: 'Updated description' }, actor);
 
       const historyResult = await catalog.getVersionHistory(regResult.entity.id);
       expect(historyResult.success).toBe(true);
@@ -521,11 +515,7 @@ describe('ServiceCatalog', () => {
       if (!regResult.success) return;
 
       const updater = { id: 'user-456' };
-      await catalog.update(
-        regResult.entity.id,
-        { owner: 'new-owner' },
-        updater,
-      );
+      await catalog.update(regResult.entity.id, { owner: 'new-owner' }, updater);
 
       const historyResult = await catalog.getVersionHistory(regResult.entity.id);
       expect(historyResult.success).toBe(true);
@@ -540,11 +530,7 @@ describe('ServiceCatalog', () => {
       if (!regResult.success) return;
 
       const before = new Date();
-      await catalog.update(
-        regResult.entity.id,
-        { description: 'New description' },
-        actor,
-      );
+      await catalog.update(regResult.entity.id, { description: 'New description' }, actor);
       const after = new Date();
 
       const historyResult = await catalog.getVersionHistory(regResult.entity.id);
@@ -600,11 +586,7 @@ describe('ServiceCatalog', () => {
     });
 
     it('should return error when entity does not exist', async () => {
-      const result = await catalog.update(
-        'non-existent-id',
-        { description: 'Updated' },
-        actor,
-      );
+      const result = await catalog.update('non-existent-id', { description: 'Updated' }, actor);
 
       expect(result.success).toBe(false);
       if (result.success) return;
@@ -641,11 +623,7 @@ describe('ServiceCatalog', () => {
 
       // Perform 55 updates to exceed the 50-version retention limit
       for (let i = 0; i < 55; i++) {
-        await catalog.update(
-          regResult.entity.id,
-          { description: `Version ${i + 2}` },
-          actor,
-        );
+        await catalog.update(regResult.entity.id, { description: `Version ${i + 2}` }, actor);
       }
 
       const historyResult = await catalog.getVersionHistory(regResult.entity.id);
@@ -663,11 +641,7 @@ describe('ServiceCatalog', () => {
       expect(regResult.success).toBe(true);
       if (!regResult.success) return;
 
-      await catalog.update(
-        regResult.entity.id,
-        { description: 'Persisted update' },
-        actor,
-      );
+      await catalog.update(regResult.entity.id, { description: 'Persisted update' }, actor);
 
       const stored = await store.getById(regResult.entity.id);
       expect(stored).not.toBeNull();

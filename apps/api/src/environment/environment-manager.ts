@@ -11,13 +11,20 @@
  */
 
 import { randomUUID } from 'crypto';
+
 import type { EnvironmentStore, Environment, EnvironmentVariable } from './environment-store';
 
 /** Environment tier determines resource limits and policies. */
 export type EnvironmentTier = 'development' | 'staging' | 'production' | 'preview';
 
 /** Environment status. */
-export type EnvironmentStatus = 'provisioning' | 'active' | 'degraded' | 'maintenance' | 'decommissioning' | 'deleted';
+export type EnvironmentStatus =
+  | 'provisioning'
+  | 'active'
+  | 'degraded'
+  | 'maintenance'
+  | 'decommissioning'
+  | 'deleted';
 
 /** Resource quota configuration. */
 export interface ResourceQuota {
@@ -135,7 +142,7 @@ export class EnvironmentManager {
       namespace: request.namespace || `ns-${request.name}`,
       quota,
       labels: request.labels || {},
-      autoScaling: request.autoScaling ?? (request.tier === 'production'),
+      autoScaling: request.autoScaling ?? request.tier === 'production',
       ttlHours: request.ttlHours,
       createdBy: actor,
       createdAt: new Date(),
@@ -169,7 +176,11 @@ export class EnvironmentManager {
   /**
    * Update an existing environment.
    */
-  async update(id: string, request: UpdateEnvironmentRequest, actor: string): Promise<EnvironmentResult> {
+  async update(
+    id: string,
+    request: UpdateEnvironmentRequest,
+    _actor: string,
+  ): Promise<EnvironmentResult> {
     const existing = await this.store.getById(id);
     if (!existing) {
       return { success: false, error: `Environment '${id}' not found` };
@@ -198,14 +209,18 @@ export class EnvironmentManager {
   /**
    * Delete (decommission) an environment.
    */
-  async delete(id: string, actor: string): Promise<EnvironmentResult> {
+  async delete(id: string, _actor: string): Promise<EnvironmentResult> {
     const existing = await this.store.getById(id);
     if (!existing) {
       return { success: false, error: `Environment '${id}' not found` };
     }
 
     if (existing.tier === 'production') {
-      return { success: false, error: 'Production environments cannot be deleted via API. Use manual decommission process.' };
+      return {
+        success: false,
+        error:
+          'Production environments cannot be deleted via API. Use manual decommission process.',
+      };
     }
 
     if (existing.status === 'deleted') {
@@ -223,7 +238,11 @@ export class EnvironmentManager {
    * Promote an environment's configuration to the next tier.
    * dev → staging → production
    */
-  async promote(sourceId: string, targetTier: EnvironmentTier, actor: string): Promise<EnvironmentResult> {
+  async promote(
+    sourceId: string,
+    targetTier: EnvironmentTier,
+    actor: string,
+  ): Promise<EnvironmentResult> {
     const source = await this.store.getById(sourceId);
     if (!source) {
       return { success: false, error: `Source environment '${sourceId}' not found` };
@@ -273,7 +292,7 @@ export class EnvironmentManager {
     key: string,
     value: string,
     isSecret: boolean,
-    actor: string,
+    _actor: string,
   ): Promise<{ success: boolean; error?: string }> {
     const env = await this.store.getById(environmentId);
     if (!env) {
@@ -282,7 +301,11 @@ export class EnvironmentManager {
 
     // Validate key format
     if (!/^[A-Z][A-Z0-9_]*$/.test(key)) {
-      return { success: false, error: 'Variable key must be uppercase alphanumeric with underscores, starting with a letter' };
+      return {
+        success: false,
+        error:
+          'Variable key must be uppercase alphanumeric with underscores, starting with a letter',
+      };
     }
 
     await this.store.setVariable(environmentId, {
@@ -329,22 +352,35 @@ export class EnvironmentManager {
   /**
    * Validate a create environment request.
    */
-  private validateCreateRequest(request: CreateEnvironmentRequest): { success: boolean; error?: string } {
+  private validateCreateRequest(request: CreateEnvironmentRequest): {
+    success: boolean;
+    error?: string;
+  } {
     if (!request.name || request.name.trim().length < 3) {
       return { success: false, error: 'Environment name must be at least 3 characters' };
     }
 
     if (!/^[a-z][a-z0-9-]*[a-z0-9]$/.test(request.name)) {
-      return { success: false, error: 'Environment name must be lowercase alphanumeric with hyphens, starting and ending with a letter/number' };
+      return {
+        success: false,
+        error:
+          'Environment name must be lowercase alphanumeric with hyphens, starting and ending with a letter/number',
+      };
     }
 
     if (request.name.length > 63) {
-      return { success: false, error: 'Environment name must not exceed 63 characters (Kubernetes namespace limit)' };
+      return {
+        success: false,
+        error: 'Environment name must not exceed 63 characters (Kubernetes namespace limit)',
+      };
     }
 
     const validTiers: EnvironmentTier[] = ['development', 'staging', 'production', 'preview'];
     if (!validTiers.includes(request.tier)) {
-      return { success: false, error: `Invalid tier '${request.tier}'. Must be one of: ${validTiers.join(', ')}` };
+      return {
+        success: false,
+        error: `Invalid tier '${request.tier}'. Must be one of: ${validTiers.join(', ')}`,
+      };
     }
 
     if (request.ttlHours !== undefined && request.tier !== 'preview') {

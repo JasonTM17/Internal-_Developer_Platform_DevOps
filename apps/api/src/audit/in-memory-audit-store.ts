@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 /**
  * In-memory implementation of AuditLogStore.
  *
@@ -8,6 +9,7 @@
  */
 
 import type { AuditLogEntry, AuditQueryFilters, PaginatedAuditResult } from '@idp/shared';
+
 import { type AuditLogStore, MAX_QUERY_LIMIT, MIN_RETENTION_DAYS } from './audit-logger';
 
 /**
@@ -38,7 +40,7 @@ export class InMemoryAuditStore implements AuditLogStore {
     retentionCutoff.setDate(retentionCutoff.getDate() - MIN_RETENTION_DAYS);
 
     // Filter entries
-    let filtered = this.entries.filter((entry) => {
+    const filtered = this.entries.filter((entry) => {
       // Actor filter (exact match)
       if (filters.actor && entry.actor !== filters.actor) {
         return false;
@@ -78,9 +80,8 @@ export class InMemoryAuditStore implements AuditLogStore {
     const hasMore = startIndex + limit < filtered.length;
 
     // Next cursor is the ID of the last entry in this page
-    const nextCursor = hasMore && pageEntries.length > 0
-      ? pageEntries[pageEntries.length - 1].id
-      : null;
+    const nextCursor =
+      hasMore && pageEntries.length > 0 ? pageEntries[pageEntries.length - 1].id : null;
 
     return {
       entries: pageEntries,

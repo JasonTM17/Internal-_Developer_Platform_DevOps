@@ -8,7 +8,6 @@
  */
 
 import type { Command } from 'commander';
-import { getRootOpts } from '../utils/command-helpers.js';
 import { printError, printWarning } from '../utils/output.js';
 
 /** Log entry structure. */

@@ -4,9 +4,10 @@
  * Validates: Requirements 9.2, 9.3, 9.4
  */
 
-import { describe, it, expect, vi } from 'vitest';
-import type { Response } from 'express';
 import type { AuthenticatedUser } from '@idp/shared';
+import type { Response } from 'express';
+import { describe, it, expect, vi } from 'vitest';
+
 import {
   evaluatePermission,
   evaluatePermissionAcrossTeams,

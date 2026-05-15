@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
 import { CacheLayer } from './cache';
 
 // Mock Redis client
@@ -29,7 +30,7 @@ function createMockRedis() {
       return newVal;
     }),
     expire: vi.fn(async () => 1),
-    mget: vi.fn(async (...keys: string[]) => keys.map(k => store.get(k) ?? null)),
+    mget: vi.fn(async (...keys: string[]) => keys.map((k) => store.get(k) ?? null)),
     scan: vi.fn(async () => ['0', [] as string[]]),
     _store: store,
     _ttls: ttls,
@@ -63,11 +64,7 @@ describe('CacheLayer', () => {
 
     it('should use namespace prefix in keys', async () => {
       await cache.set('key', 'value');
-      expect(mockRedis.setex).toHaveBeenCalledWith(
-        'test:key',
-        300,
-        expect.any(String),
-      );
+      expect(mockRedis.setex).toHaveBeenCalledWith('test:key', 300, expect.any(String));
     });
 
     it('should use custom TTL when provided', async () => {

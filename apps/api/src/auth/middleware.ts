@@ -7,10 +7,10 @@
  * Requirements: 9.1, 9.5, 9.6
  */
 
-import { createRemoteJWKSet, jwtVerify, errors as joseErrors } from 'jose';
-import type { Request, Response, NextFunction } from 'express';
 import type { AuthenticatedUser, APIErrorResponse, RoleAssignment } from '@idp/shared';
 import { ERROR_CODES } from '@idp/shared';
+import type { Request, Response, NextFunction } from 'express';
+import { createRemoteJWKSet, jwtVerify, errors as joseErrors } from 'jose';
 
 /**
  * Configuration for the authentication middleware.
@@ -60,12 +60,7 @@ interface OIDCTokenPayload {
  * 6. Attaches AuthenticatedUser to request on success
  */
 export function createAuthMiddleware(config: AuthMiddlewareConfig) {
-  const {
-    jwksUri,
-    issuer,
-    audience,
-    sessionTimeoutMinutes = 60,
-  } = config;
+  const { jwksUri, issuer, audience, sessionTimeoutMinutes = 60 } = config;
 
   // Create JWKS client for verifying token signatures
   const jwks = config.jwksClient ?? createRemoteJWKSet(new URL(jwksUri));

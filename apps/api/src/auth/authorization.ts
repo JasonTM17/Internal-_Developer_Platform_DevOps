@@ -15,10 +15,11 @@
  * memberships has their permissions evaluated independently per team.
  */
 
-import type { Request, Response, NextFunction } from 'express';
+import { roleHasPermission } from '@idp/config';
 import type { AuthenticatedUser, AuthzResult, APIErrorResponse } from '@idp/shared';
 import { ERROR_CODES } from '@idp/shared';
-import { roleHasPermission } from '@idp/config';
+import type { Request, Response, NextFunction } from 'express';
+
 import type { AuthenticatedRequest } from './middleware';
 
 /**
@@ -249,7 +250,7 @@ export function requirePermission(
     getResource: (req) => {
       const team = options?.getTeam
         ? options.getTeam(req)
-        : (req.params[teamParam] ?? req.query.team as string ?? '');
+        : (req.params[teamParam] ?? (req.query.team as string) ?? '');
       return {
         type: resourceType,
         team,

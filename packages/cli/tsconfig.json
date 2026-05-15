@@ -21,6 +21,6 @@
     "exactOptionalPropertyTypes": false,
     "noUncheckedIndexedAccess": true
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "bin/**/*.ts"],
   "exclude": ["node_modules", "dist", "**/*.test.ts"]
 }

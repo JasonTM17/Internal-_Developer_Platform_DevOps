@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto';
+
 import { getEventBus, EventEnvelope, PublishOptions } from '../event-bus';
 import {
   DeploymentStartedEvent,
@@ -135,10 +136,7 @@ export class DeploymentEventPublisher {
     };
 
     const eventBus = getEventBus();
-    await eventBus.publish(
-      `${DEPLOYMENT_SUBJECT_PREFIX}.rolledback.${data.environment}`,
-      envelope,
-    );
+    await eventBus.publish(`${DEPLOYMENT_SUBJECT_PREFIX}.rolledback.${data.environment}`, envelope);
 
     return eventId;
   }

@@ -6,10 +6,10 @@
  *
  * Validates: Requirements 1.4, 2.1, 2.2, 2.3
  */
-import { z } from 'zod';
 import { CatalogEntityInputSchema } from '@idp/config';
 import type { CatalogEntityInput, APIErrorResponse, APIErrorDetail } from '@idp/shared';
 import { ERROR_CODES } from '@idp/shared';
+import { z } from 'zod';
 
 /**
  * Result type for catalog entity validation.

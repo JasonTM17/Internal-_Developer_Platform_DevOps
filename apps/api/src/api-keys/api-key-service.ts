@@ -10,6 +10,7 @@
  * - Scoped permissions per key
  */
 import { createHash, randomBytes } from 'crypto';
+
 import { Request, Response, NextFunction } from 'express';
 
 export interface ApiKey {
@@ -87,7 +88,7 @@ export class ApiKeyService {
    */
   validateKey(plaintextKey: string): ApiKeyValidationResult {
     const hashedKey = this.hashKey(plaintextKey);
-    const key = Array.from(this.keys.values()).find(k => k.hashedKey === hashedKey);
+    const key = Array.from(this.keys.values()).find((k) => k.hashedKey === hashedKey);
 
     if (!key) {
       return { valid: false, error: 'Invalid API key' };
@@ -115,7 +116,10 @@ export class ApiKeyService {
    * Rotate an API key. Creates a new key and optionally keeps the old one active
    * for a grace period.
    */
-  rotateKey(keyId: string, gracePeriodMs = 3600000): { newKey: ApiKey; plaintextKey: string } | null {
+  rotateKey(
+    keyId: string,
+    gracePeriodMs = 3600000,
+  ): { newKey: ApiKey; plaintextKey: string } | null {
     const oldKey = this.keys.get(keyId);
     if (!oldKey) return null;
 
@@ -174,7 +178,7 @@ export class ApiKeyService {
 
       // Check scopes
       if (requiredScopes && requiredScopes.length > 0) {
-        const hasScope = requiredScopes.every(scope => result.key!.scopes.includes(scope));
+        const hasScope = requiredScopes.every((scope) => result.key!.scopes.includes(scope));
         if (!hasScope) {
           res.status(403).json({ error: 'Insufficient permissions' });
           return;
@@ -191,7 +195,7 @@ export class ApiKeyService {
    * List all API keys (without hashed values).
    */
   listKeys(): Omit<ApiKey, 'hashedKey'>[] {
-    return Array.from(this.keys.values()).map(({ hashedKey, ...rest }) => rest);
+    return Array.from(this.keys.values()).map(({ hashedKey: _, ...rest }) => rest);
   }
 
   /**

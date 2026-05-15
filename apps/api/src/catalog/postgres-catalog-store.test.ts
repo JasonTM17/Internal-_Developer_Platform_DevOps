@@ -7,11 +7,13 @@
  * Requirements: 1.1, 1.3, 1.5, 1.6
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { PostgresCatalogStore } from './postgres-catalog-store';
-import { DuplicateEntityError } from './catalog-store';
-import type { DatabasePool } from '../db';
 import type { CatalogEntity, CatalogEntityVersion, DependencyEdge } from '@idp/shared';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+import type { DatabasePool } from '../db';
+
+import { DuplicateEntityError } from './catalog-store';
+import { PostgresCatalogStore } from './postgres-catalog-store';
 
 /**
  * Creates a mock database pool for testing.
@@ -321,12 +323,7 @@ describe('PostgresCatalogStore', () => {
       expect(querySpy).toHaveBeenCalledTimes(1);
       const [sql, params] = querySpy.mock.calls[0];
       expect(sql).toContain('INSERT INTO catalog_entity_dependencies');
-      expect(params).toEqual([
-        'source-id',
-        'target-id',
-        'runtime',
-        edge.createdAt,
-      ]);
+      expect(params).toEqual(['source-id', 'target-id', 'runtime', edge.createdAt]);
     });
   });
 

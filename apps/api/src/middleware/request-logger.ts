@@ -15,6 +15,8 @@
 import { randomUUID } from 'crypto';
 import type { Request, Response, NextFunction } from 'express';
 
+import { logger } from '../lib/logger';
+
 /** Log entry structure for request/response pairs. */
 export interface RequestLogEntry {
   level: string;
@@ -66,14 +68,17 @@ const DEFAULT_REDACT_HEADERS = [
 const DEFAULT_EXCLUDE_PATHS = ['/health', '/ready', '/metrics'];
 
 /**
- * Default log output function - writes structured JSON to stdout.
+ * Default log output function - uses Pino structured logger.
  */
 function defaultOutput(entry: RequestLogEntry): void {
-  const output = JSON.stringify(entry);
-  if (entry.level === 'error') {
-    process.stderr.write(output + '\n');
+  const { level, message, ...data } = entry;
+  const reqLogger = logger.child({ requestId: entry.requestId });
+  if (level === 'error') {
+    reqLogger.error(data, message);
+  } else if (level === 'warn') {
+    reqLogger.warn(data, message);
   } else {
-    process.stdout.write(output + '\n');
+    reqLogger.info(data, message);
   }
 }
 
