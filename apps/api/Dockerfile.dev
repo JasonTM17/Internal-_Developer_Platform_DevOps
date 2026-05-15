@@ -8,7 +8,8 @@ COPY apps/api/package.json ./apps/api/
 COPY packages/shared/package.json ./packages/shared/
 COPY packages/config/package.json ./packages/config/
 COPY packages/ui/package.json ./packages/ui/
-RUN pnpm install
+COPY packages/cli/package.json ./packages/cli/
+RUN pnpm install --shamefully-hoist
 COPY apps/api/ ./apps/api/
 COPY packages/ ./packages/
 ENV NODE_ENV=development PORT=3000 LOG_LEVEL=debug

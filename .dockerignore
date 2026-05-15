@@ -1,0 +1,16 @@
+node_modules
+**/node_modules
+.git
+.github
+*.md
+!README.md
+.env*
+.vscode
+.idea
+coverage
+dist
+**/dist
+.turbo
+**/.turbo
+.next
+**/.next

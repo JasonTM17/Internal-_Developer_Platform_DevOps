@@ -16,6 +16,7 @@ import helmet from 'helmet';
 
 import { createAuthMiddleware } from './auth/middleware';
 import { getConfig } from './config/index';
+import { openApiSpec } from './docs/openapi';
 import { createCorsMiddleware, buildCorsOptions } from './middleware/cors';
 import { createErrorHandler, notFoundHandler } from './middleware/error-handler';
 import { HealthCheckRegistry, registerHealthEndpoints } from './middleware/health';
@@ -98,6 +99,25 @@ export function createApp(): Express {
 
   // Metrics endpoint
   app.get('/metrics', createMetricsEndpoint(metricsCollector));
+
+  // Swagger API documentation
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-unsafe-assignment
+    const swaggerUi: {
+      serve: express.RequestHandler[];
+      setup: (spec: object, opts?: object) => express.RequestHandler;
+    } = require('swagger-ui-express');
+    app.use(
+      '/api-docs',
+      ...swaggerUi.serve,
+      swaggerUi.setup(openApiSpec, {
+        customSiteTitle: 'IDP API Documentation',
+        customCss: '.swagger-ui .topbar { display: none }',
+      }),
+    );
+  } catch {
+    app.get('/api-docs', (_req, res) => res.json(openApiSpec));
+  }
 
   // Auth middleware for API routes (skip in dev if AUTH_DISABLED=true)
   const authDisabled =
