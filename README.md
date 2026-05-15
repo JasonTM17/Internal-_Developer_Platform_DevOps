@@ -188,6 +188,7 @@ pnpm build
 ├── packages/
 │   ├── shared/                 # Shared utilities and types
 │   ├── ui/                     # Shared UI component library
+│   ├── cli/                    # CLI tool for platform operations
 │   └── config/                 # Shared ESLint, TypeScript, Prettier configs
 ├── infra/
 │   ├── terraform/              # 10 IaC modules (EKS, RDS, VPC, IAM, etc.)

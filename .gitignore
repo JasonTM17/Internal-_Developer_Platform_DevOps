@@ -46,3 +46,6 @@ pnpm-debug.log
 # Test artifacts
 test-results/
 playwright-report/
+
+# OMC plugin state
+.omc/
