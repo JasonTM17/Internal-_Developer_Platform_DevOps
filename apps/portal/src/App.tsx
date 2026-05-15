@@ -1,6 +1,6 @@
 import { CssBaseline, Box, CircularProgress, Typography } from '@mui/material';
 import React, { Suspense, lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 
 import { AuthProvider, useAuth } from './auth/AuthProvider';
 import { ProtectedRoute } from './auth/ProtectedRoute';
@@ -72,9 +72,10 @@ export const navigationConfig = [
 /** Inner app routes — separated to access auth context */
 const AppRoutes: React.FC = () => {
   const { isAuthenticated } = useAuth();
+  const location = useLocation();
 
-  // Show login page if not authenticated
-  if (!isAuthenticated) {
+  // Show login page if not authenticated OR if explicitly on /login path
+  if (!isAuthenticated || location.pathname === '/login') {
     return (
       <Suspense fallback={<PageLoader />}>
         <LoginPage />
