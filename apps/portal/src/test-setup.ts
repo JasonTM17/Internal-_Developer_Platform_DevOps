@@ -1,2 +1,1 @@
-// Test setup for Portal
-// Add any global test configuration here
+import '@testing-library/jest-dom/vitest';
