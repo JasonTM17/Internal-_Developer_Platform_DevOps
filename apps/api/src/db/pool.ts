@@ -9,6 +9,9 @@
  * - Connection retry with exponential backoff
  */
 import { Pool, PoolConfig, PoolClient, QueryResult as PgQueryResult } from 'pg';
+
+import { logger } from '../lib/logger';
+
 import type { DatabasePool, QueryResult, QueryResultRow } from './database';
 
 export interface PoolOptions {
@@ -38,12 +41,7 @@ export class PostgresPool implements DatabasePool {
     this.pool = new Pool(config);
 
     this.pool.on('error', (err) => {
-      console.error(JSON.stringify({
-        level: 'error',
-        message: 'Unexpected pool error',
-        error: err.message,
-        timestamp: new Date().toISOString(),
-      }));
+      logger.error({ err }, 'Unexpected pool error');
     });
   }
 

@@ -1,18 +1,7 @@
-/* eslint-disable */
-/**
- * Background Job Queue
- *
- * Production-ready job processing built on BullMQ patterns:
- * - Job queue abstraction with typed payloads
- * - Worker registration with concurrency control
- * - Job scheduling (cron and delayed)
- * - Dead letter queue for failed jobs
- * - Job retry with configurable backoff
- * - Job progress tracking
- * - Graceful shutdown
- */
 import { Queue, Worker, Job, QueueEvents, JobsOptions } from 'bullmq';
 import { Redis } from 'ioredis';
+
+import { logger } from '../lib/logger';
 
 export interface JobQueueOptions {
   redis: Redis;
@@ -39,7 +28,7 @@ export interface ScheduledJob<T = unknown> {
 export type JobHandler<T = unknown, R = void> = (job: Job<T>) => Promise<R>;
 
 export class JobQueue<T = unknown> {
-  private queue: Queue<T>;
+  private queue: Queue;
   private worker: Worker<T> | null = null;
   private events: QueueEvents;
   private handlers: Map<string, JobHandler<T>> = new Map();
@@ -57,20 +46,14 @@ export class JobQueue<T = unknown> {
 
     const connection = opts.redis;
 
-    this.queue = new Queue<T>(opts.queueName, { connection });
+    this.queue = new Queue(opts.queueName, { connection });
     this.events = new QueueEvents(opts.queueName, { connection });
   }
 
-  /**
-   * Register a handler for a specific job type.
-   */
   registerHandler(jobName: string, handler: JobHandler<T>): void {
     this.handlers.set(jobName, handler);
   }
 
-  /**
-   * Start processing jobs.
-   */
   startProcessing(): void {
     if (this.worker) return;
 
@@ -89,39 +72,32 @@ export class JobQueue<T = unknown> {
       },
     );
 
-    this.worker.on('failed', (job: any, error: Error) => {
-      console.error(
-        JSON.stringify({
-          level: 'error',
-          message: 'Job failed',
+    this.worker.on('failed', (job: Job<T> | undefined, error: Error) => {
+      logger.error(
+        {
           jobId: job?.id,
           jobName: job?.name,
-          error: error.message,
+          err: error,
           attemptsMade: job?.attemptsMade,
-          timestamp: new Date().toISOString(),
-        }),
+        },
+        'Job failed',
       );
     });
 
-    this.worker.on('completed', (job: any) => {
-      console.info(
-        JSON.stringify({
-          level: 'info',
-          message: 'Job completed',
+    this.worker.on('completed', (job: Job<T>) => {
+      logger.info(
+        {
           jobId: job.id,
           jobName: job.name,
           duration: Date.now() - job.timestamp,
-          timestamp: new Date().toISOString(),
-        }),
+        },
+        'Job completed',
       );
     });
   }
 
-  /**
-   * Add a job to the queue.
-   */
   async addJob(name: string, data: T, options?: JobsOptions): Promise<Job<T>> {
-    return this.queue.add(name as any, data as any, {
+    return this.queue.add(name, data as object, {
       attempts: this.options.maxRetries,
       backoff: {
         type: this.options.backoffType,
@@ -130,19 +106,16 @@ export class JobQueue<T = unknown> {
       removeOnComplete: { count: 1000 },
       removeOnFail: { count: 5000 },
       ...options,
-    }) as unknown as Job<T>;
+    }) as unknown as Promise<Job<T>>;
   }
 
-  /**
-   * Schedule a recurring job with cron expression.
-   */
   async scheduleRecurring(
     name: string,
     data: T,
     cron: string,
     options?: JobsOptions,
   ): Promise<void> {
-    await this.queue.add(name as any, data as any, {
+    await this.queue.add(name, data as object, {
       repeat: { pattern: cron },
       attempts: this.options.maxRetries,
       backoff: {
@@ -153,9 +126,6 @@ export class JobQueue<T = unknown> {
     });
   }
 
-  /**
-   * Add a delayed job (execute after specified milliseconds).
-   */
   async addDelayedJob(
     name: string,
     data: T,
@@ -165,9 +135,6 @@ export class JobQueue<T = unknown> {
     return this.addJob(name, data, { delay: delayMs, ...options });
   }
 
-  /**
-   * Move a failed job to the dead letter queue.
-   */
   async moveToDeadLetter(job: Job<T>): Promise<void> {
     const dlqName = `${this.options.queueName}:dlq`;
     const dlq = new Queue(dlqName, { connection: this.options.redis });
@@ -178,9 +145,6 @@ export class JobQueue<T = unknown> {
     await dlq.close();
   }
 
-  /**
-   * Get queue statistics.
-   */
   async getStats() {
     const [waiting, active, completed, failed, delayed] = await Promise.all([
       this.queue.getWaitingCount(),
@@ -193,9 +157,6 @@ export class JobQueue<T = unknown> {
     return { waiting, active, completed, failed, delayed };
   }
 
-  /**
-   * Retry all failed jobs.
-   */
   async retryFailed(limit = 100): Promise<number> {
     const failed = await this.queue.getFailed(0, limit);
     let retried = 0;
@@ -206,9 +167,6 @@ export class JobQueue<T = unknown> {
     return retried;
   }
 
-  /**
-   * Gracefully shutdown the queue and worker.
-   */
   async shutdown(): Promise<void> {
     if (this.worker) {
       await this.worker.close();

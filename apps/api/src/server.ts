@@ -17,6 +17,7 @@ import helmet from 'helmet';
 import { createAuthMiddleware } from './auth/middleware';
 import { getConfig } from './config/index';
 import { openApiSpec } from './docs/openapi';
+import { logger } from './lib/logger';
 import { createCorsMiddleware, buildCorsOptions } from './middleware/cors';
 import { createErrorHandler, notFoundHandler } from './middleware/error-handler';
 import { HealthCheckRegistry, registerHealthEndpoints } from './middleware/health';
@@ -27,6 +28,7 @@ import {
 } from './middleware/metrics';
 import { createRateLimiter, RATE_LIMIT_PRESETS } from './middleware/rate-limiter';
 import { createRequestLogger } from './middleware/request-logger';
+import { createSanitizeMiddleware } from './middleware/sanitize';
 import { registerApiRoutes } from './routes/index';
 
 /** Server instance with shutdown capability. */
@@ -55,11 +57,30 @@ export function createApp(): Express {
   app.use(express.json({ limit: config.maxBodySize }));
   app.use(express.urlencoded({ extended: true, limit: config.maxBodySize }));
 
+  // Input sanitization (after body parsing, before routes)
+  app.use(createSanitizeMiddleware());
+
   // Security headers
   app.use(
     helmet({
-      contentSecurityPolicy: false,
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'", "'unsafe-inline'"],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          imgSrc: ["'self'", 'data:', 'https:'],
+          connectSrc: ["'self'"],
+          frameSrc: ["'none'"],
+          objectSrc: ["'none'"],
+          baseUri: ["'self'"],
+        },
+      },
       crossOriginEmbedderPolicy: false,
+      hsts: {
+        maxAge: 31536000,
+        includeSubDomains: true,
+        preload: true,
+      },
     }),
   );
 
@@ -168,22 +189,15 @@ export function createServer(): ServerInstance {
     async start(): Promise<void> {
       return new Promise((resolve, reject) => {
         httpServer = app.listen(config.port, config.host, () => {
-          console.log(
-            JSON.stringify({
-              level: 'info',
-              message: `Server started on ${config.host}:${config.port}`,
-              environment: config.env,
-              version: config.version,
-              timestamp: new Date().toISOString(),
-            }),
+          logger.info(
+            { environment: config.env, version: config.version },
+            `Server started on ${config.host}:${config.port}`,
           );
           resolve();
         });
 
         httpServer.on('error', (error: NodeJS.ErrnoException) => {
-          if (error.code === 'EADDRINUSE') {
-            console.error(`Port ${config.port} is already in use`);
-          }
+          logger.error({ err: error }, `Port ${config.port} bind failed`);
           reject(error);
         });
 
@@ -200,37 +214,19 @@ export function createServer(): ServerInstance {
       if (isShuttingDown) return;
       isShuttingDown = true;
 
-      console.log(
-        JSON.stringify({
-          level: 'info',
-          message: 'Graceful shutdown initiated',
-          timestamp: new Date().toISOString(),
-        }),
-      );
+      logger.info('Graceful shutdown initiated');
 
       // Stop accepting new connections
       if (httpServer) {
         await new Promise<void>((resolve) => {
           const timeout = setTimeout(() => {
-            console.log(
-              JSON.stringify({
-                level: 'warn',
-                message: 'Shutdown timeout reached, forcing close',
-                timestamp: new Date().toISOString(),
-              }),
-            );
+            logger.warn('Shutdown timeout reached, forcing close');
             resolve();
           }, config.shutdownTimeoutMs);
 
           httpServer!.close(() => {
             clearTimeout(timeout);
-            console.log(
-              JSON.stringify({
-                level: 'info',
-                message: 'Server closed gracefully',
-                timestamp: new Date().toISOString(),
-              }),
-            );
+            logger.info('Server closed gracefully');
             resolve();
           });
         });
@@ -248,13 +244,7 @@ export async function bootstrap(): Promise<void> {
 
   // Graceful shutdown on SIGTERM/SIGINT
   const shutdown = async (signal: string) => {
-    console.log(
-      JSON.stringify({
-        level: 'info',
-        message: `Received ${signal}, starting graceful shutdown`,
-        timestamp: new Date().toISOString(),
-      }),
-    );
+    logger.info({ signal }, `Received ${signal}, starting graceful shutdown`);
     await server.stop();
     process.exit(0);
   };
@@ -268,28 +258,15 @@ export async function bootstrap(): Promise<void> {
 
   // Uncaught exception handler
   process.on('uncaughtException', (error: Error) => {
-    console.error(
-      JSON.stringify({
-        level: 'error',
-        message: 'Uncaught exception',
-        error: error.message,
-        stack: error.stack,
-        timestamp: new Date().toISOString(),
-      }),
-    );
+    logger.fatal({ err: error }, 'Uncaught exception');
     process.exit(1);
   });
 
   // Unhandled rejection handler
   process.on('unhandledRejection', (reason: unknown) => {
-    console.error(
-      JSON.stringify({
-        level: 'error',
-        message: 'Unhandled promise rejection',
-        reason: reason instanceof Error ? reason.message : String(reason),
-        stack: reason instanceof Error ? reason.stack : undefined,
-        timestamp: new Date().toISOString(),
-      }),
+    logger.fatal(
+      { err: reason instanceof Error ? reason : new Error(String(reason)) },
+      'Unhandled promise rejection',
     );
     process.exit(1);
   });
