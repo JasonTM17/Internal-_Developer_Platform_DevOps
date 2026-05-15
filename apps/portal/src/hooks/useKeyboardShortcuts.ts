@@ -84,7 +84,7 @@ export function useKeyboardShortcuts(
 
   const shortcuts: ShortcutMap = {
     ...getDefaultShortcuts(navigate),
-    ...overrides,
+    ...(overrides as ShortcutMap),
   };
 
   const resetSequence = useCallback(() => {
