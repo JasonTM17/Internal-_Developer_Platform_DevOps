@@ -1,4 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
 import { CircuitBreaker, CircuitOpenError } from './circuit-breaker';
 
 describe('CircuitBreaker', () => {
@@ -131,7 +132,7 @@ describe('CircuitBreaker', () => {
         failureThreshold: 5,
       });
 
-      const slowFn = () => new Promise(resolve => setTimeout(resolve, 200));
+      const slowFn = () => new Promise((resolve) => setTimeout(resolve, 200));
       await expect(slowBreaker.execute(slowFn)).rejects.toThrow('Circuit breaker timeout');
     });
   });

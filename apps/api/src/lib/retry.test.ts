@@ -1,4 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
 import { withRetry, isTransientError } from './retry';
 
 describe('withRetry', () => {
@@ -18,7 +19,8 @@ describe('withRetry', () => {
   });
 
   it('should retry on failure and succeed', async () => {
-    const fn = vi.fn()
+    const fn = vi
+      .fn()
       .mockRejectedValueOnce(new Error('fail'))
       .mockRejectedValueOnce(new Error('fail'))
       .mockResolvedValue('success');
@@ -39,10 +41,16 @@ describe('withRetry', () => {
 
     const promise = withRetry(fn, { maxRetries: 2, baseDelayMs: 100, jitter: false });
 
+    // Catch the rejection to prevent unhandled rejection
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    const caught = promise.catch((e) => e);
+
     await vi.advanceTimersByTimeAsync(100);
     await vi.advanceTimersByTimeAsync(200);
 
-    await expect(promise).rejects.toThrow('persistent failure');
+    const error = await caught;
+    expect(error).toBeInstanceOf(Error);
+    expect((error as Error).message).toBe('persistent failure');
     expect(fn).toHaveBeenCalledTimes(3); // initial + 2 retries
   });
 
@@ -62,9 +70,7 @@ describe('withRetry', () => {
 
   it('should call onRetry callback with attempt info', async () => {
     const onRetry = vi.fn();
-    const fn = vi.fn()
-      .mockRejectedValueOnce(new Error('fail'))
-      .mockResolvedValue('ok');
+    const fn = vi.fn().mockRejectedValueOnce(new Error('fail')).mockResolvedValue('ok');
 
     const promise = withRetry(fn, {
       maxRetries: 3,
@@ -82,7 +88,8 @@ describe('withRetry', () => {
 
   it('should apply exponential backoff', async () => {
     const onRetry = vi.fn();
-    const fn = vi.fn()
+    const fn = vi
+      .fn()
       .mockRejectedValueOnce(new Error('fail'))
       .mockRejectedValueOnce(new Error('fail'))
       .mockRejectedValueOnce(new Error('fail'))
@@ -96,9 +103,9 @@ describe('withRetry', () => {
       onRetry,
     });
 
-    await vi.advanceTimersByTimeAsync(100);  // 100 * 2^0 = 100
-    await vi.advanceTimersByTimeAsync(200);  // 100 * 2^1 = 200
-    await vi.advanceTimersByTimeAsync(400);  // 100 * 2^2 = 400
+    await vi.advanceTimersByTimeAsync(100); // 100 * 2^0 = 100
+    await vi.advanceTimersByTimeAsync(200); // 100 * 2^1 = 200
+    await vi.advanceTimersByTimeAsync(400); // 100 * 2^2 = 400
     await promise;
 
     expect(onRetry).toHaveBeenNthCalledWith(1, expect.any(Error), 1, 100);
@@ -108,7 +115,8 @@ describe('withRetry', () => {
 
   it('should cap delay at maxDelayMs', async () => {
     const onRetry = vi.fn();
-    const fn = vi.fn()
+    const fn = vi
+      .fn()
       .mockRejectedValueOnce(new Error('fail'))
       .mockRejectedValueOnce(new Error('fail'))
       .mockResolvedValue('ok');
